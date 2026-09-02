@@ -226,7 +226,7 @@ figure.fig figcaption{font-size:12.5px;color:var(--fg2);margin-top:8px}
     <div class="search-results" id="searchResults"></div>
   </div>
   <div class="progress-line"><div id="progressBar"></div></div>
-  <div class="progress-text" id="progressText">已学 0/133 章</div>
+  <div class="progress-text" id="progressText">已学 0/138 章</div>
   <nav class="toc" id="toc">
 
     <div class="part" data-part="p1">
@@ -435,6 +435,17 @@ figure.fig figcaption{font-size:12.5px;color:var(--fg2);margin-top:8px}
       </div>
     </div>
 
+    <div class="part" data-part="p14">
+      <button class="part-toggle"><span class="arrow">▼</span>第十四篇 · 高速互连与集合通信</button>
+      <div class="chap-list">
+        <a href="#chi1" data-ch="chi1"><span class="chk"></span><span class="no">I1</span><span class="tt">PCIe 协议栈深潜：TLP/流控/LTSSM</span></a>
+        <a href="#chi2" data-ch="chi2"><span class="chk"></span><span class="no">I2</span><span class="tt">PCIe 性能工程与排障体系</span></a>
+        <a href="#chi3" data-ch="chi3"><span class="chk"></span><span class="no">I3</span><span class="tt">GPU 互连：P2P/GPUDirect/NVLink</span></a>
+        <a href="#chi4" data-ch="chi4"><span class="chk"></span><span class="no">I4</span><span class="tt">NCCL 集合通信库</span></a>
+        <a href="#chi5" data-ch="chi5"><span class="chk"></span><span class="no">I5</span><span class="tt">分布式通信实战与横向对比</span></a>
+      </div>
+    </div>
+
     <div class="part" data-part="papp">
       <button class="part-toggle"><span class="arrow">▼</span>附录 · 题库与速查</button>
       <div class="chap-list">
@@ -462,6 +473,7 @@ figure.fig figcaption{font-size:12.5px;color:var(--fg2);margin-top:8px}
     <span class="meta-pill">🖥 SoC：正点原子i.MX6U ALPHA · ATK-DLRK3568 · Orange Pi Zero(H3)</span>
     <span class="meta-pill">⚙️ RTOS：FreeRTOS · RT-Thread · Zephyr · seL4</span>
     <span class="meta-pill">📡 协议：UART/I2C/SPI/CAN/USB/WiFi/BLE/LoRa/NB-IoT/PCIe</span>
+    <span class="meta-pill">🔗 互连：PCIe 协议栈 / GPUDirect · NVLink / NCCL 集合通信 / RDMA</span>
     <span class="meta-pill">🏭 项目：6 个综合实战（含 GitHub 与立创开源对照）</span>
   </div>
 </div>
@@ -489,6 +501,7 @@ figure.fig figcaption{font-size:12.5px;color:var(--fg2);margin-top:8px}
   <a class="card" href="#part11"><span class="cn">🧮</span><h3>第十一篇 · 工程常用算法</h3><p>数字滤波七件套/卡尔曼族谱(EKF·调参)/姿态解算/PID全集(抗饱和·自整定)/LQR与复合控制/SVPWM·无感FOC/S曲线轨迹/CRC族谱/FFT·Goertzel/轻加密/导航概览（A1~A11）</p></a>
   <a class="card" href="#part12"><span class="cn">⚡</span><h3>第十二篇 · 系统性能工程</h3><p>性能分析方法论(USE法·火焰图专题)/MCU系统优化(启动·裁剪·负载)/RTOS多任务调优/三大优化战役复盘/Linux内核与容器进阶/专家技能地图（SO1~SO5+SE）</p></a>
   <a class="card" href="#part13"><span class="cn">🧩</span><h3>第十三篇 · ZYNQ 异构开发</h3><p>ZYNQ7020 架构全景(PS+PL)/AXI互联/Verilog 精要/Vivado 七步流程/PS裸机与 PS-PL 协同实战/数据采集系统（Z1~Z5 · 正点原子领航者板）</p></a>
+  <a class="card" href="#part14"><span class="cn">🔗</span><h3>第十四篇 · 高速互连与集合通信</h3><p>PCIe 协议栈深潜(TLP/信用流控/LTSSM)/带宽账本与 DMA 引擎/GPUDirect·NVLink·NVSwitch 拓扑/NCCL 集合通信(原语·Ring·Tree·调优)/RDMA·RoCE 与分布式通信实战（I1~I5）</p></a>
 </div>
 
 <h2>开始之前：硬件锚点清单</h2>
@@ -18076,6 +18089,939 @@ while(running){
 
 <div class="box tip"><span class="bt">🎓 第十三篇收束寄语</span>
 <p>ZYNQ 是嵌入式工程师进入异构计算的最低门槛——你已有的所有软件知识(ARM/Linux/C)直接复用，唯一的新增是 Verilog 与并行思维。一旦跨过这个门槛，你会发现<strong>原来有些问题真的可以把算法变成电路来解</strong>。这不是替代你的 MCU/Linux 技能，而是给你的工具箱加了一把别人没有的钥匙。</p></div>
+</section>
+
+<div class="part-divider" id="part14">
+  <div class="pd-kicker">PART 14 · HIGH-SPEED INTERCONNECT &amp; COLLECTIVE COMMUNICATION</div>
+  <h1>第十四篇 · 高速互连与集合通信</h1>
+  <p>当算力从「一块板子」走向「一台服务器、一个机柜、一个集群」，瓶颈就从 CPU 主频转移到了<strong>数据搬运的通道</strong>上。本篇沿着一条清晰的带宽阶梯向上走：PCIe（设备与主机）→ GPUDirect / NVLink / NVSwitch（GPU 与 GPU）→ NCCL（进程与进程、节点与节点）→ RDMA / RoCE（跨机网络）。前两章把第85章的 PCIe 从「会用 lspci」推进到<strong>协议栈内部与带宽账本</strong>，后三章攻克 AI 集群的集合通信体系。目标不是背参数，而是建立一种能力：<strong>给你一张拓扑图，就能算出理论带宽、预测实测值、并指出瓶颈在哪一段链路上。</strong></p>
+</div>
+
+<section class="chapter" id="chi1">
+<div class="ch-head">
+<span class="part-tag">第十四篇 · 高速互连</span>
+<h2>I1 · PCIe 协议栈深潜：TLP、流控与 LTSSM 状态机</h2>
+<p class="ch-sub">第85章讲了「怎么看见设备」，本章讲「设备之间到底在传什么」。理解 TLP 头、信用流控与链路训练状态机，你才能解释那些看似玄学的性能与稳定性问题。</p>
+</div>
+<div class="goals"><strong>🎯 学习目标</strong><ul>
+<li>读懂 TLP 的三段结构与 Fmt/Type 字段，能判断一次 MMIO 访问对应的包类型</li>
+<li>掌握基于信用的流控机制，理解「为什么 Posted 写会被阻塞」</li>
+<li>理解 LTSSM 状态机各状态的进入/退出条件，能解释降速与丢链路的根因</li>
+<li>掌握配置空间布局与 MSI-X 机制，写出多队列中断驱动</li>
+</ul></div>
+
+<h3>I1.1 三层模型与三种包</h3>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>层</th><th>产物</th><th>职责</th><th>类比以太网</th></tr>
+<tr><td>事务层</td><td><strong>TLP</strong>（Transaction Layer Packet）</td><td>读写事务语义、路由、QoS/TC</td><td>IP 包（含地址与端口）</td></tr>
+<tr><td>数据链路层</td><td><strong>DLLP</strong>（Data Link Layer Packet）</td><td>序号、LCRC 校验、ACK/NAK 重传、信用通告</td><td>TCP 的可靠传输</td></tr>
+<tr><td>物理层</td><td><strong>Ordered Set</strong>（有序集）</td><td>帧定界、链路训练、时钟补偿、电气空闲</td><td>物理层前导码/空闲码</td></tr>
+</table></div>
+<p class="small muted">关键区分：<strong>TLP 承载业务数据并可跨 Switch 路由</strong>；DLLP 只在<strong>相邻两端口之间</strong>传递，永远不会被转发——这是判断抓包内容归属的第一原则。</p>
+
+<h3>I1.2 TLP 结构解剖</h3>
+<div class="codeblock"><pre><code data-lang="text">TLP 三段： [Header 3DW 或 4DW] [Data Payload 0~4KB] [ECRC 1DW 可选]
+                ↓ 数据链路层封装
+           [SeqNum 2B] [TLP Header+Payload+ECRC] [LCRC 4B]
+                ↓ 物理层封装(Gen1/2)
+           [STP 1B] ... [END/EDB 1B]
+
+Header 首 DW 的关键位域（32 bit）：
+  bit[31:29] Fmt   —— 头长度与有无数据：000=3DW无数据 010=3DW带数据
+                      001=4DW无数据 011=4DW带数据
+  bit[28:24] Type  —— 事务类型，与 Fmt 共同决定包种类
+  bit[22:20] TC    —— 流量类别(0~7)，配合 VC 做 QoS
+  bit[14:12] Attr  —— 属性(Relaxed Ordering / No Snoop / ID-Based Ordering)
+  bit[9:0]   Length—— 以 DW 为单位的负载长度(1~1024 DW，即最多4KB)</code></pre></div>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>Fmt/Type</th><th>包名称</th><th>路由方式</th><th>典型场景</th></tr>
+<tr><td>00/00000</td><td>MRd（Memory Read）</td><td>地址路由</td><td>CPU 读设备 BAR 寄存器</td></tr>
+<tr><td>10/00000</td><td>MWr（Memory Write）</td><td>地址路由</td><td>CPU 写寄存器；设备 DMA 写内存 ★</td></tr>
+<tr><td>00/01010</td><td>CplD（Completion with Data）</td><td>ID 路由</td><td>MRd 的读返回</td></tr>
+<tr><td>00/00100</td><td>CfgRd0/CfgRd1</td><td>ID 路由</td><td>枚举时读配置空间</td></tr>
+<tr><td>01/10xxx</td><td>Msg / MsgD</td><td>隐式路由</td><td>中断(INTx 模拟)、电源管理 PME、错误报告</td></tr>
+</table></div>
+
+<h3>I1.3 三种路由方式（决定 Switch 怎么转发）</h3>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>路由</th><th>依据字段</th><th>用于哪些包</th><th>要点</th></tr>
+<tr><td>地址路由</td><td>32/64 位地址</td><td>MRd / MWr</td><td>Switch 按 BAR 窗口范围判定落在哪个下游端口</td></tr>
+<tr><td>ID 路由</td><td>Bus/Device/Function 号</td><td>Cpl / CplD / Cfg*</td><td>完成包沿原路返回靠的是 Requester ID</td></tr>
+<tr><td>隐式路由</td><td>Type 字段隐含目标</td><td>Msg 类</td><td>目标是 Root Complex / 广播 —— 无地址无 ID</td></tr>
+</table></div>
+<div class="box warn"><span class="bt">⚠️ 工程推论：读比写慢得多</span>
+<p>MWr 是 <strong>Posted</strong>（发出即忘，不等响应）；MRd 是 <strong>Non-Posted</strong>（必须等对端回 CplD）。因此一次 MMIO <strong>读</strong>的往返延迟 ≈ 2× 链路延迟 + 设备处理时间，而 DMA 写可以流水线化。<strong>能用一次大块读解决，就不要循环读 32 次寄存器</strong>——这是驱动性能的第一条铁律。</p></div>
+
+<h3>I1.4 基于信用的流控（Flow Control）</h3>
+<p>PCIe 不用「停-等」也不用「反压信号」，而是<strong>信用（Credit）机制</strong>：接收方预先通告自己缓冲区的容量，发送方每发一个包扣减信用，收不到信用就不能发。</p>
+<div class="codeblock"><pre><code data-lang="text">六类信用（每个 VC 独立维护）：
+  Posted     : PH(头) / PD(数据)      ← MWr、Msg
+  Non-Posted : NPH(头) / NPD(数据)    ← MRd
+  Completion : CPH(头) / CPD(数据)    ← Cpl / CplD
+基本单位：头 1 credit = 最大头尺寸；数据 1 credit = 4 DW(16 字节)
+
+初始化：链路训练完成后进入 FC_INIT，双方用 InitFC1/InitFC2 DLLP
+        交换缓冲区大小 —— 若通告「无限信用」则头/数据信用置为无限。
+运行中：通过 UpdateFC DLLP 周期性归还信用(UpdateFC-P/NP/Cpl)
+
+诊断价值： ★ 当驱动出现「DMA 写卡死」时，若抓包看到对端持续不发
+         UpdateFC-P，说明<strong>接收侧缓冲已被下游堵死</strong>(而非本端问题)。</code></pre></div>
+
+<h3>I1.5 LTSSM：链路训练与状态机</h3>
+<p>LTSSM（Link Training and Status State Machine）是 PCIe 最核心的状态机，也是所有「链路起不来/降速/掉卡」问题的分析框架。</p>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>状态</th><th>含义</th><th>停留/跳转条件</th></tr>
+<tr><td><strong>Detect</strong></td><td>检测对端是否存在（Quiet→Active）</td><td>收不到对端 → 回 Quiet 循环；这就是「空槽位」</td></tr>
+<tr><td><strong>Polling</strong></td><td>位锁定与符号锁定，交换 TS1/TS2</td><td>信号质量差会在此反复或进 Compliance（测试态）</td></tr>
+<tr><td><strong>Configuration</strong></td><td>协商链路宽度与 Lane 号、极性翻转</td><td>★ Lane Reversal / Polarity Inversion 在此自动修正</td></tr>
+<tr><td><strong>L0</strong></td><td><strong>正常工作态</strong></td><td>唯一能传 TLP 的状态</td></tr>
+<tr><td>L0s</td><td>浅休眠（单向，快速唤醒 &lt;1µs）</td><td>ASPM 开启时短时空闲进入</td></tr>
+<tr><td>L1</td><td>深休眠（需双方协商，唤醒更慢）</td><td>省电与延迟的折衷点</td></tr>
+<tr><td>L2</td><td>最深省电，主电源可移除</td><td>需辅助电源维持唤醒逻辑</td></tr>
+<tr><td><strong>Recovery</strong></td><td>重新训练（速率变更/均衡重调）</td><td>★ Gen3+ 每次提速都必经此态做 EQ</td></tr>
+<tr><td>Hot Reset / Loopback / Disable</td><td>热复位 / 环回测试 / 禁用</td><td>调试与复位手段</td></tr>
+</table></div>
+<div class="codeblock"><pre><code data-lang="text">Gen3 及以上引入 Equalization(EQ)：在 Recovery.RcvrLock 阶段交换
+TS1/TS2 中的 EQ 参数(preset / coefficient)，分 4 个 phase 迭代收敛。
+
+典型故障映射：
+  Gen1 稳定但 Gen3 起不来   → EQ 相位失败或走线损耗过大(降速可解)
+  反复进出 Recovery        → 信号边际/参考时钟抖动/电源瞬态
+  卡在 Detect 循环         → PERST# 时序、参考时钟缺失、板卡未上电
+  Configuration 后宽度变窄 → 某条 Lane 训练失败被剔除(降宽运行)</code></pre></div>
+
+<h3>I1.6 配置空间与 Capability 链</h3>
+<div class="codeblock"><pre><code data-lang="text">每个 Function 拥有 4KB 配置空间：
+  0x000~0x03F  PCI 兼容头(Type0=Endpoint / Type1=Bridge)
+  0x040~0x0FF  传统 PCI 区域(含 Capability 链表起点 CapPtr @0x34)
+  0x100~0xFFF  PCIe 扩展区域 —— 所有高级能力都挂在这里
+
+Capability 是<strong>单向链表</strong>：每项的 [0]=CapID, [1]=NextPtr
+  常见 CapID： 0x01 电源管理 | 0x05 MSI | 0x10 PCIe(Express能力★)
+               0x11 MSI-X    | 0x13 PCI Advanced Features
+               0x0D SSVID    | 0x12 SATA | 0x03 VPD
+  ★ PCIe Capability 结构里就有 Device Capabilities / Link Capabilities
+     / Link Status —— 也就是 lspci -vvv 里 LnkCap / LnkSta 的来源！
+
+遍历方法：
+  lspci -vvv -s 01:00.0 | grep -i capabilities
+  setpci -s 01:00.0 0x34.b            # 读 CapPtr
+  setpci -s 01:00.0 CAP_EXP+0xc.w     # PCIe Cap 的 Link Capabilities
+  setpci -s 01:00.0 CAP_EXP+0x12.w    # Link Status ★ 看当前速率/宽度</code></pre></div>
+
+<h3>I1.7 中断演进：INTx → MSI → MSI-X</h3>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>机制</th><th>载体</th><th>特点</th><th>适用场景</th></tr>
+<tr><td>INTx</td><td>带内 Msg TLP 模拟四根物理中断线</td><td>共享、需读寄存器确认来源</td><td>兼容老设备</td></tr>
+<tr><td>MSI</td><td>一次 MWr TLP 写特定地址/数据</td><td>最多 32 个向量，必须连续分配</td><td>简单设备</td></tr>
+<tr><td><strong>MSI-X</strong></td><td>独立的 Table + PBA（映射到 BAR）</td><td>最多 2048 个向量，<strong>可离散、每向量独立地址与屏蔽</strong></td><td>多队列网卡/NVMe/GPU ★</td></tr>
+</table></div>
+<div class="codeblock"><pre><code data-lang="c">/* 驱动侧：按队列申请 MSI-X 并绑定不同 CPU 核 */
+nvec = pci_alloc_irq_vectors(pdev, 1, nqueues, PCI_IRQ_MSIX);
+for (i = 0; i &lt; nvec; i++) {
+    int irq = pci_irq_vector(pdev, i);               /* 第 i 个向量 */
+    /* 绑定亲和性：让队列 i 的中断跑在 NUMA 就近的核上 */
+    irq_set_affinity_hint(irq, cpumask_of(per_cpu_core[i]));
+    request_irq(irq, qp_handler[i], 0, devname, &amp;qp[i]);
+}
+/* 关键点：MSI-X 的 Table 位于 BAR 内 —— 设备直接写表项指定的
+   地址/数据即可触发中断，无需再读设备寄存器确认，省一次 MMIO 读。 */</code></pre></div>
+<div class="box tip"><span class="bt">💡 为什么 MSI-X 能提升吞吐</span>
+<p>① 每个队列独立中断 → 可绑不同 CPU 核，中断处理并行化；② 消除「共享中断线 → 逐个 ISR 查询」的串行开销；③ 配合 <strong>中断合并（Interrupt Coalescing）</strong>在高负载下按计数/超时聚合，把每包一中断变成每 N 包一中断。代价是延迟上升，因此<strong>低延迟场景要关合并</strong>。</p></div>
+
+<h3>I1.8 带宽账本：从 GT/s 算到 MB/s</h3>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>代际</th><th>速率</th><th>编码</th><th>x1 有效带宽</th><th>x4</th><th>x8</th><th>x16</th></tr>
+<tr><td>Gen1</td><td>2.5 GT/s</td><td>8b/10b (80%)</td><td>250 MB/s</td><td>1 GB/s</td><td>2 GB/s</td><td>4 GB/s</td></tr>
+<tr><td>Gen2</td><td>5 GT/s</td><td>8b/10b (80%)</td><td>500 MB/s</td><td>2 GB/s</td><td>4 GB/s</td><td>8 GB/s</td></tr>
+<tr><td>Gen3</td><td>8 GT/s</td><td>128b/130b (98.46%)</td><td>985 MB/s</td><td>3.94 GB/s</td><td>7.88 GB/s</td><td>15.75 GB/s</td></tr>
+<tr><td>Gen4</td><td>16 GT/s</td><td>128b/130b</td><td>1.97 GB/s</td><td>7.88 GB/s</td><td>15.75 GB/s</td><td>31.5 GB/s</td></tr>
+<tr><td>Gen5</td><td>32 GT/s</td><td>128b/130b</td><td>3.94 GB/s</td><td>15.75 GB/s</td><td>31.5 GB/s</td><td>63 GB/s</td></tr>
+<tr><td>Gen6</td><td>64 GT/s</td><td>PAM4 + FLIT 1b/1b</td><td>7.88 GB/s</td><td>31.5 GB/s</td><td>63 GB/s</td><td>126 GB/s</td></tr>
+</table></div>
+<div class="codeblock"><pre><code data-lang="text">统一公式： 有效带宽(MB/s) = 速率(GT/s) × 编码效率 ÷ 8 × lane数
+
+示例：Gen4 x4 = 16 × 0.9846 ÷ 8 × 4 = 7.88 GB/s   (与表中一致)
+注意 Gen6 改用 PAM4 四电平 + FLIT 模式，编码开销不再用 128b/130b 表达，
+      且强制 FEC —— 延迟略升但带宽翻倍。</code></pre></div>
+
+<div class="quiz"><strong>📝 思考题</strong><ol>
+<li>为什么 MRd 必须等待 CplD，而 MWr 不需要？这对驱动寄存器访问顺序有什么约束？</li>
+<li>若抓包发现大量 UpdateFC-NP DLLP 而 MWr 正常，最可能的瓶颈在哪一段？</li>
+<li>Gen3 设备插在 Gen2 插槽上，链路最终协商到什么速率？由 LTSSM 的哪个状态决定？</li>
+<li>MSI-X 的 Table 位于 BAR 空间中，如果 BAR 空间不足会怎样？枚举阶段能否发现？</li>
+</ol></div>
+
+<div class="lab"><strong>🧪 动手实验 LI1-1：用 lspci 手工遍历 Capability 链（45 分钟）</strong>
+<p><strong>步骤</strong>：① <code>lspci -vvv -s &lt;bdf&gt;</code> 找到 <code>Capabilities</code> 列表，记录每个 CapID 与偏移；② 用 <code>setpci</code> 从 <code>0x34.b</code> 起手工遍历链表，验证与 lspci 输出一致；③ 定位 PCIe Capability，读出 <code>CAP_EXP+0x12.w</code> 并解析出当前 Link Speed 与 Width；④ 对照 <code>CAP_EXP+0xc.w</code>（LnkCap）判断设备是否跑在标称速率上；⑤ 对支持 MSI-X 的设备，读 <code>Message Control</code> 寄存器解析 Table Size。</p>
+<p><strong>验收</strong>：提交一份「三层解析报告」：链路速率/宽度 + Capability 清单 + MSI-X 向量数，并说明设备是否达到标称能力。</p></div>
+
+<div class="box tip"><span class="bt">🗺️ 本章知识地图</span>
+<p><strong>前置依赖</strong>：第85章（拓扑/BAR/lspci 基础）、ch26 DMA。<strong>后续衔接</strong>：I2 用本章的开销概念做带宽精算；I3 的 GPUDirect P2P 依赖 Address Routing 与 ACS 理解。<strong>开源定位</strong>：内核 <code>drivers/pci/</code> 与 <code>Documentation/PCI/</code>；MindShare《PCI Express Technology》第 3~6 章（TLP/流控/物理层）。</p></div>
+</section>
+
+<section class="chapter" id="chi2">
+<div class="ch-head">
+<span class="part-tag">第十四篇 · 高速互连</span>
+<h2>I2 · PCIe 性能工程：开销精算、DMA 引擎与排障体系</h2>
+<p class="ch-sub">理论 7.88 GB/s，实测只有 6 GB/s——消失的 25% 去了哪里？本章把开销逐项拆开，给出可复现的计算方法与调优顺序。</p>
+</div>
+<div class="goals"><strong>🎯 学习目标</strong><ul>
+<li>能逐项列出 PCIe 传输开销并手算有效吞吐</li>
+<li>掌握 MPS/MRRS/RCB 等参数对性能的影响与设置方法</li>
+<li>理解 DMA 描述符环与多队列设计，写出不丢包的高吞吐驱动骨架</li>
+<li>建立 AER 错误分类与排障决策树</li>
+</ul></div>
+
+<h3>I2.1 开销逐项拆解（以 Gen3 x8、256B 负载写为例）</h3>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>开销项</th><th>大小</th><th>说明</th><th>可优化性</th></tr>
+<tr><td>TLP 头</td><td>12B（3DW）或 16B（4DW）</td><td>64 位地址必须用 4DW 头</td><td>32 位寻址省 4B</td></tr>
+<tr><td>TLP 负载</td><td>1~1024 DW</td><td>★ 越大摊销越好，但受 MPS 限制</td><td><strong>主要抓手</strong></td></tr>
+<tr><td>ECRC</td><td>4B（可选）</td><td>端到端校验，默认多关闭</td><td>可关（权衡可靠性）</td></tr>
+<tr><td>序号 + LCRC</td><td>6B</td><td>数据链路层强制</td><td>不可省</td></tr>
+<tr><td>物理层帧</td><td>Gen1/2: 2B；Gen3+: 4B</td><td>STP + END 定界</td><td>不可省</td></tr>
+<tr><td>ACK DLLP</td><td>8B / 每个或多个 TLP</td><td>确认开销，可聚合</td><td>由 AckLatency 影响</td></tr>
+<tr><td>UpdateFC DLLP</td><td>8B</td><td>信用归还</td><td>由缓冲大小影响</td></tr>
+<tr><td>SKP 有序集</td><td>周期性插入</td><td>时钟补偿（~1/1180 符号）</td><td>不可省，量极小</td></tr>
+</table></div>
+<div class="codeblock"><pre><code data-lang="text">手算示例：Gen3 x8，MPS=256B，3DW 头，写方向
+  每 TLP 链路占用 = 12(头) + 256(负载) + 6(Seq+LCRC) + 4(物理帧)
+                  = 278 字节
+  有效数据占比   = 256 / 278 = 92.1%
+  再扣 ACK/FC DLLP（约 1~3%）： 综合 ≈ 88~90%
+  理论 7.877 GB/s × 0.89 ≈ 7.0 GB/s
+
+若 MPS 降到 128B： 12+128+6+4=150 → 128/150=85.3% → 综合约 81%
+  ★ 结论：MPS 从 128 提到 256，吞吐提升约 8~10 个百分点 —— 这是
+    「零成本」的第一优先级调优项。
+
+读方向还要额外计入：请求 TLP(12B+6B+4B) + 返回 CplD 延迟，
+  且受 Max Read Request Size(MRRS) 与 outstanding 请求数限制 ——
+  读吞吐通常低于写 10~20%。</code></pre></div>
+
+<h3>I2.2 关键参数：MPS / MRRS / RCB</h3>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>参数</th><th>全称</th><th>取值</th><th>影响</th><th>设置位置</th></tr>
+<tr><td>MPS</td><td>Max Payload Size</td><td>128/256/512/1024/2048/4096 B</td><td>单 TLP 最大负载，<strong>吞吐主因</strong></td><td>Device Control 寄存器；<code>pci=pcie_bus_perf</code> 或 setpci</td></tr>
+<tr><td>MRRS</td><td>Max Read Request Size</td><td>128B~4KB</td><td>单次读请求上限，影响读吞吐</td><td>Device Control 寄存器</td></tr>
+<tr><td>RCB</td><td>Read Completion Boundary</td><td>64B / 128B</td><td>完成包边界对齐，影响分片数</td><td>Link Control 寄存器（只读属性）</td></tr>
+<tr><td>MPS 协商</td><td>——</td><td>取路径上<strong>最小值</strong></td><td>★ 木桶效应：一个老设备会拖累整条路径</td><td>枚举时由内核统一配置</td></tr>
+</table></div>
+<div class="codeblock"><pre><code data-lang="bash"># 查看当前协商结果（★ 重点看 DevCap 与 DevCtl 的差异）
+lspci -vvv -s 01:00.0 | grep -iE 'DevCap:|DevCtl:' | grep -iE 'payload|MaxReadReq'
+#   DevCap: MaxPayload 512 bytes, ...          ← 设备能力上限
+#   DevCtl: MaxPayload 128 bytes, ...          ← 实际生效值(被拖累)
+
+# 让内核按性能优先重新配置 MPS（重启生效）
+#   内核启动参数： pcie_bus_perf  (旧版： pci=pcie_bus_perf)
+# 手工提升（谨慎：需整条路径都支持）
+setpci -s 01:00.0 CAP_EXP+0x8.w=0x5060   # 写 Device Control：MPS=256B, MRRS=4KB
+#   位域： bit[7:5]=MPS(256B→010b)  bit[14:12]=MRRS(4KB→101b)</code></pre></div>
+<div class="box warn"><span class="bt">⚠️ 木桶效应陷阱</span>
+<p>MPS 沿路径取最小值。如果 Root Port、Switch、Endpoint 中<strong>任一</strong>只支持 128B，那么即使你的 NVMe 支持 512B，实际也只能跑 128B。<strong>排查时要用 <code>lspci -tvvv</code> 把整棵树上的 DevCap/DevCtl 全部列出来对比</strong>，而不是只看 Endpoint。</p></div>
+
+<h3>I2.3 DMA 引擎设计：描述符环与多队列</h3>
+<div class="codeblock"><pre><code data-lang="text">高性能 DMA 的四个要素：
+① 描述符环(BD Ring)： 预分配环形描述符，硬件按 head/tail 指针消费
+     —— 避免每包一次寄存器写，一次提交多个描述符
+② MSI-X 多队列： 每个队列独立中断 → 绑核并行处理
+③ 对齐与突发： 描述符指向的 buffer 按 64B/4KB 对齐，长度尽量
+     凑满 MPS 的整数倍，减少尾部小包
+④ 内存类型： coherent(DMA 一致性) vs streaming(流式 + sync 调用)
+     —— coherent 简单但每次访问可能触发 cache 维护；
+        streaming 配合 dma_map_single/dma_unmap_single 性能更好
+
+伪码骨架：
+  while (生产) { desc[i].addr = dma_map_single(dev, buf, len, DMA_TO_DEVICE);
+                 desc[i].len = len; desc[i].flags = IRQ_ON_COMPLETE;
+                 i = (i+1) % RING_SIZE;
+                 if (--credits == 0) { /* 等中断归还 */ } }
+  writel(tail_reg, i);              /* 一次写 doorbell 提交整批 */</code></pre></div>
+<div class="box tip"><span class="bt">💡 包大小优先于一切</span>
+<p>实测经验（RK3588 PCIe3x4 与 x86 Gen3x8 一致）：<strong>调优优先级 = 包大小 &gt; 队列数 &gt; 中断合并 &gt; 内存拷贝消除</strong>。把 4KB 包改成 2MB 块，吞吐常能从 2.6 GB/s 提到 3.2 GB/s；而增加队列数在队列已够时几乎无收益。先量再调，别凭感觉。</p></div>
+
+<h3>I2.4 实测方法学：怎么测才可信</h3>
+<div class="codeblock"><pre><code data-lang="bash"># 1) 先确认链路状态（速率/宽度是否达标）—— 任何测速前必做
+lspci -vvv -s 01:00.0 | grep -iE 'LnkCap:|LnkSta:'
+#   LnkSta: Speed 8GT/s, Width x8  ← 与 LnkCap 一致才是满血
+
+# 2) 用 DMA 侧测速（绕过文件系统，贴近硬件真实能力）
+#    NVMe： fio 直打裸设备
+fio --name=t --filename=/dev/nvme0n1 --rw=read --bs=1M \
+    --iodepth=32 --numjobs=1 --direct=1 --runtime=30 --time_based
+
+# 3) 用带宽计数器（部分平台支持）
+#    Intel:  pcm-pcie   /   perf stat -e ... (uncore 事件)
+perf stat -a -e 'uncore_imc_0/cas_count_read/' sleep 5    # 内存侧交叉验证
+
+# 4) 交叉验证三视角： 设备侧带宽 / 内存控制器带宽 / 应用层带宽
+#    三者不一致 → 说明存在拷贝或缓存放大，而非链路问题
+关键提醒： ★ 一定要用 direct=1(O_DIRECT) 绕过 page cache，
+         否则测的是内存带宽(几十 GB/s)而不是 PCIe 带宽。</code></pre></div>
+
+<h3>I2.5 AER 深潜：错误分类与处置</h3>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>类别</th><th>子类型</th><th>默认行为</th><th>处置</th></tr>
+<tr><td rowspan="2"><strong>Correctable</strong></td><td>Bad TLP / Bad DLLP / Replay Timeout / Replay Num Rollover</td><td>硬件自动重传，仅计数</td><td>计数持续增长 → 信号完整性临界，需硬件排查</td></tr>
+<tr><td>Receiver Error</td><td>同上</td><td>同上</td></tr>
+<tr><td rowspan="2"><strong>Non-Fatal</strong></td><td>Completer Abort / Unsupported Request</td><td>上报驱动，链路继续</td><td>驱动/固件逻辑错误，查访问越界</td></tr>
+<tr><td>ECRC / Malformed TLP / Poisoned TLP</td><td>上报 AER 驱动</td><td>查设备侧数据构造</td></tr>
+<tr><td><strong>Fatal</strong></td><td>链路训练失败 / Flow Control Protocol Error / Data Link Protocol Error</td><td><strong>链路强制复位</strong></td><td>物理层/硬件问题，必查 SI/PI</td></tr>
+</table></div>
+<div class="codeblock"><pre><code data-lang="bash"># 开启并查看 AER（内核需 CONFIG_PCIEAER=y）
+dmesg | grep -iE 'aer|pcie.*error'
+#   pcieport 0000:00:1c.0: AER: Corrected error received: id=00e0
+#   pcieport 0000:00:1c.0: PCIe Bus Error: severity=Corrected,
+#     type=Data Link Layer, id=00e0(Receiver ID)
+
+# 读取 AER 统计（每设备）
+for f in /sys/bus/pci/devices/*/aer_dev_correctable \
+         /sys/bus/pci/devices/*/aer_dev_fatal; do
+  [ -f "$f" ] &amp;&amp; echo "$f: $(cat $f)"
+done
+# 或统一入口：
+echo 1 &gt; /sys/bus/pci/devices/0000:00:1c.0/aer_stats   # 部分内核支持
+
+# 常用内核参数
+pcie_aspm=off        # 排除省电状态导致的掉链路（排障首选对照）
+pcie_ports=native    # 交还给内核原生 AER 驱动(而非固件)
+pci=nommconf         # 排除 MMCONFIG 访问问题(老平台)</code></pre></div>
+
+<h3>I2.6 排障决策树：从现象到根因</h3>
+<div class="codeblock"><pre><code data-lang="text">现象①：吞吐远低于理论值(&lt;60%)
+  ├─ LnkSta 速率/宽度不达标？ ── 是 → 转 SIG/PI 排查(示波器/眼图)
+  ├─ MPS 被拖累到 128B？     ── 是 → pcie_bus_perf 重配
+  ├─ 是否走了 page cache？   ── 是 → 用 O_DIRECT 重测
+  ├─ 包大小 &lt; 64KB？          ── 是 → 增大块尺寸重测(收益最大)
+  └─ 单队列打满单核？        ── 是 → 开多队列 + 绑核
+
+现象②：偶发超时/丢数据
+  ├─ dmesg 有 Correctable 洪水？ ── 是 → 信号边际，硬件排查
+  ├─ Completion Timeout 报错？   ── 是 → 设备固件未响应，查设备侧
+  ├─ IOMMU/DMAR 报错？          ── 是 → dma_set_mask 地址位宽问题
+  └─ 仅高负载出现？             ── 是 → 电源瞬态跌落，测纹波
+
+现象③：热复位后不可用
+  └─ 驱动 remove/rescan 是否完整？ BAR 重新映射？ MSI-X 重新使能？
+     → echo 1 &gt; .../remove; echo 1 &gt; /sys/bus/pci/rescan</code></pre></div>
+
+<h3>I2.7 实测数据表：各代际典型达成率（工程口径）</h3>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>场景</th><th>理论带宽</th><th>典型实测</th><th>达成率</th><th>主要损耗</th></tr>
+<tr><td>Gen3 x4 DMA 写（2MB 块）</td><td>3.94 GB/s</td><td>3.2~3.5 GB/s</td><td>81~89%</td><td>TLP 开销 + ACK</td></tr>
+<tr><td>Gen3 x8 DMA 读（1MB）</td><td>7.88 GB/s</td><td>6.0~6.8 GB/s</td><td>76~86%</td><td>MRRS 限制 + 读延迟</td></tr>
+<tr><td>Gen4 x4 NVMe 顺序读</td><td>7.88 GB/s</td><td>6.5~7.2 GB/s</td><td>82~91%</td><td>协议栈 + 文件系统</td></tr>
+<tr><td>Gen3 x16 GPU P2P 写</td><td>15.75 GB/s</td><td>10~12 GB/s</td><td>63~76%</td><td>ACS 绕行 / 地址对齐</td></tr>
+<tr><td colspan="5" class="muted">口径说明：均为大块传输、O_DIRECT、多队列开启；小包随机访问会显著低于此表。</td></tr>
+</table></div>
+
+<div class="quiz"><strong>📝 思考题</strong><ol>
+<li>手算 Gen4 x8、MPS=512B 写方向的理论达成率（列出每步开销）。</li>
+<li>为什么木桶效应让 MPS 调优必须先检查整条路径？请给出排查命令序列。</li>
+<li>测速时忘记 <code>direct=1</code>，为什么结果会虚高到几十 GB/s？测的其实是哪一段？</li>
+<li>Completion Timeout 与 Correctable Error 增长同时出现，优先怀疑硬件还是软件？为什么？</li>
+</ol></div>
+
+<div class="lab"><strong>🧪 动手实验 LI2-1：画出你的平台吞吐曲线（90 分钟）</strong>
+<p><strong>步骤</strong>：① 用 <code>lspci -tvvv</code> 列出整棵树并记录每个节点的 <code>DevCap</code>/<code>DevCtl</code> 的 MaxPayload 与 LnkSta；② 用 dd/fio 在块大小 4KB / 64KB / 1MB / 4MB 下各测一轮，记录吞吐；③ 尝试用 <code>setpci</code> 或 <code>pcie_bus_perf</code> 提升 MPS 后<b>重测同组数据</b>；④ 用 <code>dmesg</code> 统计测试期间的 AER 计数；⑤ 把结果画成「块大小—吞吐」曲线并标注理论上限线。</p>
+<p><strong>验收</strong>：一张含理论线的吞吐曲线图 + MPS 调优前后的量化对比 + 达成率分析结论（指出本平台的主要损耗项）。</p></div>
+
+<div class="box tip"><span class="bt">🗺️ 本章知识地图</span>
+<p><strong>前置依赖</strong>：I1 协议栈、第85章 XDMA 实战、ch12 篇性能方法论（USE 法）。<strong>后续衔接</strong>：I3 把 DMA 概念延伸到 GPUDirect P2P；I5 的 RDMA 性能模型是同一套账本方法的跨机版本。<strong>开源定位</strong>：内核 <code>Documentation/PCI/pciebus-howto.rst</code>、SPDK/DPDK 的用户态 DMA 范式源码。</p></div>
+</section>
+
+<section class="chapter" id="chi3">
+<div class="ch-head">
+<span class="part-tag">第十四篇 · 高速互连</span>
+<h2>I3 · GPU 互连体系：P2P、GPUDirect 与 NVLink/NVSwitch 拓扑</h2>
+<p class="ch-sub">两块 GPU 之间传数据，走 PCIe 还是 NVLink？差几倍？为什么有时「能连上却很慢」？本章建立服务器内互连的带宽层次与拓扑读图能力。</p>
+</div>
+<div class="goals"><strong>🎯 学习目标</strong><ul>
+<li>建立服务器内互连的带宽层次模型（PCIe / NVLink / NVSwitch / 内存总线）</li>
+<li>理解 PCIe P2P 原理与 ACS 导致「能连但慢」的机理</li>
+<li>掌握 GPUDirect 四大能力的适用边界</li>
+<li>能读懂 <code>nvidia-smi topo -m</code> 并据此判断通信瓶颈与 NCCL 路径选择</li>
+</ul></div>
+
+<h3>I3.1 带宽层次：先记住这张阶梯</h3>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>互连</th><th>典型带宽（双向聚合）</th><th>延迟量级</th><th>连接什么</th><th>谁在用</th></tr>
+<tr><td>PCIe Gen4 x16</td><td>~63 GB/s</td><td>~1~2 µs</td><td>CPU ↔ GPU / GPU ↔ NIC</td><td>通用设备</td></tr>
+<tr><td>PCIe Gen5 x16</td><td>~126 GB/s</td><td>~1 µs</td><td>同上</td><td>新平台</td></tr>
+<tr><td>NVLink 3（A100）</td><td><strong>600 GB/s</strong></td><td>~0.5 µs</td><td>GPU ↔ GPU</td><td>同机多卡</td></tr>
+<tr><td>NVLink 4（H100）</td><td><strong>900 GB/s</strong></td><td>~0.4 µs</td><td>GPU ↔ GPU</td><td>DGX H100</td></tr>
+<tr><td>NVSwitch（交换机）</td><td>全端口线速交叉</td><td>更低</td><td>任意 GPU ↔ 任意 GPU</td><td>8~256 卡全互联</td></tr>
+<tr><td>InfiniBand HDR</td><td>200 Gb/s ≈ 25 GB/s</td><td>~2 µs</td><td>节点 ↔ 节点</td><td>跨机通信</td></tr>
+<tr><td colspan="5" class="muted">★ 关键认知：<strong>机内 NVLink 比 PCIe 快约 10~20 倍，而跨机网络又比 PCIe 慢约 2~5 倍</strong>。这个数量级落差决定了并行策略：能放机内的不要跨机。</td></tr>
+</table></div>
+
+<h3>I3.2 PCIe P2P：原理与 ACS 陷阱</h3>
+<div class="codeblock"><pre><code data-lang="text">P2P(Peer-to-Peer)：两个 Endpoint 之间直接传数据，<strong>不经过主机内存中转</strong>
+  有 P2P： GPU0 显存 →(PCIe Switch 直转)→ GPU1 显存     1 跳
+  无 P2P： GPU0 显存 → 主机内存 → GPU1 显存            2 跳 + 额外拷贝
+           ★ 带宽约减半，延迟翻倍，还占用 CPU 内存带宽
+
+底层实现： GPU1 把 BAR 窗口暴露出来，GPU0 的 DMA 引擎按地址路由
+          直接写 GPU1 的显存 —— 走的就是 I1 讲的 Address Routing。
+
+★ ACS(Access Control Services) 陷阱：
+  Switch 开启 ACS 后，出于安全隔离考虑，所有 P2P 请求被强制
+  <strong>上送到 Root Complex 再转发回来</strong>(P2P Request Redirect) ——
+  结果是「P2P 功能可用，但性能大幅下降甚至被判为不可用」。
+  典型报错： NCCL INFO Could not enable P2P between dev X and dev Y
+  处理： BIOS 关闭 ACS(部分厂商提供选项) 或
+        内核参数 pcie_acs_override=downstream,multifunction
+        （★ 生产环境需权衡安全隔离需求）</code></pre></div>
+
+<h3>I3.3 GPUDirect 家族四兄弟</h3>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>能力</th><th>解决什么问题</th><th>数据路径</th><th>适用场景</th></tr>
+<tr><td><strong>GPUDirect P2P</strong></td><td>同机 GPU 直连</td><td>GPU↔GPU 经 PCIe/NVLink</td><td>单机多卡训练 ★</td></tr>
+<tr><td><strong>GPUDirect RDMA</strong></td><td>网卡直接读写显存</td><td>NIC↔GPU 显存，<strong>零 CPU 拷贝</strong></td><td>多机训练、NCCL 跨机 ★★</td></tr>
+<tr><td><strong>GPUDirect Storage</strong></td><td>存储直连显存</td><td>NVMe↔GPU 显存，绕过 CPU 内存</td><td>大模型加载、数据预处理</td></tr>
+<tr><td><strong>GPUDirect Async</strong></td><td>通信与计算流水线化</td><td>NIC/SC 通知 GPU 直接推进</td><td>通信重叠、低延迟流水线</td></tr>
+</table></div>
+<div class="codeblock"><pre><code data-lang="bash"># 检查 GPUDirect RDMA 是否可用
+lsmod | grep -iE 'nv_peer_mem|nvidia_peermem|gdrdrv'
+#   现代内核用 nvidia-peermem（取代旧的 nv_peer_mem）
+modprobe nvidia-peermem
+
+# 检查 P2P 能力
+nvidia-smi topo -p2p r       # 读带宽矩阵
+nvidia-smi topo -p2p w       # 写带宽矩阵
+nvidia-smi topo -p2p n       # 是否支持(OK/NS)
+
+# 典型输出解读
+#   GPU0  GPU1  →  若显示 NS(Not Supported)，则 NCCL 会绕道主机内存</code></pre></div>
+<div class="box warn"><span class="bt">⚠️ 最常见的「慢一半」原因</span>
+<p>多机训练中若 <code>nvidia-peermem</code> 未加载，NCCL 会退化为「显存 → 主机内存 → 网卡」的两跳路径，带宽损失可达 30~50%，且 CPU 占用飙升。<strong>排查顺序：先看 <code>lsmod | grep peermem</code>，再看 <code>NCCL_DEBUG=INFO</code> 里有无 <code>NET/IB</code> 与 <code>GDRDMA</code> 字样。</strong></p></div>
+
+<h3>I3.4 NVLink 与 NVSwitch</h3>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>代际</th><th>承载 GPU</th><th>链路数/GPU</th><th>双向聚合带宽</th><th>特点</th></tr>
+<tr><td>NVLink 1</td><td>P100</td><td>4</td><td>160 GB/s</td><td>首次引入高带宽 GPU 互连</td></tr>
+<tr><td>NVLink 2</td><td>V100</td><td>6</td><td>300 GB/s</td><td>支持一致性内存访问</td></tr>
+<tr><td>NVLink 3</td><td>A100</td><td>12</td><td><strong>600 GB/s</strong></td><td>DGX A100 标配</td></tr>
+<tr><td>NVLink 4</td><td>H100</td><td>18</td><td><strong>900 GB/s</strong></td><td>支持网络内归约协作</td></tr>
+<tr><td>NVLink 5</td><td>B200</td><td>18</td><td><strong>1800 GB/s</strong></td><td>第五代，带宽再翻倍</td></tr>
+</table></div>
+<div class="codeblock"><pre><code data-lang="text">问题：NVLink 是点对点的，8 卡全互联需要 C(8,2)=28 条连接 —— 不可行
+答案：NVSwitch —— 一块专用交换芯片，提供全端口线速交叉
+  DGX A100： 6 个 NVSwitch，8 卡任意两两之间 600 GB/s <strong>全带宽</strong>
+  DGX H100： NVLink4 + NVSwitch3，8 卡全互联 900 GB/s
+  ★ 对比无 NVSwitch 的 PCIe 卡： GPU0↔GPU1 走 NVLink 快，
+    但 GPU0↔GPU5 可能只能走 PCIe —— <strong>拓扑不均匀是性能陷阱</strong>
+
+NVLink 的两种使用形态：
+  ① 点对点直连（工作站多卡桥接，2~4 卡）
+  ② 经 NVSwitch 全互联（服务器级，8 卡以上）</code></pre></div>
+
+<h3>I3.5 读懂拓扑：nvidia-smi topo -m</h3>
+<div class="codeblock"><pre><code data-lang="bash">$ nvidia-smi topo -m
+
+	GPU0	GPU1	GPU2	GPU3	CPU Affinity	NUMA Affinity
+GPU0	 X 	NV12	NV12	NV12	0-31		0
+GPU1	NV12	 X 	NV12	NV12	0-31		0
+GPU2	NV12	NV12	 X 	NV12	0-31		0
+GPU3	NV12	NV12	NV12	 X 	0-31		0
+
+Legend:
+  X    = Self
+  SYS  = 跨 NUMA 节点的 PCIe + SMP 互连   ← 最慢
+  NODE = 跨 PCIe Host Bridge
+  PHB  = 经过 PCIe Host Bridge
+  PXB  = 经过多个 PCIe 桥
+  PIX  = 最多经过一个 PCIe 桥             ← PCIe 中最快
+  NV#  = 经过 # 条绑定的 NVLink            ← ★ 最快</code></pre></div>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>标记</th><th>含义</th><th>对 NCCL 的影响</th></tr>
+<tr><td><strong>NV#</strong></td><td>NVLink 直连（数字=链路数）</td><td>最优，走 NVLink 通道</td></tr>
+<tr><td>PIX / PXB</td><td>同一 PCIe 桥下 / 跨多桥</td><td>可观，性能次之</td></tr>
+<tr><td>PHB / NODE</td><td>跨 Host Bridge</td><td>较差，可能受 ACS 影响</td></tr>
+<tr><td><strong>SYS</strong></td><td>跨 NUMA 节点（CPU 插槽间）</td><td><strong>最差</strong>，走 UPI，带宽骤降</td></tr>
+</table></div>
+<div class="box tip"><span class="bt">💡 拓扑与并行策略的对应</span>
+<p>① <strong>张量并行（TP）通信量最大</strong>，必须放在同一 NVSwitch 域内；② <strong>流水线并行（PP）</strong>通信量小，可跨节点；③ <strong>数据并行（DP）梯度同步</strong>量大但可与反向计算重叠，跨节点走 RDMA；④ 若拓扑出现 SYS，考虑用 NUMA 绑核把通信限制在本 NUMA 内。</p></div>
+
+<h3>I3.6 NUMA 与亲和性：被忽略的性能杀手</h3>
+<div class="codeblock"><pre><code data-lang="bash"># 查看 GPU 挂在哪个 NUMA 节点
+nvidia-smi topo -m            # 最后一列 NUMA Affinity
+
+# 查看网卡在哪个 NUMA 节点（跨机通信关键）
+cat /sys/class/net/eth0/device/numa_node
+#   若网卡在 NUMA0 而 GPU 在 NUMA1 → 跨槽通信，带宽与延迟都变差
+
+# 绑定进程到 GPU 所属 NUMA 的 CPU 核
+numactl --cpunodebind=0 --membind=0 python train.py
+# 或在容器内： docker run --cpuset-cpus=0-31 ...
+
+# 验证亲和性是否生效
+numactl --show
+#   policy: bind ; preferred node: 0 ; physcpubind: 0-31</code></pre></div>
+
+<h3>I3.7 故障排故表</h3>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>现象</th><th>根因候选</th><th>定位路径</th></tr>
+<tr><td>P2P 显示 Not Supported</td><td>ACS 开启 / 驱动版本 / IOMMU 分组</td><td><code>nvidia-smi topo -p2p n</code>；查 <code>/sys/kernel/iommu_groups/</code>；试 <code>pcie_acs_override</code></td></tr>
+<tr><td>多机带宽只有标称一半</td><td>nvidia-peermem 未加载</td><td><code>lsmod | grep peermem</code>；<code>NCCL_DEBUG=INFO</code> 看有无 GDRDMA</td></tr>
+<tr><td>同机多卡带宽差异巨大</td><td>拓扑不均匀（部分对走 PCIe）</td><td><code>nvidia-smi topo -m</code> 逐对检查；避免跨 NUMA</td></tr>
+<tr><td>GPU 间能通信但延迟抖动</td><td>PCIe ASPM / 省电状态</td><td><code>nvidia-smi -q -d POWER</code>；BIOS 关 ASPM 或开 persistence mode</td></tr>
+<tr><td>显存访问偶发失败</td><td>Resizable BAR 未开 / Above 4G 未开</td><td><code>lspci -vvv | grep -i 'resizable bar'</code>；BIOS 开启相关项</td></tr>
+</table></div>
+
+<div class="quiz"><strong>📝 思考题</strong><ol>
+<li>为什么 ACS 开启后 P2P「功能可用但性能变差」？请结合 I1 的地址路由解释数据实际走了什么路径。</li>
+<li>8 卡服务器中 GPU0↔GPU1 是 NV12，GPU0↔GPU7 是 SYS。若做 AllReduce，Ring 顺序应如何安排以避开慢链路？</li>
+<li>为什么 <code>nvidia-peermem</code> 缺失会让跨机带宽损失 30~50%？画出有无该模块的两条数据路径。</li>
+<li>Resizable BAR 未开启时，GPU 显存映射受什么限制？对 GPUDirect RDMA 有何影响？</li>
+</ol></div>
+
+<div class="lab"><strong>🧪 动手实验 LI3-1：绘制你的服务器互连拓扑图（60 分钟）</strong>
+<p><strong>步骤</strong>：① <code>nvidia-smi topo -m</code> 导出矩阵，把每对 GPU 的连接类型（NV#/PIX/PHB/SYS）标在图上；② <code>nvidia-smi topo -p2p n</code> 与 <code>-p2p r</code> 分别记录支持性与读带宽，标出「能连但慢」的对；③ 用 <code>numactl -H</code> 与 <code>cat /sys/class/net/*/device/numa_node</code> 补齐 NUMA 归属；④ 检查 <code>lsmod | grep peermem</code> 与 Resizable BAR 状态；⑤ 对照本章表格标注「最慢链路」并预测 NCCL 的路径选择。</p>
+<p><strong>验收</strong>：一张完整拓扑图（含 GPU/NIC/NUMA 归属与链路类型）+ 一份「瓶颈链路预测报告」，后续用 I4 的 <code>nccl-tests</code> 实测验证预测是否准确。</p></div>
+
+<div class="box tip"><span class="bt">🗺️ 本章知识地图</span>
+<p><strong>前置依赖</strong>：I1 地址路由与 BAR、I2 DMA 与带宽账本、第6篇 NUMA 概念。<strong>后续衔接</strong>：I4 的 NCCL 正是根据本章拓扑做路径选择；I5 的跨机 RDMA 是同一模型的机间延伸。<strong>开源定位</strong>：NVIDIA <code>nvidia-peermem</code> 源码、NCCL 仓库 <code>src/graph/</code> 与 <code>src/transport/</code> 目录。</p></div>
+</section>
+
+<section class="chapter" id="chi4">
+<div class="ch-head">
+<span class="part-tag">第十四篇 · 集合通信</span>
+<h2>I4 · NCCL 集合通信库：原语、算法与调优实战</h2>
+<p class="ch-sub">NCCL（NVIDIA Collective Communications Library）是 GPU 集群通信的事实标准。本章从原语语义讲到 Ring/Tree 算法，再到「看到日志就该知道改哪个环境变量」的调优与排障能力。</p>
+</div>
+<div class="goals"><strong>🎯 学习目标</strong><ul>
+<li>掌握九种集合原语的语义、数据量关系与典型使用场景</li>
+<li>推导 Ring AllReduce 的传输量公式，理解「带宽最优」与「延迟最优」的取舍</li>
+<li>理解 Simple / LL / LL128 三种协议的适用边界</li>
+<li>掌握 algbw 与 busbw 的换算，能看懂 nccl-tests 输出并判断是否达标</li>
+<li>建立 NCCL 调优与挂起（hang）排查的系统方法</li>
+</ul></div>
+
+<h3>I4.1 NCCL 是什么：定位与生态</h3>
+<div class="codeblock"><pre><code data-lang="text">NCCL = NVIDIA Collective Communications Library
+定位： 专为 GPU 设计的<strong>拓扑感知</strong>集合通信库，开源(github.com/NVIDIA/nccl)
+
+核心特点：
+  ① 拓扑感知(Topology-Aware)：启动即探测 PCIe/NVLink/NVSwitch/网卡拓扑，
+     据此自动选择算法与路径 —— 这是它比 MPI 快的根本
+  ② 多通道并行：同时使用多个 CUDA stream 与多条链路打满带宽
+  ③ GPU 内核直连：通信由 GPU kernel 直接执行，减少 CPU 介入
+
+生态位置（谁在调用它）：
+  PyTorch      → torch.distributed 的 nccl backend（DDP / FSDP）
+  Megatron-LM  → 张量并行/流水线并行的通信底座
+  DeepSpeed    → ZeRO 系列的 allgather / reducescatter
+  vLLM / TensorRT-LLM → 多卡推理的通信
+  Horovod      → 早期主流，现多数场景被原生 DDP 取代
+
+★ NCCL 只管<strong>节点内+节点间的数据搬运</strong>，不管任务编排 —— 
+  进程启动靠 torchrun / mpirun / srun，NCCL 只负责 communicator 建立后的通信。</code></pre></div>
+
+<h3>I4.2 九种集合原语：语义与数据量</h3>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>原语</th><th>输入 → 输出</th><th>每卡传输量</th><th>典型场景</th></tr>
+<tr><td><strong>AllReduce</strong></td><td>各卡 S → 各卡得到归约后的 S</td><td>2S(N-1)/N（Ring）</td><td><strong>数据并行梯度同步</strong> ★★★</td></tr>
+<tr><td><strong>ReduceScatter</strong></td><td>各卡 S → 各卡得到归约结果的 1/N</td><td>S(N-1)/N</td><td><strong>ZeRO / FSDP 梯度分片</strong> ★★</td></tr>
+<tr><td><strong>AllGather</strong></td><td>各卡 S/N → 各卡得到拼接后的 S</td><td>S(N-1)/N</td><td><strong>FSDP 参数重组</strong> ★★</td></tr>
+<tr><td>Broadcast</td><td>根卡 S → 所有卡 S</td><td>S</td><td>初始化参数分发</td></tr>
+<tr><td>Reduce</td><td>各卡 S → 根卡得到归约结果</td><td>S</td><td>指标汇总</td></tr>
+<tr><td>All-to-All</td><td>各卡 S → 各卡按目标交换分片</td><td>S(N-1)/N</td><td><strong>MoE 专家并行</strong> ★</td></tr>
+<tr><td>Gather</td><td>各卡 S → 根卡得到 N×S</td><td>S</td><td>结果收集</td></tr>
+<tr><td>Scatter</td><td>根卡 N×S → 各卡得到 S</td><td>S</td><td>数据分发</td></tr>
+<tr><td>Send / Recv</td><td>点对点</td><td>消息大小</td><td><strong>流水线并行</strong> stage 间传递 ★</td></tr>
+</table></div>
+<div class="codeblock"><pre><code data-lang="text">重要恒等式（理解大模型训练的钥匙）：
+  AllReduce = ReduceScatter + AllGather
+  ★ FSDP 正是用这个分解把「峰值显存」换「通信量」：
+     前向时 AllGather 重组完整参数 → 用完立即释放
+     反向时 ReduceScatter 分片归约梯度 → 每卡只存 1/N 的优化器状态
+    代价：通信量从 2S(N-1)/N 变成 1.5 倍(多一轮)，但显存降到 1/N
+
+数据量对照（N=8, S=1GB）：
+  AllReduce       : 每卡收发 2×1GB×7/8 = 1.75 GB
+  ReduceScatter   : 每卡收发 1GB×7/8   = 0.875 GB
+  AllGather       : 每卡收发 1GB×7/8   = 0.875 GB</code></pre></div>
+
+<h3>I4.3 Ring AllReduce：为什么它带宽最优</h3>
+<div class="codeblock"><pre><code data-lang="text">算法分两阶段，共 2(N-1) 步，每步传输 S/N：
+
+阶段① Reduce-Scatter（N-1 步）：
+  第 k 步： GPU_i 把自己的第 (i-k) 块发给 GPU_(i+1)
+           GPU_i 收到 GPU_(i-1) 的第 (i-k-1) 块 → 累加到本地对应块
+  结束态： 每个 GPU 持有「某一块的完整归约结果」(共 N 块各归约一次)
+  每卡传输： (N-1) × S/N
+
+阶段② All-Gather（N-1 步）：
+  第 k 步： GPU_i 把自己刚归约完的块发给 GPU_(i+1)，并接收上游的块
+  结束态： 每个 GPU 持有完整的归约结果(N 块全都有)
+  每卡传输： (N-1) × S/N
+
+★ 关键结论：
+  每卡总传输量 = 2(N-1)S/N ≈ 2S   （N 增大时趋于 2S，与 N 无关！）
+  → <strong>带宽最优</strong>：增大卡数不会增加单卡的传输量
+  → 但步数 = 2(N-1)，<strong>延迟 O(N)</strong>：卡数越多延迟越高
+
+  这就是为什么： 大消息用 Ring（带宽敏感，延迟可摊销）
+                小消息用 Tree（延迟敏感，带宽用不满）</code></pre></div>
+
+<h3>I4.4 Tree 算法：延迟最优的取舍</h3>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>维度</th><th>Ring</th><th>Tree</th></tr>
+<tr><td>步数（延迟）</td><td>2(N-1)，<strong>O(N)</strong></td><td>2log(N)，<strong>O(logN)</strong></td></tr>
+<tr><td>每卡传输量</td><td>2S(N-1)/N ≈ <strong>2S</strong></td><td>非均衡：根节点收发更多</td></tr>
+<tr><td>适用消息</td><td><strong>大消息</strong>（≥ 数百 KB）</td><td><strong>小消息</strong>（≤ 数十 KB）</td></tr>
+<tr><td>瓶颈</td><td>延迟随卡数线性增长</td><td>根节点带宽瓶颈</td></tr>
+</table></div>
+<div class="box tip"><span class="bt">💡 NCCL 怎么选</span>
+<p>NCCL 内部按<strong>消息大小 × 卡数 × 拓扑</strong>在初始化时通过代价模型（cost model）自动挑选算法与协议，无需手工指定。手工强制（<code>NCCL_ALGO</code>）通常只在调试或已知拓扑特殊时使用。<strong>看到日志里的 <code>Ring</code>/<code>Tree</code> 决策，就应能反推出消息大小量级。</strong></p></div>
+
+<h3>I4.5 三种协议：Simple / LL / LL128</h3>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>协议</th><th>传输粒度</th><th>同步方式</th><th>带宽达成</th><th>适用</th></tr>
+<tr><td><strong>Simple</strong></td><td>大块（默认 512KB 缓冲切分）</td><td>需额外同步（内存屏障/信号）</td><td><strong>最高</strong>（接近链路极限）</td><td>大消息 ★</td></tr>
+<tr><td><strong>LL</strong>（Low Latency）</td><td>4 字节（含 flag 的自旋传输）</td><td>数据自带完成标志，<strong>无需额外同步</strong></td><td>较低（约 25~50%）</td><td>极小消息（&lt; 数 KB）</td></tr>
+<tr><td><strong>LL128</strong></td><td>128 字节（含 flag）</td><td>同上，粒度更粗</td><td><strong>~95%</strong>（接近 Simple）</td><td>中小消息 ★ 需 NVLink</td></tr>
+</table></div>
+<div class="codeblock"><pre><code data-lang="text">为什么 LL 快却带宽低？
+  每次传输都要附带 flag 并自旋等待 —— 省掉了同步开销(延迟低)，
+  但有效数据占比低(4B 里 4B 数据+flag 机制开销) → 带宽差。
+
+LL128 的甜点： 128B 粒度让 flag 开销被充分摊销，
+  同时保留「无需额外同步」的低延迟特性 ——
+  ★ 前提： 需要 NVLink 等支持 128B 原子传输的链路；
+          纯 PCIe 环境可能回退到 LL 或 Simple。
+
+调试观察： NCCL_DEBUG=TRACE 会打印实际使用的 protocol
+  NCLL / LL128 / Simple 的选择是自动的，
+  若发现大消息走了 LL，通常是拓扑探测异常 —— 值得深查。</code></pre></div>
+
+<h3>I4.6 性能度量：algbw 与 busbw（★ 必会换算）</h3>
+<div class="codeblock"><pre><code data-lang="text">两个带宽指标的含义：
+  algbw (Algorithm Bandwidth) = 数据量 S / 耗时 t
+      —— 「从算法视角看，每秒完成了多少数据的集合操作」
+
+  busbw (Bus Bandwidth) = algbw × N / (2(N-1))      【AllReduce 公式】
+      —— 「归一化到每条链路的实际带宽」，衡量硬件利用效率
+
+为什么需要 busbw？
+  Ring AllReduce 中每卡实际收发约 2S 数据，但算法只"完成"了 S 的数据量。
+  若直接看 algbw 会低估链路压力。busbw 把它还原成链路视角。
+
+换算示例（N=8, S=1GB, t=10ms）：
+  algbw = 1GB / 0.01s = 100 GB/s
+  busbw = 100 × 8 / (2×7) = 114.3 GB/s
+  ★ 判断标准： busbw 接近链路带宽(A100 NVLink ≈ 600 GB/s 的一部分)
+     才算跑满；若 busbw 只有链路带宽的 30%，说明有瓶颈未消除。
+
+各原语的 busbw 换算系数（nccl-tests 采用）：
+  AllReduce      : busbw = algbw × N / (2(N-1))
+  ReduceScatter  : busbw = algbw × N / (N-1)
+  AllGather      : busbw = algbw × N / (N-1)
+  Broadcast      : busbw = algbw              （等于算法带宽）
+  Reduce         : busbw = algbw              （同上）
+  All-to-All     : busbw = algbw              （同上）
+  ★ 牢记： 只有 AllReduce 有那个 2 —— 因为它走两阶段。</code></pre></div>
+
+<h3>I4.7 nccl-tests：装、跑、读</h3>
+<div class="codeblock"><pre><code data-lang="bash"># 编译
+git clone https://github.com/NVIDIA/nccl-tests.git &amp;&amp; cd nccl-tests
+make MPI=1 MPI_HOME=/usr/local/mpi CUDA_HOME=/usr/local/cuda
+#   无 MPI 环境可： make CUDA_HOME=/usr/local/cuda （仍可测多卡）
+
+# 单机 8 卡 AllReduce 全量扫描
+./build/all_reduce_perf -b 8 -e 8G -f 2 -g 1
+#   -b 起始大小  -e 结束大小  -f 步长因子(2=倍增)  -g 每进程 GPU 数
+
+# 多机两节点各 8 卡（共 16 卡）
+mpirun -np 16 -H node1:8,node2:8 \
+  --bind-to none --map-by slot \
+  -x NCCL_DEBUG=INFO -x NCCL_IB_HCA=mlx5_0 \
+  ./build/all_reduce_perf -b 8 -e 8G -f 2 -g 1</code></pre></div>
+<div class="codeblock"><pre><code data-lang="text">典型输出（8 卡，A100 NVLink，节选）：
+
+#       size         count      type   redop     time   algbw   busbw  #wrong
+#        (B)    (elements)                       (us)  (GB/s)  (GB/s)
+           8             2     float     sum    10.32    0.00    0.00      0
+        1024           256     float     sum    10.85    0.09    0.16      0
+      131072         32768     float     sum    17.20    7.62   13.35      0
+     8388608       2097152     float     sum    62.40  134.43  235.25      0
+   268435456      67108864     float     sum   986.30  272.16  476.28      0
+  1073741824     268435456     float     sum  3765.40  285.13  498.98      0
+
+读数要点：
+  ① <strong>小消息(&lt;128KB) 带宽极低</strong> —— 这是延迟主导区，属正常现象
+  ② <strong>大消息(&gt;256MB) 趋于平稳</strong> —— 这是带宽主导区，看这里的 busbw
+  ③ 上例 busbw ≈ 499 GB/s，A100 标称 600 GB/s → 达成率 83%，属健康范围
+  ④ <strong>#wrong 必须为 0</strong> —— 非 0 说明数据校验失败，是严重问题
+  ⑤ 若大消息 busbw 只有 100~200 GB/s（多卡 NVLink 环境）→ 有瓶颈，见 I4.9</code></pre></div>
+
+<h3>I4.8 环境变量速查表（调优与排障的弹药库）</h3>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>变量</th><th>作用</th><th>常用取值</th></tr>
+<tr><td><strong>NCCL_DEBUG</strong></td><td>日志级别，<strong>排障第一开关</strong></td><td><code>VERSION</code> / <code>WARN</code> / <code>INFO</code> / <code>TRACE</code></td></tr>
+<tr><td>NCCL_DEBUG_SUBSYS</td><td>子系统过滤，缩小日志范围</td><td><code>INIT,BOOTSTRAP,ENV,GRAPH,TUNING,NET,COLL</code></td></tr>
+<tr><td>NCCL_DEBUG_FILE</td><td>日志落盘（多机必用）</td><td><code>/tmp/nccl.%h.%p.log</code></td></tr>
+<tr><td><strong>NCCL_SOCKET_IFNAME</strong></td><td>指定 bootstrap 用的网卡</td><td><code>eth0</code> / <code>^lo,docker</code>（排除）</td></tr>
+<tr><td>NCCL_IB_HCA</td><td>指定 IB/RoCE 网卡</td><td><code>mlx5_0</code> 或 <code>mlx5_0,mlx5_1</code></td></tr>
+<tr><td>NCCL_IB_GID_INDEX</td><td>RoCE 场景必调</td><td><code>3</code>（常见，需按实际查）</td></tr>
+<tr><td>NCCL_IB_DISABLE</td><td>禁用 IB 走 TCP</td><td><code>1</code>（对照测试用）</td></tr>
+<tr><td>NCCL_IB_TIMEOUT / RETRY_CNT</td><td>IB 超时与重试</td><td><code>22</code> / <code>13</code>（弱网络放宽）</td></tr>
+<tr><td>NCCL_NET_GDR_LEVEL</td><td>GPUDirect RDMA 启用层级</td><td><code>2</code>（同 NUMA）/ <code>5</code>（更激进）</td></tr>
+<tr><td>NCCL_P2P_DISABLE</td><td>禁用 GPU 间 P2P</td><td><code>1</code>（对照测试）</td></tr>
+<tr><td>NCCL_SHM_DISABLE</td><td>禁用共享内存通道</td><td><code>1</code>（排除 SHM 问题）</td></tr>
+<tr><td>NCCL_ALGO</td><td>强制算法</td><td><code>RING</code> / <code>TREE</code> / <code>COLLNET</code></td></tr>
+<tr><td>NCCL_PROTO</td><td>强制协议</td><td><code>Simple</code> / <code>LL</code> / <code>LL128</code></td></tr>
+<tr><td>NCCL_BUFFSIZE</td><td>通信缓冲大小</td><td>默认 4MB；大消息可加到 8~16MB</td></tr>
+<tr><td>NCCL_NCHANNELS / MIN / MAX</td><td>通道数</td><td>增大可提升大消息带宽</td></tr>
+<tr><td>NCCL_TOPO_FILE</td><td>手工指定拓扑（虚拟化/异常探测）</td><td><code>/path/topo.xml</code></td></tr>
+<tr><td>NCCL_TOPO_DUMP_FILE</td><td>导出探测到的拓扑</td><td><code>/tmp/topo.xml</code></td></tr>
+<tr><td>NCCL_ASYNC_ERROR_HANDLING</td><td>异步错误处理</td><td>新版本默认开启</td></tr>
+<tr><td>NCCL_CROSS_NIC</td><td>跨网卡使用策略</td><td><code>0</code>/<code>1</code>/<code>2</code>，多网卡调优</td></tr>
+</table></div>
+
+<h3>I4.9 排障手册：从现象到动作</h3>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>现象</th><th>可能根因</th><th>排查动作</th></tr>
+<tr><td><strong>启动时 hang（无报错卡住）</strong></td><td>网卡选错 / 防火墙 / 端口不通</td><td>① <code>NCCL_DEBUG=INFO</code> 看卡在哪一步；② 明确 <code>NCCL_SOCKET_IFNAME</code>；③ 关闭或放通防火墙；④ 用 <code>ib_write_bw</code> 先验证网络本身</td></tr>
+<tr><td>NCCL WARN 无法建立连接</td><td>主机名解析 / SSH 免密 / 多网卡</td><td>检查 <code>/etc/hosts</code>、<code>hostname -I</code>、<code>NCCL_SOCKET_IFNAME</code> 排除 docker/lo</td></tr>
+<tr><td>能跑但带宽很低</td><td>走了 TCP 而非 IB；peermem 未加载；拓扑探测异常</td><td>日志里找 <code>NET/IB</code> 与 <code>GDRDMA</code>；<code>lsmod|grep peermem</code>；<code>NCCL_TOPO_DUMP_FILE</code> 看拓扑</td></tr>
+<tr><td>RoCE 环境报错/不通</td><td>GID index 不对</td><td>用 <code>show_gids</code> 查正确 index，设 <code>NCCL_IB_GID_INDEX</code></td></tr>
+<tr><td>unhandled error / 进程退出</td><td>某 rank 崩溃（OOM / CUDA 错误）</td><td>查该 rank 的 Python/CUDA 报错；NCCL 报错往往是<strong>结果而非原因</strong></td></tr>
+<tr><td>大消息带宽不达标</td><td>通道数不足 / 缓冲太小 / 算法选择不佳</td><td>调 <code>NCCL_BUFFSIZE</code>、<code>NCCL_MIN_NCHANNELS</code>；用 <code>NCCL_ALGO=RING</code> 对照</td></tr>
+<tr><td>偶发超时（长任务跑到一半挂）</td><td>IB 超时参数 / 网络抖动</td><td>增大 <code>NCCL_IB_TIMEOUT</code>、<code>NCCL_IB_RETRY_CNT</code></td></tr>
+</table></div>
+<div class="box warn"><span class="bt">⚠️ 排障黄金三步</span>
+<p><strong>① 先分层验证</strong>：网络层用 <code>ib_write_bw</code>/<code>perftest</code> 验证 → GPU 层用 <code>nccl-tests</code> 验证 → 应用层用真实训练验证。<strong>跳过下层直接查应用层是最常见的低效做法。</strong><br>
+<strong>② 打开 INFO 日志</strong>：<code>NCCL_DEBUG=INFO</code> 会打印拓扑探测结果、实际使用的 transport（P2P/SHM/NET/IB）与算法决策，90% 的问题在这里就能定位。<br>
+<strong>③ 用对照法缩小范围</strong>：逐个加 <code>NCCL_P2P_DISABLE=1</code>、<code>NCCL_SHM_DISABLE=1</code>、<code>NCCL_IB_DISABLE=1</code>，看禁用哪一层后行为变化 —— 变好的那层就是问题所在。</p></div>
+
+<div class="quiz"><strong>📝 思考题</strong><ol>
+<li>推导 N=16、S=2GB 时 Ring AllReduce 每卡的传输总量与理论步数。</li>
+<li>nccl-tests 显示 AllReduce 的 algbw=200 GB/s（N=8），求 busbw；若链路是 A100 NVLink（600 GB/s），达成率是多少？</li>
+<li>为什么 AllReduce 的 busbw 公式里有个 2，而 ReduceScatter 没有？</li>
+<li>多机训练启动 hang 住，日志停在初始化阶段。列出你的前 5 个排查动作及顺序。</li>
+<li>小消息（1KB）和大消息（1GB）分别应该期望看到哪种算法与协议？为什么？</li>
+</ol></div>
+
+<div class="lab"><strong>🧪 动手实验 LI4-1：nccl-tests 全量扫描与达成率分析（90 分钟）</strong>
+<p><strong>步骤</strong>：① 编译 nccl-tests；② 跑 <code>all_reduce_perf -b 8 -e 8G -f 2 -g 1</code> 保存完整输出；③ 用 I3 得到的拓扑带宽作为分母，计算大消息区的 busbw 达成率；④ 分别设置 <code>NCCL_P2P_DISABLE=1</code>、<code>NCCL_ALGO=TREE</code> 各跑一次，对比曲线变化；⑤ 用 <code>NCCL_DEBUG=INFO</code> 抓取日志，找出实际使用的 transport 与算法，验证与你的预测是否一致。</p>
+<p><strong>验收</strong>：一张「消息大小—busbw」曲线（含 P2P 开/关对照）+ 达成率计算表 + 一份日志关键行摘录与解读。</p></div>
+
+<div class="lab"><strong>🧪 动手实验 LI4-2：制造并修复一次 hang（60 分钟，进阶）</strong>
+<p><strong>步骤</strong>：① 两节点环境下故意把 <code>NCCL_SOCKET_IFNAME</code> 设成错误的网卡名，观察 hang 现象与日志停在哪一步；② 恢复正确值并验证启动成功；③ 再故意 <code>modprobe -r nvidia_peermem</code>，用 I3 的方法验证 GDRDMA 消失与带宽下降幅度；④ 记录两组「故障—现象—修复」对照。</p>
+<p><strong>验收</strong>：一份故障复现与修复记录，含两组带宽对比数据与日志关键行。</p></div>
+
+<div class="box tip"><span class="bt">🗺️ 本章知识地图</span>
+<p><strong>前置依赖</strong>：I3 拓扑与 GPUDirect、I2 带宽账本思维。<strong>后续衔接</strong>：I5 把 NCCL 放到 RDMA/MPI 的更大坐标系中对比，并给出训练场景的通信模式与实战案例。<strong>开源定位</strong>：github.com/NVIDIA/nccl（<code>src/collectives/</code> 算法实现、<code>src/transport/</code> 传输层）、github.com/NVIDIA/nccl-tests。</p></div>
+</section>
+
+<section class="chapter" id="chi5">
+<div class="ch-head">
+<span class="part-tag">第十四篇 · 集合通信</span>
+<h2>I5 · 分布式通信实战：RDMA、框架横向对比与故障案例复盘</h2>
+<p class="ch-sub">把 NCCL 放回它该在的位置：它只是通信栈的一环。本章补齐 RDMA 底层、横向对比主流通信库、给出训练场景的通信模式与性能模型，并用四个真实案例训练排障直觉。</p>
+</div>
+<div class="goals"><strong>🎯 学习目标</strong><ul>
+<li>理解 RDMA 核心抽象（QP/CQ/MR）与 IB / RoCE v2 的差异</li>
+<li>能根据场景选择 NCCL / MPI / Gloo，并说明理由</li>
+<li>掌握 DDP / FSDP / TP / PP / EP 各自的通信模式与代价</li>
+<li>会用「计算时间 vs 通信时间」模型判断能否重叠、估算加速比</li>
+<li>通过案例复盘建立从现象到根因的推理链</li>
+</ul></div>
+
+<h3>I5.1 RDMA 基础：为什么它能绕过 CPU</h3>
+<div class="codeblock"><pre><code data-lang="text">RDMA (Remote Direct Memory Access)： 一台机器的网卡<strong>直接读写</strong>
+  另一台机器的用户态内存，全程<strong>不经过对方 CPU、不拷贝</strong>。
+
+四大收益： 零拷贝(Zero-copy) / 内核旁路(Kernel bypass) /
+           CPU 卸载 / 低延迟(µs 级)
+
+核心抽象（Verbs API）：
+  PD  (Protection Domain)  保护域，资源隔离边界
+  MR  (Memory Region)      ★ 注册内存：把内存"钉住"并交给网卡
+                             注册后才允许远程读写（pin + 地址翻译表）
+  QP  (Queue Pair)         发送队列+接收队列，通信端点（类似 socket）
+  CQ  (Completion Queue)   完成队列，轮询获取完成事件
+  WR  (Work Request)       工作请求，即一次 send/recv/read/write 的描述
+
+典型流程：
+  ibv_reg_mr(注册内存) → ibv_create_qp(建连接) → ibv_post_send(提交请求)
+  → 网卡 DMA 直接搬数据 → ibv_poll_cq(轮询完成) ★ 不需要中断
+
+传输服务类型：
+  RC (Reliable Connection) ★ 最常用，可靠有序有连接
+  UC (Unreliable Connection) / UD (Unreliable Datagram) 特殊场景</code></pre></div>
+
+<h3>I5.2 IB vs RoCE：选型与配置差异</h3>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>方案</th><th>承载</th><th>可路由</th><th>硬件要求</th><th>特点</th></tr>
+<tr><td><strong>InfiniBand</strong></td><td>原生 IB 链路层</td><td>是（IB 路由）</td><td>专用 HCA + IB 交换机</td><td>性能最佳、生态成熟、成本最高</td></tr>
+<tr><td><strong>RoCE v1</strong></td><td>以太网 L2</td><td><strong>否</strong>（同二层）</td><td>普通以太网 + RoCE 网卡</td><td>已基本淘汰</td></tr>
+<tr><td><strong>RoCE v2</strong></td><td>UDP/IP</td><td><strong>是</strong></td><td>无损以太网（需 PFC/ECN）</td><td>★ 性价比高，需精心调优</td></tr>
+<tr><td>iWARP</td><td>TCP</td><td>是</td><td>支持 iWARP 的网卡</td><td>实现复杂，现已少见</td></tr>
+</table></div>
+<div class="box warn"><span class="bt">⚠️ RoCE 的两个大坑</span>
+<p><strong>① GID Index 选错</strong>：RoCE v2 必须选正确的 GID index，否则建连失败。用 <code>show_gids</code> 查看，通常 <code>index 3</code> 对应 RoCE v2（不同驱动版本可能不同），通过 <code>NCCL_IB_GID_INDEX</code> 指定。<br>
+<strong>② 丢包即灾难</strong>：RoCE 对丢包极敏感，必须配置无损以太网——<strong>PFC（基于优先级的流控）+ ECN（显式拥塞通知）</strong>。交换机侧配置不当会导致吞吐暴跌到 1/10，这也是「RoCE 网络明明 100G 却只能跑 10G」的常见原因。</p></div>
+<div class="codeblock"><pre><code data-lang="bash"># RDMA 工具箱（perftest 包）
+ibv_devinfo                    # 查看 RDMA 设备与固件
+ibstat                         # IB 端口状态(State: Active 才正常)
+show_gids                      # ★ 查看 GID 表，确定 RoCE v2 的 index
+
+# 两端对测（先于 NCCL 验证网络层是否健康！）
+# 服务端：
+ib_write_bw -d mlx5_0 -i 1 --report_gbits
+# 客户端：
+ib_write_bw -d mlx5_0 -i 1 --report_gbits &lt;server_ip&gt;
+#   预期： 100G 网卡应跑出 90+ Gb/s；若远低于此，问题在网络不在 NCCL
+
+# GPU 显存直测（验证 GPUDirect RDMA 是否生效）
+ib_write_bw -d mlx5_0 --use_cuda=0 &lt;server_ip&gt;</code></pre></div>
+
+<h3>I5.3 通信库横向对比：什么时候不用 NCCL</h3>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>库</th><th>主导方</th><th>主战场</th><th>拓扑感知</th><th>选型建议</th></tr>
+<tr><td><strong>NCCL</strong></td><td>NVIDIA</td><td>GPU↔GPU 集合通信</td><td><strong>是</strong> ★</td><td><strong>GPU 训练首选</strong>，多机多卡事实标准</td></tr>
+<tr><td>OpenMPI / MPICH</td><td>社区</td><td>CPU 集群、HPC</td><td>弱</td><td>HPC 科学计算、CPU 并行任务</td></tr>
+<tr><td>MPI（GPU-aware）</td><td>社区</td><td>通用并行</td><td>中</td><td>已有 MPI 代码库需迁移时；性能通常不及 NCCL</td></tr>
+<tr><td>Gloo</td><td>Meta</td><td>CPU 集合通信</td><td>无</td><td><strong>CPU 训练/推理</strong>、PyTorch 的 CPU backend</td></tr>
+<tr><td>Horovod</td><td>LF AI</td><td>封装层</td><td>取决于后端</td><td>历史项目；新项目建议原生 DDP</td></tr>
+<tr><td>RCCL / xccl</td><td>AMD / 华为</td><td>异构加速卡</td><td>是</td><td>非 NVIDIA 硬件的对等方案</td></tr>
+</table></div>
+<div class="box tip"><span class="bt">💡 选型一句话</span>
+<p><strong>GPU 集合通信用 NCCL；CPU 集合通信用 Gloo；HPC 通用并行用 MPI；跨硬件平台看厂商对等库（RCCL 等）。</strong>不要试图用一个库通吃所有场景——PyTorch 同时提供 nccl 与 gloo 两个 backend，正是这个道理。</p></div>
+
+<h3>I5.4 训练中的通信模式：五种并行各自的账</h3>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>并行方式</th><th>切分对象</th><th>主要通信原语</th><th>通信量</th><th>部署位置</th></tr>
+<tr><td><strong>DP（数据并行）</strong></td><td>批次</td><td>AllReduce（梯度）</td><td>大，但可重叠</td><td>跨机/跨卡均可</td></tr>
+<tr><td><strong>FSDP / ZeRO</strong></td><td>参数+梯度+优化器</td><td>AllGather + ReduceScatter</td><td>约 1.5× DP</td><td>跨机/跨卡</td></tr>
+<tr><td><strong>TP（张量并行）</strong></td><td>层内权重</td><td>AllReduce / AllGather</td><td><strong>极大</strong>（每层都通）</td><td><strong>必须机内 NVLink</strong> ★</td></tr>
+<tr><td><strong>PP（流水线并行）</strong></td><td>层</td><td>Send / Recv（P2P）</td><td>小</td><td>可跨机</td></tr>
+<tr><td><strong>EP（专家并行）</strong></td><td>MoE 专家</td><td>All-to-All</td><td>中~大，不均衡</td><td>机内优先</td></tr>
+<tr><td><strong>SP（序列并行）</strong></td><td>序列维度</td><td>AllGather + ReduceScatter</td><td>中</td><td>与 TP 配合</td></tr>
+</table></div>
+<div class="codeblock"><pre><code data-lang="text">3D 并行的经典布局（以 1024 卡为例）：
+  TP=8   放在<strong>单机 8 卡内</strong>（NVLink 域）—— 通信量最大，必须最快链路
+  PP=8   跨机（Send/Recv 通信量小，跨机代价可接受）
+  DP=16  在最外层（AllReduce 可跨机，但通过分桶重叠隐藏）
+  ★ 原则： <strong>通信量越大的并行维度，放在越快的链路上</strong>
+         这是把 I3 的拓扑知识与本章通信模式结合后的直接推论。
+
+ZeRO 三阶段的通信账（相对 DP 的 1.0 倍）：
+  ZeRO-1 (优化器状态分片) : 1.0× —— 只多一次通信调度
+  ZeRO-2 (+梯度分片)      : 1.0× —— 用 ReduceScatter 替代 AllReduce，总量不变
+  ZeRO-3 (+参数分片)      : 1.5× —— 多一次前向 AllGather
+  ★ 记忆口诀： 分片越激进，显存越省，通信越多，但不超过 1.5 倍。</code></pre></div>
+
+<h3>I5.5 通信与计算重叠：把通信「藏」起来</h3>
+<div class="codeblock"><pre><code data-lang="text">DDP 的核心技巧：梯度分桶(Bucketing)+ backward hook 触发
+
+  未重叠： 反向算完所有层 → 一次性 AllReduce 全部梯度
+           T = T_backward + T_comm        （通信完全暴露）
+
+  重叠后： 反向算完一个桶 → 立即对该桶发起 AllReduce
+           T ≈ T_backward + T_comm(最后一桶)  （大部分通信被计算掩盖）
+  默认桶大小 25MB(DDP)，可按模型调 —— 太小则通信次数多(延迟累积)，
+                                      太大则重叠度低(尾部暴露)
+
+性能模型（判断能否重叠的最小模型）：
+  T_comm(N) = S_data / BW_effective + Latency(N)
+             其中 AllReduce: S_data ≈ 2S(N-1)/N
+  T_comp    = 2 × 参数量 × batch / FLOPS_effective
+
+  若 T_comm &lt; T_comp  → 通信可被完全隐藏，扩展效率接近线性
+  若 T_comm &gt; T_comp  → 通信成为瓶颈，需减少通信量或提升带宽
+
+  算术强度视角： 每字节参数对应的计算量越大，越容易隐藏通信。
+  ★ 这就是为什么<strong>小模型多机训练往往负收益</strong>：
+     计算量小、通信占比高 —— 加卡反而更慢。</code></pre></div>
+<div class="codeblock"><pre><code data-lang="bash"># PyTorch DDP 常用通信相关开关
+# 桶大小（默认 25MB）
+torch.distributed.init_process_group(backend="nccl")
+model = DDP(model, bucket_cap_mb=50)          # 大模型可加大桶
+
+# 关闭梯度同步（做梯度累积时用，减少无效通信）
+with model.no_sync():                          # ★ 非同步步不触发 AllReduce
+    loss.backward()
+
+# 通信 dtype 压缩（减少通信量，配合 FP16/BF16）
+# 或： PowerSGD / 稀疏通信（进阶压缩算法）
+
+# 环境变量辅助（PyTorch 生态）
+export NCCL_DEBUG=INFO
+export TORCH_DISTRIBUTED_DEBUG=DETAIL          # 定位集合调用不匹配</code></pre></div>
+
+<h3>I5.6 故障案例复盘（四条推理链）</h3>
+
+<div class="codeblock"><pre><code data-lang="text">案例①：多机训练带宽只有单机的 1/10
+  现象： 8 卡单机 400+ GB/s，2 机 16 卡却只有 40 GB/s
+  分层： 先跑 ib_write_bw —— 也只有 10 Gb/s（100G 网卡）
+  ★ 定位： 问题在网络层，不在 NCCL
+  根因： RoCE 交换机未配置 PFC，存在丢包 → RoCE 吞吐崩塌
+  修复： 交换机侧启用 PFC + ECN，配置无损以太网队列
+  沉淀： <strong>「先验证下层，再怀疑上层」—— ib_write_bw 是分水岭</strong>
+
+案例②：8 卡比 4 卡还慢
+  现象： 4 卡 1000 samples/s，8 卡只有 850 samples/s
+  取证： nvidia-smi topo -m 显示 GPU4~7 与 GPU0~3 之间是 SYS
+  ★ 定位： 跨 NUMA 槽位通信，走 UPI 而非 NVLink
+  根因： 服务器无 NVSwitch，两套 CPU 各挂 4 卡，跨槽走 UPI
+  修复： 改用 4 卡/节点 × 2 节点 DP，或只使用同 NUMA 内的 4 卡
+  沉淀： <strong>加卡前先看拓扑，不是所有"8 卡"都等价</strong>
+
+案例③：训练跑到第 N 步 hang 住，无报错
+  现象： 固定步数后挂起，日志无 NCCL error
+  取证： NCCL_DEBUG=INFO 显示卡在某一 collective；
+         dmesg 有 IB 端口错误计数增长
+  ★ 定位： 网络间歇丢包导致 RDMA 重传超时
+  根因： 光模块故障/线缆接触不良，IB 错误计数持续累积
+  修复： 更换光模块；临时放宽 NCCL_IB_TIMEOUT 与 RETRY_CNT
+  沉淀： <strong>间歇性 hang 优先查硬件错误计数器，而非调参数</strong>
+
+案例④：显存看起来够却 OOM
+  现象： 模型+优化器状态计算下来占 70% 显存，但启动即 OOM
+  取证： NCCL_DEBUG=INFO 显示通信缓冲分配；峰值出现在 AllGather 时
+  ★ 定位： FSDP 前向 AllGather 时的瞬时峰值 + NCCL 缓冲 + 碎片
+  根因： 按"稳态"估算显存，忽略了通信瞬时峰值与 NCCL 缓冲(默认4MB×通道数)
+  修复： 减小 NCCL_BUFFSIZE、启用 activation checkpointing、
+        用更小 micro-batch
+  沉淀： <strong>显存预算要按"峰值"算，通信缓冲是常被漏掉的一项</strong></code></pre></div>
+
+<h3>I5.7 上线前检查清单</h3>
+<ol>
+<li><strong>网络层</strong>：<code>ib_write_bw</code> 达标（≥ 标称 90%）？光模块/线缆错误计数为零？</li>
+<li><strong>GPU 层</strong>：<code>nvidia-smi topo -m</code> 无意外 SYS 链路？<code>topo -p2p n</code> 全部 OK？</li>
+<li><strong>驱动层</strong>：<code>lsmod | grep peermem</code> 已加载？<code>nvidia-smi</code> 持久化模式已开？</li>
+<li><strong>通信层</strong>：<code>nccl-tests</code> 大消息 busbw 达成率 ≥ 70%？<code>#wrong</code> 全为 0？</li>
+<li><strong>系统层</strong>：NUMA 绑核已配置？CPU 频率未降频？无其他任务争抢？</li>
+<li><strong>应用层</strong>：桶大小合理？<code>no_sync</code> 用于梯度累积？通信可与计算重叠？</li>
+<li><strong>可观测性</strong>：<code>NCCL_DEBUG=INFO</code> 日志落盘已配置？便于事后复盘？</li>
+</ol>
+
+<div class="quiz"><strong>📝 思考题</strong><ol>
+<li>为什么 RoCE 对丢包如此敏感？PFC 与 ECN 各自解决什么问题？</li>
+<li>某模型单机 8 卡训练，通信时间占 40%。若扩到 4 机 32 卡（跨机带宽为机内 1/10），通信占比会变成多少？还能线性加速吗？</li>
+<li>ZeRO-3 相比 ZeRO-2 多了哪一次通信？为什么通信量是 1.5 倍而非 2 倍？</li>
+<li>案例③中为什么不建议一上来就调大 <code>NCCL_IB_TIMEOUT</code>？</li>
+<li>TP 为什么必须放在机内 NVLink 域，而 PP 可以跨机？用通信量数据论证。</li>
+</ol></div>
+
+<div class="lab"><strong>🧪 动手实验 LI5-1：端到端通信栈体检（120 分钟）</strong>
+<p><strong>步骤</strong>：① 用 <code>ib_write_bw</code> 测两节点间裸 RDMA 带宽，记录并与网卡标称值对比；② 用 <code>ib_write_bw --use_cuda=0</code> 测 GPU 显存直传带宽，对比上一步判断 GPUDirect RDMA 是否生效；③ 跑 <code>nccl-tests</code> 的 <code>all_reduce_perf</code>，计算 busbw 及其相对 RDMA 带宽的达成率；④ 用 <code>show_gids</code> 与 <code>ibstat</code> 确认 GID index 与端口状态；⑤ 按 I5.7 清单逐项打勾。</p>
+<p><strong>验收</strong>：一份「网络层 → GPU 层 → 通信层」三层带宽对照表（含各层达成率）+ 完整体检清单，并标注本集群的瓶颈层级。</p></div>
+
+<div class="lab"><strong>🧪 动手实验 LI5-2：通信重叠效果量化（90 分钟）</strong>
+<p><strong>步骤</strong>：① 用 PyTorch 写一个简单模型，测量纯反向计算时间 <code>T_comp</code>；② 用 <code>bucket_cap_mb</code> 分别设为 1MB / 25MB / 100MB，测量每 step 总时间；③ 用 <code>model.no_sync()</code> 关闭部分步的通信，观察时间变化，反推 <code>T_comm</code>；④ 用本章公式计算理论 <code>T_comm</code>，与实测对比；⑤ 尝试开启/关闭混合精度，观察通信量减半对总时间的影响。</p>
+<p><strong>验收</strong>：一张「桶大小—step 时间」曲线 + 理论 vs 实测 <code>T_comm</code> 对比表 + 重叠率计算结论。</p></div>
+
+<div class="box tip"><span class="bt">🎓 第十四篇收束寄语</span>
+<p>从 PCIe 的一个 TLP 头，到万卡集群的一次 AllReduce，本质上讲的是同一件事：<strong>数据从 A 到 B 需要多少代价，以及这个代价由谁承担</strong>。你在这篇里建立的不是一堆参数，而是三种能力——<strong>算得出</strong>（带宽账本与 busbw 换算）、<strong>看得懂</strong>（拓扑图与 NCCL 日志）、<strong>查得动</strong>（分层验证与对照法）。有了这三样，无论遇到的是嵌入式板卡上的一条 Gen3 链路，还是机房里的一整张 RoCE 网络，你的分析框架都是通用的。这也正是把 PCIe 与 NCCL 放进同一篇的意义：<strong>它们不是两个领域，而是同一条带宽阶梯的两端。</strong></p></div>
+
+<div class="box tip"><span class="bt">🗺️ 本章知识地图</span>
+<p><strong>前置依赖</strong>：I3 拓扑、I4 NCCL 核心。<strong>横向联动</strong>：第85章 PCIe 基础、ch12 性能方法论（USE 法在本章体现为「网络→GPU→通信→应用」四层体检）、第4篇异构计算概念。<strong>开源定位</strong>：linux-rdma/perftest（RDMA 测速工具）、ofiwg/libfabric、openucx/ucx（通信框架抽象层）、NVIDIA/nccl-tests。</p></div>
 </section>
 
 <div class="part-divider" id="partapp"><h3>B5 · Zephyr west 与 ESP-IDF 命令速查</h3>

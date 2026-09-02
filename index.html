@@ -18133,19 +18133,20 @@ while(running){
 <p class="small muted">关键区分：<strong>TLP 承载业务数据并可跨 Switch 路由</strong>；DLLP 只在<strong>相邻两端口之间</strong>传递，永远不会被转发——这是判断抓包内容归属的第一原则。</p>
 
 <h3>I1.2 TLP 结构解剖</h3>
-<div class="codeblock"><pre><code data-lang="text">TLP 三段： [Header 3DW 或 4DW] [Data Payload 0~4KB] [ECRC 1DW 可选]
-                ↓ 数据链路层封装
-           [SeqNum 2B] [TLP Header+Payload+ECRC] [LCRC 4B]
-                ↓ 物理层封装(Gen1/2)
-           [STP 1B] ... [END/EDB 1B]
-
-Header 首 DW 的关键位域（32 bit）：
-  bit[31:29] Fmt   —— 头长度与有无数据：000=3DW无数据 010=3DW带数据
-                      001=4DW无数据 011=4DW带数据
-  bit[28:24] Type  —— 事务类型，与 Fmt 共同决定包种类
-  bit[22:20] TC    —— 流量类别(0~7)，配合 VC 做 QoS
-  bit[14:12] Attr  —— 属性(Relaxed Ordering / No Snoop / ID-Based Ordering)
-  bit[9:0]   Length—— 以 DW 为单位的负载长度(1~1024 DW，即最多4KB)</code></pre></div>
+<div class="codeblock"><pre><code data-lang="text">TLP 三段：[Header 3DW或4DW][Data Payload 0~4KB][ECRC 1DW 可选]
+  ↓ 数据链路层封装
+[SeqNum 2B][TLP Header+Payload+ECRC][LCRC 4B]
+  ↓ 物理层封装(Gen1/2)
+[STP 1B] ...... [END/EDB 1B]</code></pre></div>
+<p>Header 首 DW（32 bit）的位域决定了这个包「是什么、多大、走哪条路」，是抓包分析时最先看的字段：</p>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>位域</th><th>字段</th><th>含义</th></tr>
+<tr><td>bit[31:29]</td><td><strong>Fmt</strong></td><td>头长度与有无数据：000=3DW无数据 / 010=3DW带数据 / 001=4DW无数据 / 011=4DW带数据</td></tr>
+<tr><td>bit[28:24]</td><td><strong>Type</strong></td><td>事务类型，与 Fmt 共同决定包种类（见下表）</td></tr>
+<tr><td>bit[22:20]</td><td>TC</td><td>流量类别(0~7)，配合 VC 实现 QoS</td></tr>
+<tr><td>bit[14:12]</td><td>Attr</td><td>属性：Relaxed Ordering / No Snoop / ID-Based Ordering</td></tr>
+<tr><td>bit[9:0]</td><td>Length</td><td>负载长度（以 DW 计，1~1024DW，即最多 4KB）</td></tr>
+</table></div>
 <div class="tbl-wrap"><table class="tbl">
 <tr><th>Fmt/Type</th><th>包名称</th><th>路由方式</th><th>典型场景</th></tr>
 <tr><td>00/00000</td><td>MRd（Memory Read）</td><td>地址路由</td><td>CPU 读设备 BAR 寄存器</td></tr>
@@ -18167,18 +18168,18 @@ Header 首 DW 的关键位域（32 bit）：
 
 <h3>I1.4 基于信用的流控（Flow Control）</h3>
 <p>PCIe 不用「停-等」也不用「反压信号」，而是<strong>信用（Credit）机制</strong>：接收方预先通告自己缓冲区的容量，发送方每发一个包扣减信用，收不到信用就不能发。</p>
-<div class="codeblock"><pre><code data-lang="text">六类信用（每个 VC 独立维护）：
-  Posted     : PH(头) / PD(数据)      ← MWr、Msg
-  Non-Posted : NPH(头) / NPD(数据)    ← MRd
-  Completion : CPH(头) / CPD(数据)    ← Cpl / CplD
-基本单位：头 1 credit = 最大头尺寸；数据 1 credit = 4 DW(16 字节)
-
-初始化：链路训练完成后进入 FC_INIT，双方用 InitFC1/InitFC2 DLLP
-        交换缓冲区大小 —— 若通告「无限信用」则头/数据信用置为无限。
-运行中：通过 UpdateFC DLLP 周期性归还信用(UpdateFC-P/NP/Cpl)
-
-诊断价值： ★ 当驱动出现「DMA 写卡死」时，若抓包看到对端持续不发
-         UpdateFC-P，说明<strong>接收侧缓冲已被下游堵死</strong>(而非本端问题)。</code></pre></div>
+<p>PCIe 不用「停-等」，也不拉一根反压信号线，而是<strong>信用（Credit）机制</strong>：接收方预先通告自己缓冲区的容量，发送方每发一个包就扣减相应信用，<strong>信用耗尽就必须停发</strong>。可类比为「预授权额度」——额度内随便花，花完必须等对方归还。</p>
+<p>信用按「三类事务 × 头/数据」两个维度共分六种，每个虚拟通道（VC）独立维护：</p>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>事务类别</th><th>头信用</th><th>数据信用</th><th>覆盖的包</th></tr>
+<tr><td><strong>Posted</strong></td><td>PH</td><td>PD</td><td>MWr、Msg</td></tr>
+<tr><td><strong>Non-Posted</strong></td><td>NPH</td><td>NPD</td><td>MRd、CfgRd/CfgWr</td></tr>
+<tr><td><strong>Completion</strong></td><td>CPH</td><td>CPD</td><td>Cpl、CplD</td></tr>
+</table></div>
+<p class="small muted">基本单位：头 1 credit = 一个最大头尺寸；数据 1 credit = 4DW（16 字节）。</p>
+<p>运行节奏分两步：<strong>初始化</strong>——链路训练完成后双方用 InitFC1/InitFC2 DLLP 交换缓冲区大小（若通告「无限信用」则置为无限）；<strong>运行中</strong>——通过 UpdateFC DLLP 周期性归还信用（UpdateFC-P / -NP / -Cpl）。</p>
+<div class="box tip"><span class="bt">💡 诊断价值</span>
+<p>当驱动出现「DMA 写卡死」时，若抓包看到<strong>对端持续不回 UpdateFC-P</strong>，说明接收侧缓冲已被下游堵死——问题在对端或更下游，而非本端。这是流控机制提供的独特排障视角。</p></div>
 
 <h3>I1.5 LTSSM：链路训练与状态机</h3>
 <p>LTSSM（Link Training and Status State Machine）是 PCIe 最核心的状态机，也是所有「链路起不来/降速/掉卡」问题的分析框架。</p>
@@ -18194,33 +18195,38 @@ Header 首 DW 的关键位域（32 bit）：
 <tr><td><strong>Recovery</strong></td><td>重新训练（速率变更/均衡重调）</td><td>★ Gen3+ 每次提速都必经此态做 EQ</td></tr>
 <tr><td>Hot Reset / Loopback / Disable</td><td>热复位 / 环回测试 / 禁用</td><td>调试与复位手段</td></tr>
 </table></div>
-<div class="codeblock"><pre><code data-lang="text">Gen3 及以上引入 Equalization(EQ)：在 Recovery.RcvrLock 阶段交换
-TS1/TS2 中的 EQ 参数(preset / coefficient)，分 4 个 phase 迭代收敛。
-
-典型故障映射：
-  Gen1 稳定但 Gen3 起不来   → EQ 相位失败或走线损耗过大(降速可解)
-  反复进出 Recovery        → 信号边际/参考时钟抖动/电源瞬态
-  卡在 Detect 循环         → PERST# 时序、参考时钟缺失、板卡未上电
-  Configuration 后宽度变窄 → 某条 Lane 训练失败被剔除(降宽运行)</code></pre></div>
+<p>Gen3 及以上引入<strong>均衡（Equalization, EQ）</strong>：速率到 8GT/s 以上后接收端无法仅靠固定参数恢复信号，需在 Recovery 状态交换 TS1/TS2 中的 EQ 参数（preset / coefficient），分 4 个 phase 迭代收敛。大量「Gen1 稳定但 Gen3 起不来」的问题正源于此。结合 LTSSM 状态机，故障可以按「卡在哪个状态」直接归类：</p>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>典型现象</th><th>LTSSM 卡点</th><th>根因与处置</th></tr>
+<tr><td>Gen1 稳定但 Gen3 起不来</td><td>Recovery（EQ 阶段）</td><td>EQ 相位失败或走线损耗过大——先降速验证稳定，再调 EQ preset</td></tr>
+<tr><td>反复进出 Recovery</td><td>Recovery ↔ L0 摆动</td><td>信号边际临界 / 参考时钟抖动 / 电源瞬态跌落</td></tr>
+<tr><td>卡在 Detect 循环</td><td>Detect</td><td>PERST# 时序违例、参考时钟缺失、板卡未上电</td></tr>
+<tr><td>链路宽度变窄（如 x4→x2）</td><td>Configuration</td><td>某条 Lane 训练失败被剔除、降宽运行——查该 Lane 走线</td></tr>
+</table></div>
 
 <h3>I1.6 配置空间与 Capability 链</h3>
-<div class="codeblock"><pre><code data-lang="text">每个 Function 拥有 4KB 配置空间：
-  0x000~0x03F  PCI 兼容头(Type0=Endpoint / Type1=Bridge)
-  0x040~0x0FF  传统 PCI 区域(含 Capability 链表起点 CapPtr @0x34)
-  0x100~0xFFF  PCIe 扩展区域 —— 所有高级能力都挂在这里
-
-Capability 是<strong>单向链表</strong>：每项的 [0]=CapID, [1]=NextPtr
-  常见 CapID： 0x01 电源管理 | 0x05 MSI | 0x10 PCIe(Express能力★)
-               0x11 MSI-X    | 0x13 PCI Advanced Features
-               0x0D SSVID    | 0x12 SATA | 0x03 VPD
-  ★ PCIe Capability 结构里就有 Device Capabilities / Link Capabilities
-     / Link Status —— 也就是 lspci -vvv 里 LnkCap / LnkSta 的来源！
-
-遍历方法：
-  lspci -vvv -s 01:00.0 | grep -i capabilities
-  setpci -s 01:00.0 0x34.b            # 读 CapPtr
-  setpci -s 01:00.0 CAP_EXP+0xc.w     # PCIe Cap 的 Link Capabilities
-  setpci -s 01:00.0 CAP_EXP+0x12.w    # Link Status ★ 看当前速率/宽度</code></pre></div>
+<p>每个 Function 拥有 <strong>4KB 配置空间</strong>，布局分三段：</p>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>区域</th><th>内容</th></tr>
+<tr><td>0x000 ~ 0x03F</td><td>PCI 兼容头（Type0=Endpoint / Type1=Bridge）</td></tr>
+<tr><td>0x040 ~ 0x0FF</td><td>传统 PCI 区域，含 <strong>Capability 链表入口 CapPtr（偏移 0x34）</strong></td></tr>
+<tr><td>0x100 ~ 0xFFF</td><td>PCIe 扩展区域——所有高级能力挂在这里</td></tr>
+</table></div>
+<p>Capability 是一条<strong>单向链表</strong>：每项的 <code>[0]=CapID</code>、<code>[1]=NextPtr</code>，逐级跳转即可遍历全部能力。常见的 CapID：</p>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>CapID</th><th>能力</th><th>CapID</th><th>能力</th></tr>
+<tr><td>0x01</td><td>电源管理</td><td>0x10</td><td><strong>PCIe 能力 ★</strong></td></tr>
+<tr><td>0x05</td><td>MSI</td><td>0x11</td><td><strong>MSI-X ★</strong></td></tr>
+<tr><td>0x03</td><td>VPD</td><td>0x12</td><td>SATA</td></tr>
+<tr><td>0x0D</td><td>SSVID</td><td>0x13</td><td>PCI Advanced Features</td></tr>
+</table></div>
+<div class="box tip"><span class="bt">💡 lspci 的数据来源就在这里</span>
+<p>PCIe Capability（CapID 0x10）结构中包含 Device/Link Capabilities 与 Link Status——<code>lspci -vvv</code> 输出里的 <code>LnkCap</code>/<code>LnkSta</code> 读的正是这几个寄存器。</p></div>
+<div class="codeblock"><pre><code data-lang="bash"># 手工遍历 Capability 链
+lspci -vvv -s 01:00.0 | grep -i capabilities
+setpci -s 01:00.0 0x34.b            # 读 CapPtr(链表起点)
+setpci -s 01:00.0 CAP_EXP+0xc.w     # PCIe Cap 的 Link Capabilities
+setpci -s 01:00.0 CAP_EXP+0x12.w    # Link Status ★ 看当前速率/宽度</code></pre></div>
 
 <h3>I1.7 中断演进：INTx → MSI → MSI-X</h3>
 <div class="tbl-wrap"><table class="tbl">
@@ -18252,11 +18258,11 @@ for (i = 0; i &lt; nvec; i++) {
 <tr><td>Gen5</td><td>32 GT/s</td><td>128b/130b</td><td>3.94 GB/s</td><td>15.75 GB/s</td><td>31.5 GB/s</td><td>63 GB/s</td></tr>
 <tr><td>Gen6</td><td>64 GT/s</td><td>PAM4 + FLIT 1b/1b</td><td>7.88 GB/s</td><td>31.5 GB/s</td><td>63 GB/s</td><td>126 GB/s</td></tr>
 </table></div>
-<div class="codeblock"><pre><code data-lang="text">统一公式： 有效带宽(MB/s) = 速率(GT/s) × 编码效率 ÷ 8 × lane数
-
-示例：Gen4 x4 = 16 × 0.9846 ÷ 8 × 4 = 7.88 GB/s   (与表中一致)
-注意 Gen6 改用 PAM4 四电平 + FLIT 模式，编码开销不再用 128b/130b 表达，
-      且强制 FEC —— 延迟略升但带宽翻倍。</code></pre></div>
+<div class="box tip"><span class="bt">📐 统一计算公式（10 秒算出任何代际 × 宽度）</span>
+<p><strong>有效带宽(MB/s) = 速率(GT/s) × 编码效率 ÷ 8 × lane 数</strong></p>
+<p>示例：Gen4 x4 = 16 × 0.9846 ÷ 8 × 4 ≈ <strong>7.88 GB/s</strong>（与上表一致）。</p></div>
+<div class="box warn"><span class="bt">⚠️ Gen6 开始公式失效</span>
+<p>Gen6 改用 <strong>PAM4 四电平调制 + FLIT 模式</strong>，编码开销不再用 128b/130b 表达，且<strong>强制 FEC 前向纠错</strong>——延迟略升但带宽翻倍。套用老公式计算 Gen6 会得到错误结果。</p></div>
 
 <div class="quiz"><strong>📝 思考题</strong><ol>
 <li>为什么 MRd 必须等待 CplD，而 MWr 不需要？这对驱动寄存器访问顺序有什么约束？</li>
@@ -18298,20 +18304,16 @@ for (i = 0; i &lt; nvec; i++) {
 <tr><td>UpdateFC DLLP</td><td>8B</td><td>信用归还</td><td>由缓冲大小影响</td></tr>
 <tr><td>SKP 有序集</td><td>周期性插入</td><td>时钟补偿（~1/1180 符号）</td><td>不可省，量极小</td></tr>
 </table></div>
-<div class="codeblock"><pre><code data-lang="text">手算示例：Gen3 x8，MPS=256B，3DW 头，写方向
-  每 TLP 链路占用 = 12(头) + 256(负载) + 6(Seq+LCRC) + 4(物理帧)
-                  = 278 字节
-  有效数据占比   = 256 / 278 = 92.1%
-  再扣 ACK/FC DLLP（约 1~3%）： 综合 ≈ 88~90%
-  理论 7.877 GB/s × 0.89 ≈ 7.0 GB/s
-
-若 MPS 降到 128B： 12+128+6+4=150 → 128/150=85.3% → 综合约 81%
-  ★ 结论：MPS 从 128 提到 256，吞吐提升约 8~10 个百分点 —— 这是
-    「零成本」的第一优先级调优项。
-
-读方向还要额外计入：请求 TLP(12B+6B+4B) + 返回 CplD 延迟，
-  且受 Max Read Request Size(MRRS) 与 outstanding 请求数限制 ——
-  读吞吐通常低于写 10~20%。</code></pre></div>
+<div class="box tip"><span class="bt">📐 手算示范：Gen3 x8、MPS=256B、3DW 头、写方向</span>
+<ol>
+<li>每 TLP 链路占用 = 12(头) + 256(负载) + 6(Seq+LCRC) + 4(物理帧) = <strong>278 字节</strong>；</li>
+<li>有效数据占比 = 256 ÷ 278 = <strong>92.1%</strong>；</li>
+<li>再扣 ACK/FC DLLP（约 1~3%）：综合 ≈ <strong>88~90%</strong>；</li>
+<li>理论 7.877 GB/s × 0.89 ≈ <strong>7.0 GB/s</strong>（与 I2.7 实测表的 6.0~6.8 吻合）。</li>
+</ol></div>
+<div class="box warn"><span class="bt">⚠️ 对照实验：MPS 降到 128B 会怎样？</span>
+<p>链路占用变为 12+128+6+4 = 150 字节 → 有效占比 128/150 = 85.3% → 综合约 81%。<strong>MPS 从 128 提到 256，吞吐提升约 8~10 个百分点</strong>——这是「零成本」的第一优先级调优项。</p></div>
+<p class="small muted">读方向还要额外计入请求 TLP（12B+6B+4B）与返回 CplD 的等待延迟，且受 MRRS 与 outstanding 请求数限制——<strong>读吞吐通常低于写 10~20%</strong>。</p>
 
 <h3>I2.2 关键参数：MPS / MRRS / RCB</h3>
 <div class="tbl-wrap"><table class="tbl">
@@ -18335,22 +18337,23 @@ setpci -s 01:00.0 CAP_EXP+0x8.w=0x5060   # 写 Device Control：MPS=256B, MRRS=4
 <p>MPS 沿路径取最小值。如果 Root Port、Switch、Endpoint 中<strong>任一</strong>只支持 128B，那么即使你的 NVMe 支持 512B，实际也只能跑 128B。<strong>排查时要用 <code>lspci -tvvv</code> 把整棵树上的 DevCap/DevCtl 全部列出来对比</strong>，而不是只看 Endpoint。</p></div>
 
 <h3>I2.3 DMA 引擎设计：描述符环与多队列</h3>
-<div class="codeblock"><pre><code data-lang="text">高性能 DMA 的四个要素：
-① 描述符环(BD Ring)： 预分配环形描述符，硬件按 head/tail 指针消费
-     —— 避免每包一次寄存器写，一次提交多个描述符
-② MSI-X 多队列： 每个队列独立中断 → 绑核并行处理
-③ 对齐与突发： 描述符指向的 buffer 按 64B/4KB 对齐，长度尽量
-     凑满 MPS 的整数倍，减少尾部小包
-④ 内存类型： coherent(DMA 一致性) vs streaming(流式 + sync 调用)
-     —— coherent 简单但每次访问可能触发 cache 维护；
-        streaming 配合 dma_map_single/dma_unmap_single 性能更好
-
-伪码骨架：
-  while (生产) { desc[i].addr = dma_map_single(dev, buf, len, DMA_TO_DEVICE);
-                 desc[i].len = len; desc[i].flags = IRQ_ON_COMPLETE;
-                 i = (i+1) % RING_SIZE;
-                 if (--credits == 0) { /* 等中断归还 */ } }
-  writel(tail_reg, i);              /* 一次写 doorbell 提交整批 */</code></pre></div>
+<p>高性能 DMA 的四个要素：</p>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>要素</th><th>做法</th><th>收益</th></tr>
+<tr><td><strong>① 描述符环（BD Ring）</strong></td><td>预分配环形描述符，硬件按 head/tail 指针消费</td><td>避免每包一次寄存器写，一次 doorbell 提交整批</td></tr>
+<tr><td><strong>② MSI-X 多队列</strong></td><td>每个队列独立中断，绑核处理</td><td>中断处理并行化</td></tr>
+<tr><td><strong>③ 对齐与突发</strong></td><td>buffer 按 64B/4KB 对齐，长度凑满 MPS 整数倍</td><td>减少尾部小包，提高有效占比</td></tr>
+<tr><td><strong>④ 内存类型</strong></td><td>coherent（一致性） vs streaming（流式 + sync 调用）</td><td>coherent 简单但可能触发 cache 维护；streaming 配合 <code>dma_map_single</code> 性能更好</td></tr>
+</table></div>
+<div class="codeblock"><pre><code data-lang="c">/* 描述符环伪码骨架 */
+while (生产) {
+    desc[i].addr  = dma_map_single(dev, buf, len, DMA_TO_DEVICE);
+    desc[i].len   = len;
+    desc[i].flags = IRQ_ON_COMPLETE;
+    i = (i + 1) % RING_SIZE;
+    if (--credits == 0) { /* 等中断归还 */ }
+}
+writel(tail_reg, i);    /* 一次写 doorbell 提交整批 */</code></pre></div>
 <div class="box tip"><span class="bt">💡 包大小优先于一切</span>
 <p>实测经验（RK3588 PCIe3x4 与 x86 Gen3x8 一致）：<strong>调优优先级 = 包大小 &gt; 队列数 &gt; 中断合并 &gt; 内存拷贝消除</strong>。把 4KB 包改成 2MB 块，吞吐常能从 2.6 GB/s 提到 3.2 GB/s；而增加队列数在队列已够时几乎无收益。先量再调，别凭感觉。</p></div>
 
@@ -18470,22 +18473,16 @@ pci=nommconf         # 排除 MMCONFIG 访问问题(老平台)</code></pre></div
 </table></div>
 
 <h3>I3.2 PCIe P2P：原理与 ACS 陷阱</h3>
-<div class="codeblock"><pre><code data-lang="text">P2P(Peer-to-Peer)：两个 Endpoint 之间直接传数据，<strong>不经过主机内存中转</strong>
-  有 P2P： GPU0 显存 →(PCIe Switch 直转)→ GPU1 显存     1 跳
-  无 P2P： GPU0 显存 → 主机内存 → GPU1 显存            2 跳 + 额外拷贝
-           ★ 带宽约减半，延迟翻倍，还占用 CPU 内存带宽
-
-底层实现： GPU1 把 BAR 窗口暴露出来，GPU0 的 DMA 引擎按地址路由
-          直接写 GPU1 的显存 —— 走的就是 I1 讲的 Address Routing。
-
-★ ACS(Access Control Services) 陷阱：
-  Switch 开启 ACS 后，出于安全隔离考虑，所有 P2P 请求被强制
-  <strong>上送到 Root Complex 再转发回来</strong>(P2P Request Redirect) ——
-  结果是「P2P 功能可用，但性能大幅下降甚至被判为不可用」。
-  典型报错： NCCL INFO Could not enable P2P between dev X and dev Y
-  处理： BIOS 关闭 ACS(部分厂商提供选项) 或
-        内核参数 pcie_acs_override=downstream,multifunction
-        （★ 生产环境需权衡安全隔离需求）</code></pre></div>
+<p><strong>P2P（Peer-to-Peer）</strong>：两个 Endpoint 之间直接传数据，<strong>不经过主机内存中转</strong>。有与没有 P2P，数据路径差别巨大：</p>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>路径</th><th>数据流</th><th>代价</th></tr>
+<tr><td><strong>有 P2P</strong></td><td>GPU0 显存 →(PCIe Switch 直转)→ GPU1 显存</td><td>1 跳，直通</td></tr>
+<tr><td>无 P2P</td><td>GPU0 显存 → 主机内存 → GPU1 显存</td><td>2 跳 + 额外拷贝：<strong>带宽约减半、延迟翻倍</strong>，还占用 CPU 内存带宽</td></tr>
+</table></div>
+<p><strong>底层实现</strong>：GPU1 把 BAR 窗口暴露出来，GPU0 的 DMA 引擎按地址路由直接写 GPU1 的显存——走的正是 I1 讲的 Address Routing。</p>
+<div class="box warn"><span class="bt">⚠️ ACS（Access Control Services）陷阱</span>
+<p>Switch 开启 ACS 后，出于安全隔离考虑，所有 P2P 请求被<strong>强制上送到 Root Complex 再转发回来</strong>（P2P Request Redirect）——结果是「P2P 功能可用，但性能大幅下降甚至被判为不可用」。</p>
+<p>典型报错：<code>NCCL INFO Could not enable P2P between dev X and dev Y</code>。处理：BIOS 关闭 ACS（部分厂商提供选项），或内核参数 <code>pcie_acs_override=downstream,multifunction</code>（生产环境需权衡安全隔离需求）。</p></div>
 
 <h3>I3.3 GPUDirect 家族四兄弟</h3>
 <div class="tbl-wrap"><table class="tbl">
@@ -18519,16 +18516,14 @@ nvidia-smi topo -p2p n       # 是否支持(OK/NS)
 <tr><td>NVLink 4</td><td>H100</td><td>18</td><td><strong>900 GB/s</strong></td><td>支持网络内归约协作</td></tr>
 <tr><td>NVLink 5</td><td>B200</td><td>18</td><td><strong>1800 GB/s</strong></td><td>第五代，带宽再翻倍</td></tr>
 </table></div>
-<div class="codeblock"><pre><code data-lang="text">问题：NVLink 是点对点的，8 卡全互联需要 C(8,2)=28 条连接 —— 不可行
-答案：NVSwitch —— 一块专用交换芯片，提供全端口线速交叉
-  DGX A100： 6 个 NVSwitch，8 卡任意两两之间 600 GB/s <strong>全带宽</strong>
-  DGX H100： NVLink4 + NVSwitch3，8 卡全互联 900 GB/s
-  ★ 对比无 NVSwitch 的 PCIe 卡： GPU0↔GPU1 走 NVLink 快，
-    但 GPU0↔GPU5 可能只能走 PCIe —— <strong>拓扑不均匀是性能陷阱</strong>
-
-NVLink 的两种使用形态：
-  ① 点对点直连（工作站多卡桥接，2~4 卡）
-  ② 经 NVSwitch 全互联（服务器级，8 卡以上）</code></pre></div>
+<p><strong>问题</strong>：NVLink 是点对点的，8 卡全互联需要 C(8,2)=28 条连接——不可行。<strong>答案</strong>：NVSwitch——一块专用交换芯片，提供全端口线速交叉。DGX A100 用 6 个 NVSwitch 实现 8 卡任意两两之间 600 GB/s <strong>全带宽</strong>；DGX H100 用 NVLink4 + NVSwitch3 实现 900 GB/s 全互联。</p>
+<div class="box warn"><span class="bt">⚠️ 拓扑不均匀是性能陷阱</span>
+<p>对比无 NVSwitch 的普通 PCIe 多卡：GPU0↔GPU1 走 NVLink 很快，但 GPU0↔GPU5 可能只能走 PCIe——<strong>同一个程序里不同 GPU 对的通信速度可以差 10 倍</strong>，务必用 <code>nvidia-smi topo -m</code> 逐对确认（见 I3.5）。</p></div>
+<p>NVLink 的两种使用形态：</p>
+<ul>
+<li><strong>点对点直连</strong>：工作站多卡桥接（2~4 卡）；</li>
+<li><strong>经 NVSwitch 全互联</strong>：服务器级（8 卡以上）。</li>
+</ul>
 
 <h3>I3.5 读懂拓扑：nvidia-smi topo -m</h3>
 <div class="codeblock"><pre><code data-lang="bash">$ nvidia-smi topo -m
@@ -18613,24 +18608,23 @@ numactl --show
 </ul></div>
 
 <h3>I4.1 NCCL 是什么：定位与生态</h3>
-<div class="codeblock"><pre><code data-lang="text">NCCL = NVIDIA Collective Communications Library
-定位： 专为 GPU 设计的<strong>拓扑感知</strong>集合通信库，开源(github.com/NVIDIA/nccl)
-
-核心特点：
-  ① 拓扑感知(Topology-Aware)：启动即探测 PCIe/NVLink/NVSwitch/网卡拓扑，
-     据此自动选择算法与路径 —— 这是它比 MPI 快的根本
-  ② 多通道并行：同时使用多个 CUDA stream 与多条链路打满带宽
-  ③ GPU 内核直连：通信由 GPU kernel 直接执行，减少 CPU 介入
-
-生态位置（谁在调用它）：
-  PyTorch      → torch.distributed 的 nccl backend（DDP / FSDP）
-  Megatron-LM  → 张量并行/流水线并行的通信底座
-  DeepSpeed    → ZeRO 系列的 allgather / reducescatter
-  vLLM / TensorRT-LLM → 多卡推理的通信
-  Horovod      → 早期主流，现多数场景被原生 DDP 取代
-
-★ NCCL 只管<strong>节点内+节点间的数据搬运</strong>，不管任务编排 —— 
-  进程启动靠 torchrun / mpirun / srun，NCCL 只负责 communicator 建立后的通信。</code></pre></div>
+<p><strong>NCCL（NVIDIA Collective Communications Library）</strong>是专为 GPU 设计的<strong>拓扑感知</strong>集合通信库（开源：github.com/NVIDIA/nccl）。它在 GPU 集群通信领域的地位相当于 CUDA 之于 GPU 编程——几乎所有主流训练/推理框架都把它作为通信底座。</p>
+<p>它比通用通信库快的根本原因有三条：</p>
+<ul>
+<li><strong>拓扑感知（Topology-Aware）</strong>：启动时自动探测 PCIe / NVLink / NVSwitch / 网卡拓扑，据此选择算法与路径——这正是 I3 章拓扑知识发挥价值的地方；</li>
+<li><strong>多通道并行</strong>：同时使用多个 CUDA stream 与多条物理链路，把带宽打满；</li>
+<li><strong>GPU 内核直连</strong>：通信由 GPU kernel 直接执行，减少 CPU 介入。</li>
+</ul>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>框架</th><th>如何使用 NCCL</th></tr>
+<tr><td><strong>PyTorch</strong></td><td><code>torch.distributed</code> 的 nccl backend（DDP / FSDP）</td></tr>
+<tr><td><strong>Megatron-LM</strong></td><td>张量并行 / 流水线并行的通信底座</td></tr>
+<tr><td><strong>DeepSpeed</strong></td><td>ZeRO 系列的 allgather / reducescatter</td></tr>
+<tr><td><strong>vLLM / TensorRT-LLM</strong></td><td>多卡推理的通信</td></tr>
+<tr><td>Horovod</td><td>早期主流，现多数场景被原生 DDP 取代</td></tr>
+</table></div>
+<div class="box tip"><span class="bt">💡 职责边界</span>
+<p>NCCL 只管<strong>节点内 + 节点间的数据搬运</strong>，不管任务编排——进程启动靠 torchrun / mpirun / srun，NCCL 只负责 communicator 建立之后的通信。分不清这个边界是新手排障时抓错方向的常见原因。</p></div>
 
 <h3>I4.2 九种集合原语：语义与数据量</h3>
 <div class="tbl-wrap"><table class="tbl">
@@ -18645,39 +18639,26 @@ numactl --show
 <tr><td>Scatter</td><td>根卡 N×S → 各卡得到 S</td><td>S</td><td>数据分发</td></tr>
 <tr><td>Send / Recv</td><td>点对点</td><td>消息大小</td><td><strong>流水线并行</strong> stage 间传递 ★</td></tr>
 </table></div>
-<div class="codeblock"><pre><code data-lang="text">重要恒等式（理解大模型训练的钥匙）：
-  AllReduce = ReduceScatter + AllGather
-  ★ FSDP 正是用这个分解把「峰值显存」换「通信量」：
-     前向时 AllGather 重组完整参数 → 用完立即释放
-     反向时 ReduceScatter 分片归约梯度 → 每卡只存 1/N 的优化器状态
-    代价：通信量从 2S(N-1)/N 变成 1.5 倍(多一轮)，但显存降到 1/N
-
-数据量对照（N=8, S=1GB）：
-  AllReduce       : 每卡收发 2×1GB×7/8 = 1.75 GB
-  ReduceScatter   : 每卡收发 1GB×7/8   = 0.875 GB
-  AllGather       : 每卡收发 1GB×7/8   = 0.875 GB</code></pre></div>
+<div class="box tip"><span class="bt">🔑 重要恒等式（理解大模型训练的钥匙）</span>
+<p><strong>AllReduce = ReduceScatter + AllGather</strong></p>
+<p>FSDP 正是用这个分解把「峰值显存」换「通信量」：<strong>前向时</strong> AllGather 重组完整参数 → 用完立即释放；<strong>反向时</strong> ReduceScatter 分片归约梯度 → 每卡只存 1/N 的优化器状态。代价是通信量变为原来的约 1.5 倍（多了一轮），换来显存降到 1/N。</p></div>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>原语（N=8, S=1GB）</th><th>每卡收发量</th><th>计算过程</th></tr>
+<tr><td>AllReduce</td><td><strong>1.75 GB</strong></td><td>2 × 1GB × 7/8</td></tr>
+<tr><td>ReduceScatter</td><td>0.875 GB</td><td>1GB × 7/8</td></tr>
+<tr><td>AllGather</td><td>0.875 GB</td><td>1GB × 7/8</td></tr>
+</table></div>
 
 <h3>I4.3 Ring AllReduce：为什么它带宽最优</h3>
-<div class="codeblock"><pre><code data-lang="text">算法分两阶段，共 2(N-1) 步，每步传输 S/N：
-
-阶段① Reduce-Scatter（N-1 步）：
-  第 k 步： GPU_i 把自己的第 (i-k) 块发给 GPU_(i+1)
-           GPU_i 收到 GPU_(i-1) 的第 (i-k-1) 块 → 累加到本地对应块
-  结束态： 每个 GPU 持有「某一块的完整归约结果」(共 N 块各归约一次)
-  每卡传输： (N-1) × S/N
-
-阶段② All-Gather（N-1 步）：
-  第 k 步： GPU_i 把自己刚归约完的块发给 GPU_(i+1)，并接收上游的块
-  结束态： 每个 GPU 持有完整的归约结果(N 块全都有)
-  每卡传输： (N-1) × S/N
-
-★ 关键结论：
-  每卡总传输量 = 2(N-1)S/N ≈ 2S   （N 增大时趋于 2S，与 N 无关！）
-  → <strong>带宽最优</strong>：增大卡数不会增加单卡的传输量
-  → 但步数 = 2(N-1)，<strong>延迟 O(N)</strong>：卡数越多延迟越高
-
-  这就是为什么： 大消息用 Ring（带宽敏感，延迟可摊销）
-                小消息用 Tree（延迟敏感，带宽用不满）</code></pre></div>
+<p>把 N 个 GPU 连成一个环，数据切成 N 块沿环单向流动。算法分两阶段，共 <strong>2(N-1) 步</strong>，每步传输 S/N：</p>
+<div class="codeblock"><pre><code data-lang="text">        ┌─── GPU0 ─── GPU1 ───┐
+数据沿环  │                     │  单向流动
+单向流动  └── GPU3 ─── GPU2 ←──┘</code></pre></div>
+<p><strong>阶段① Reduce-Scatter（N-1 步）</strong>——每一步：GPU<sub>i</sub> 把自己的第 (i−k) 块发给 GPU<sub>i+1</sub>，同时接收 GPU<sub>i−1</sub> 发来的块并<strong>累加</strong>到本地对应块。结束时每个 GPU 各持有「某一块的完整归约结果」（N 块各归约一次）。每卡传输 (N−1) × S/N。</p>
+<p><strong>阶段② All-Gather（N-1 步）</strong>——每一步：GPU<sub>i</sub> 把自己刚归约完的那块发给 GPU<sub>i+1</sub>，并接收上游的块。结束时每个 GPU 持有完整的归约结果（N 块全都有）。每卡传输 (N−1) × S/N。</p>
+<div class="box tip"><span class="bt">⭐ 关键结论：为什么 Ring 是「带宽最优」</span>
+<p>每卡总传输量 = <strong>2(N−1)S/N ≈ 2S，与卡数 N 无关</strong>——增加卡数不会增加单卡的传输量，这就是「带宽最优」。<br>
+但步数 = 2(N−1)，<strong>延迟随卡数线性增长（O(N)）</strong>。于是有了算法分工：<strong>大消息用 Ring</strong>（带宽敏感，延迟可摊销）；<strong>小消息用 Tree</strong>（延迟敏感，带宽用不满）。</p></div>
 
 <h3>I4.4 Tree 算法：延迟最优的取舍</h3>
 <div class="tbl-wrap"><table class="tbl">
@@ -18697,45 +18678,27 @@ numactl --show
 <tr><td><strong>LL</strong>（Low Latency）</td><td>4 字节（含 flag 的自旋传输）</td><td>数据自带完成标志，<strong>无需额外同步</strong></td><td>较低（约 25~50%）</td><td>极小消息（&lt; 数 KB）</td></tr>
 <tr><td><strong>LL128</strong></td><td>128 字节（含 flag）</td><td>同上，粒度更粗</td><td><strong>~95%</strong>（接近 Simple）</td><td>中小消息 ★ 需 NVLink</td></tr>
 </table></div>
-<div class="codeblock"><pre><code data-lang="text">为什么 LL 快却带宽低？
-  每次传输都要附带 flag 并自旋等待 —— 省掉了同步开销(延迟低)，
-  但有效数据占比低(4B 里 4B 数据+flag 机制开销) → 带宽差。
-
-LL128 的甜点： 128B 粒度让 flag 开销被充分摊销，
-  同时保留「无需额外同步」的低延迟特性 ——
-  ★ 前提： 需要 NVLink 等支持 128B 原子传输的链路；
-          纯 PCIe 环境可能回退到 LL 或 Simple。
-
-调试观察： NCCL_DEBUG=TRACE 会打印实际使用的 protocol
-  NCLL / LL128 / Simple 的选择是自动的，
-  若发现大消息走了 LL，通常是拓扑探测异常 —— 值得深查。</code></pre></div>
+<div class="box tip"><span class="bt">💡 为什么 LL 延迟低却带宽低？</span>
+<p>LL 的每次传输都<strong>自带 flag 并自旋等待</strong>——省掉了额外同步开销（所以延迟低），但 flag 机制吞掉了有效载荷（4B 粒度里开销占比高），所以带宽差。这是一种「用带宽换延迟」的设计。</p></div>
+<div class="box tip"><span class="bt">💡 LL128 的甜点位置</span>
+<p>128B 粒度让 flag 开销被充分摊销，同时保留「无需额外同步」的低延迟特性，因此能跑到接近 Simple 的 ~95% 带宽。<strong>前提</strong>：需要 NVLink 等支持 128B 原子传输的链路；纯 PCIe 环境可能回退到 LL 或 Simple。</p></div>
+<div class="box warn"><span class="bt">⚠️ 调试观察点</span>
+<p><code>NCCL_DEBUG=TRACE</code> 会打印实际使用的 protocol。协议选择是自动的——若发现<strong>大消息走了 LL</strong>，通常是拓扑探测异常，值得深查（正常时大消息应选 Simple/LL128）。</p></div>
 
 <h3>I4.6 性能度量：algbw 与 busbw（★ 必会换算）</h3>
-<div class="codeblock"><pre><code data-lang="text">两个带宽指标的含义：
-  algbw (Algorithm Bandwidth) = 数据量 S / 耗时 t
-      —— 「从算法视角看，每秒完成了多少数据的集合操作」
-
-  busbw (Bus Bandwidth) = algbw × N / (2(N-1))      【AllReduce 公式】
-      —— 「归一化到每条链路的实际带宽」，衡量硬件利用效率
-
-为什么需要 busbw？
-  Ring AllReduce 中每卡实际收发约 2S 数据，但算法只"完成"了 S 的数据量。
-  若直接看 algbw 会低估链路压力。busbw 把它还原成链路视角。
-
-换算示例（N=8, S=1GB, t=10ms）：
-  algbw = 1GB / 0.01s = 100 GB/s
-  busbw = 100 × 8 / (2×7) = 114.3 GB/s
-  ★ 判断标准： busbw 接近链路带宽(A100 NVLink ≈ 600 GB/s 的一部分)
-     才算跑满；若 busbw 只有链路带宽的 30%，说明有瓶颈未消除。
-
-各原语的 busbw 换算系数（nccl-tests 采用）：
-  AllReduce      : busbw = algbw × N / (2(N-1))
-  ReduceScatter  : busbw = algbw × N / (N-1)
-  AllGather      : busbw = algbw × N / (N-1)
-  Broadcast      : busbw = algbw              （等于算法带宽）
-  Reduce         : busbw = algbw              （同上）
-  All-to-All     : busbw = algbw              （同上）
-  ★ 牢记： 只有 AllReduce 有那个 2 —— 因为它走两阶段。</code></pre></div>
+<p>nccl-tests 输出里有两个带宽列，含义完全不同：<strong>algbw</strong>（Algorithm Bandwidth）= 数据量 S ÷ 耗时 t，是「算法视角」——每秒完成了多少数据的集合操作；<strong>busbw</strong>（Bus Bandwidth）是「链路视角」——归一化到每条链路的实际带宽，衡量硬件利用效率。</p>
+<div class="box tip"><span class="bt">💡 为什么必须有 busbw？</span>
+<p>Ring AllReduce 中每卡实际收发约 2S 数据，但算法只「完成」了 S。直接看 algbw 会<strong>低估链路压力</strong>；busbw 把它还原成链路视角，才能与硬件带宽上限对比。</p>
+<p>换算示例（N=8, S=1GB, t=10ms）：algbw = 1GB / 0.01s = <strong>100 GB/s</strong>；busbw = 100 × 8 ÷ (2×7) ≈ <strong>114.3 GB/s</strong>。<strong>判断标准</strong>：busbw 接近链路带宽才算跑满；若只有链路带宽的 30%，说明有瓶颈未消除。</p></div>
+<p>各原语的换算系数（nccl-tests 采用）：</p>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>原语</th><th>busbw 换算</th><th>备注</th></tr>
+<tr><td><strong>AllReduce</strong></td><td>algbw × N / <strong>2</strong>(N−1)</td><td>★ 唯一带 2 的——因为它走 ReduceScatter + AllGather 两阶段</td></tr>
+<tr><td>ReduceScatter</td><td>algbw × N / (N−1)</td><td>单阶段</td></tr>
+<tr><td>AllGather</td><td>algbw × N / (N−1)</td><td>单阶段</td></tr>
+<tr><td>Broadcast / Reduce</td><td>= algbw</td><td>系数为 1</td></tr>
+<tr><td>All-to-All</td><td>= algbw</td><td>系数为 1</td></tr>
+</table></div>
 
 <h3>I4.7 nccl-tests：装、跑、读</h3>
 <div class="codeblock"><pre><code data-lang="bash"># 编译
@@ -18752,23 +18715,23 @@ mpirun -np 16 -H node1:8,node2:8 \
   --bind-to none --map-by slot \
   -x NCCL_DEBUG=INFO -x NCCL_IB_HCA=mlx5_0 \
   ./build/all_reduce_perf -b 8 -e 8G -f 2 -g 1</code></pre></div>
-<div class="codeblock"><pre><code data-lang="text">典型输出（8 卡，A100 NVLink，节选）：
-
-#       size         count      type   redop     time   algbw   busbw  #wrong
+<p>典型输出（8 卡，A100 NVLink，节选）：</p>
+<div class="codeblock"><pre><code data-lang="text">#       size         count      type   redop     time   algbw   busbw  #wrong
 #        (B)    (elements)                       (us)  (GB/s)  (GB/s)
            8             2     float     sum    10.32    0.00    0.00      0
         1024           256     float     sum    10.85    0.09    0.16      0
       131072         32768     float     sum    17.20    7.62   13.35      0
      8388608       2097152     float     sum    62.40  134.43  235.25      0
    268435456      67108864     float     sum   986.30  272.16  476.28      0
-  1073741824     268435456     float     sum  3765.40  285.13  498.98      0
-
-读数要点：
-  ① <strong>小消息(&lt;128KB) 带宽极低</strong> —— 这是延迟主导区，属正常现象
-  ② <strong>大消息(&gt;256MB) 趋于平稳</strong> —— 这是带宽主导区，看这里的 busbw
-  ③ 上例 busbw ≈ 499 GB/s，A100 标称 600 GB/s → 达成率 83%，属健康范围
-  ④ <strong>#wrong 必须为 0</strong> —— 非 0 说明数据校验失败，是严重问题
-  ⑤ 若大消息 busbw 只有 100~200 GB/s（多卡 NVLink 环境）→ 有瓶颈，见 I4.9</code></pre></div>
+  1073741824     268435456     float     sum  3765.40  285.13  498.98      0</code></pre></div>
+<p><strong>读数五要点</strong>：</p>
+<ol>
+<li><strong>小消息（&lt;128KB）带宽极低是正常现象</strong>——这是延迟主导区，不要据此判断网络有问题；</li>
+<li><strong>大消息（&gt;256MB）趋于平稳</strong>——这是带宽主导区，<strong>评判带宽就看这里的 busbw</strong>；</li>
+<li>上例 busbw ≈ 499 GB/s，对照 A100 标称 600 GB/s → <strong>达成率 83%，属健康范围</strong>；</li>
+<li><strong><code>#wrong</code> 必须为 0</strong>——非 0 说明数据校验失败，是比性能更严重的正确性问题；</li>
+<li>若大消息 busbw 只有 100~200 GB/s（多卡 NVLink 环境）→ 存在瓶颈，按 I4.9 排障表逐项排查。</li>
+</ol>
 
 <h3>I4.8 环境变量速查表（调优与排障的弹药库）</h3>
 <div class="tbl-wrap"><table class="tbl">
@@ -18845,27 +18808,25 @@ mpirun -np 16 -H node1:8,node2:8 \
 </ul></div>
 
 <h3>I5.1 RDMA 基础：为什么它能绕过 CPU</h3>
-<div class="codeblock"><pre><code data-lang="text">RDMA (Remote Direct Memory Access)： 一台机器的网卡<strong>直接读写</strong>
-  另一台机器的用户态内存，全程<strong>不经过对方 CPU、不拷贝</strong>。
-
-四大收益： 零拷贝(Zero-copy) / 内核旁路(Kernel bypass) /
-           CPU 卸载 / 低延迟(µs 级)
-
-核心抽象（Verbs API）：
-  PD  (Protection Domain)  保护域，资源隔离边界
-  MR  (Memory Region)      ★ 注册内存：把内存"钉住"并交给网卡
-                             注册后才允许远程读写（pin + 地址翻译表）
-  QP  (Queue Pair)         发送队列+接收队列，通信端点（类似 socket）
-  CQ  (Completion Queue)   完成队列，轮询获取完成事件
-  WR  (Work Request)       工作请求，即一次 send/recv/read/write 的描述
-
-典型流程：
-  ibv_reg_mr(注册内存) → ibv_create_qp(建连接) → ibv_post_send(提交请求)
-  → 网卡 DMA 直接搬数据 → ibv_poll_cq(轮询完成) ★ 不需要中断
-
-传输服务类型：
-  RC (Reliable Connection) ★ 最常用，可靠有序有连接
-  UC (Unreliable Connection) / UD (Unreliable Datagram) 特殊场景</code></pre></div>
+<p><strong>RDMA（Remote Direct Memory Access）</strong>：一台机器的网卡<strong>直接读写</strong>另一台机器的用户态内存，全程<strong>不经过对方 CPU、不拷贝</strong>。四大收益：<strong>零拷贝（Zero-copy）、内核旁路（Kernel bypass）、CPU 卸载、微秒级低延迟</strong>。</p>
+<p>理解 RDMA 编程的关键是五个核心抽象（Verbs API）：</p>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>抽象</th><th>全称</th><th>作用</th></tr>
+<tr><td>PD</td><td>Protection Domain</td><td>保护域——资源隔离的边界</td></tr>
+<tr><td><strong>MR</strong> ★</td><td>Memory Region</td><td><strong>注册内存</strong>：把内存「钉住」并交给网卡（pin + 地址翻译表），<strong>注册后才允许远程读写</strong></td></tr>
+<tr><td>QP</td><td>Queue Pair</td><td>发送队列 + 接收队列，通信端点（类比 socket）</td></tr>
+<tr><td>CQ</td><td>Completion Queue</td><td>完成队列——轮询获取完成事件</td></tr>
+<tr><td>WR</td><td>Work Request</td><td>工作请求——一次 send/recv/read/write 的描述</td></tr>
+</table></div>
+<p>典型编程流程（全程不需要中断）：</p>
+<ol>
+<li><code>ibv_reg_mr</code> 注册内存（钉页 + 建立地址翻译）；</li>
+<li><code>ibv_create_qp</code> 建立通信端点；</li>
+<li><code>ibv_post_send</code> 提交工作请求；</li>
+<li><strong>网卡 DMA 直接搬数据</strong>（不经过双方 CPU）；</li>
+<li><code>ibv_poll_cq</code> 轮询完成。</li>
+</ol>
+<p class="small muted">传输服务类型：<strong>RC（Reliable Connection）最常用</strong>——可靠、有序、有连接；UC / UD 用于特殊场景（如组播）。</p>
 
 <h3>I5.2 IB vs RoCE：选型与配置差异</h3>
 <div class="tbl-wrap"><table class="tbl">
@@ -18916,41 +18877,37 @@ ib_write_bw -d mlx5_0 --use_cuda=0 &lt;server_ip&gt;</code></pre></div>
 <tr><td><strong>EP（专家并行）</strong></td><td>MoE 专家</td><td>All-to-All</td><td>中~大，不均衡</td><td>机内优先</td></tr>
 <tr><td><strong>SP（序列并行）</strong></td><td>序列维度</td><td>AllGather + ReduceScatter</td><td>中</td><td>与 TP 配合</td></tr>
 </table></div>
-<div class="codeblock"><pre><code data-lang="text">3D 并行的经典布局（以 1024 卡为例）：
-  TP=8   放在<strong>单机 8 卡内</strong>（NVLink 域）—— 通信量最大，必须最快链路
-  PP=8   跨机（Send/Recv 通信量小，跨机代价可接受）
-  DP=16  在最外层（AllReduce 可跨机，但通过分桶重叠隐藏）
-  ★ 原则： <strong>通信量越大的并行维度，放在越快的链路上</strong>
-         这是把 I3 的拓扑知识与本章通信模式结合后的直接推论。
-
-ZeRO 三阶段的通信账（相对 DP 的 1.0 倍）：
-  ZeRO-1 (优化器状态分片) : 1.0× —— 只多一次通信调度
-  ZeRO-2 (+梯度分片)      : 1.0× —— 用 ReduceScatter 替代 AllReduce，总量不变
-  ZeRO-3 (+参数分片)      : 1.5× —— 多一次前向 AllGather
-  ★ 记忆口诀： 分片越激进，显存越省，通信越多，但不超过 1.5 倍。</code></pre></div>
+<div class="box tip"><span class="bt">🗺️ 3D 并行的经典布局（以 1024 卡为例）</span>
+<ul>
+<li><strong>TP=8</strong>：放在<strong>单机 8 卡内</strong>（NVLink 域）——通信量最大，必须用最快的链路；</li>
+<li><strong>PP=8</strong>：跨机——Send/Recv 通信量小，跨机代价可接受；</li>
+<li><strong>DP=16</strong>：最外层——AllReduce 可跨机，且可通过分桶与计算重叠隐藏。</li>
+</ul>
+<p><strong>原则：通信量越大的并行维度，放在越快的链路上。</strong>这是把 I3 的拓扑知识与本章通信模式结合后的直接推论。</p></div>
+<p>ZeRO 三阶段的通信账（相对数据并行的倍数）：</p>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>阶段</th><th>分片对象</th><th>通信量</th><th>原因</th></tr>
+<tr><td>ZeRO-1</td><td>优化器状态</td><td><strong>1.0×</strong></td><td>只多一次通信调度</td></tr>
+<tr><td>ZeRO-2</td><td>+ 梯度</td><td><strong>1.0×</strong></td><td>用 ReduceScatter 替代 AllReduce，总量不变</td></tr>
+<tr><td>ZeRO-3</td><td>+ 参数</td><td><strong>1.5×</strong></td><td>多一次前向 AllGather</td></tr>
+</table></div>
+<p class="small muted">记忆口诀：分片越激进，显存越省，通信越多——但不超过 1.5 倍。</p>
 
 <h3>I5.5 通信与计算重叠：把通信「藏」起来</h3>
-<div class="codeblock"><pre><code data-lang="text">DDP 的核心技巧：梯度分桶(Bucketing)+ backward hook 触发
-
-  未重叠： 反向算完所有层 → 一次性 AllReduce 全部梯度
-           T = T_backward + T_comm        （通信完全暴露）
-
-  重叠后： 反向算完一个桶 → 立即对该桶发起 AllReduce
-           T ≈ T_backward + T_comm(最后一桶)  （大部分通信被计算掩盖）
-  默认桶大小 25MB(DDP)，可按模型调 —— 太小则通信次数多(延迟累积)，
-                                      太大则重叠度低(尾部暴露)
-
-性能模型（判断能否重叠的最小模型）：
-  T_comm(N) = S_data / BW_effective + Latency(N)
-             其中 AllReduce: S_data ≈ 2S(N-1)/N
-  T_comp    = 2 × 参数量 × batch / FLOPS_effective
-
-  若 T_comm &lt; T_comp  → 通信可被完全隐藏，扩展效率接近线性
-  若 T_comm &gt; T_comp  → 通信成为瓶颈，需减少通信量或提升带宽
-
-  算术强度视角： 每字节参数对应的计算量越大，越容易隐藏通信。
-  ★ 这就是为什么<strong>小模型多机训练往往负收益</strong>：
-     计算量小、通信占比高 —— 加卡反而更慢。</code></pre></div>
+<p>DDP 的核心技巧是<strong>梯度分桶（Bucketing）+ backward hook 触发</strong>：不等反向传播全部算完，而是每算完一个桶就立即对该桶发起 AllReduce，让通信与后续层的反向计算同时进行：</p>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>模式</th><th>流程</th><th>总耗时</th><th>通信状态</th></tr>
+<tr><td>未重叠</td><td>反向算完所有层 → 一次性 AllReduce 全部梯度</td><td>T = T<sub>backward</sub> + T<sub>comm</sub></td><td>通信<strong>完全暴露</strong></td></tr>
+<tr><td><strong>重叠后</strong></td><td>反向算完一个桶 → 立即对该桶发起 AllReduce</td><td>T ≈ T<sub>backward</sub> + T<sub>comm</sub>(最后一桶)</td><td>大部分通信<strong>被计算掩盖</strong></td></tr>
+</table></div>
+<p>默认桶大小 25MB（DDP），可按模型调：<strong>太小</strong>则通信次数多（延迟累积）；<strong>太大</strong>则重叠度低（尾部暴露）。</p>
+<div class="box tip"><span class="bt">📐 最小性能模型：判断能否重叠</span>
+<p>T<sub>comm</sub>(N) = S<sub>data</sub> / BW<sub>effective</sub> + Latency(N)，其中 AllReduce 的 S<sub>data</sub> ≈ 2S(N−1)/N；T<sub>comp</sub> = 2 × 参数量 × batch / FLOPS<sub>effective</sub>。</p>
+<ul>
+<li>若 T<sub>comm</sub> &lt; T<sub>comp</sub> → 通信可被<strong>完全隐藏</strong>，扩展效率接近线性；</li>
+<li>若 T<sub>comm</sub> &gt; T<sub>comp</sub> → 通信成为<strong>瓶颈</strong>，需减少通信量或提升带宽。</li>
+</ul>
+<p><strong>算术强度视角</strong>：每字节参数对应的计算量越大，越容易隐藏通信。这就是为什么<strong>小模型多机训练往往负收益</strong>——计算量小、通信占比高，加卡反而更慢。</p></div>
 <div class="codeblock"><pre><code data-lang="bash"># PyTorch DDP 常用通信相关开关
 # 桶大小（默认 25MB）
 torch.distributed.init_process_group(backend="nccl")
@@ -18969,39 +18926,21 @@ export TORCH_DISTRIBUTED_DEBUG=DETAIL          # 定位集合调用不匹配</co
 
 <h3>I5.6 故障案例复盘（四条推理链）</h3>
 
-<div class="codeblock"><pre><code data-lang="text">案例①：多机训练带宽只有单机的 1/10
-  现象： 8 卡单机 400+ GB/s，2 机 16 卡却只有 40 GB/s
-  分层： 先跑 ib_write_bw —— 也只有 10 Gb/s（100G 网卡）
-  ★ 定位： 问题在网络层，不在 NCCL
-  根因： RoCE 交换机未配置 PFC，存在丢包 → RoCE 吞吐崩塌
-  修复： 交换机侧启用 PFC + ECN，配置无损以太网队列
-  沉淀： <strong>「先验证下层，再怀疑上层」—— ib_write_bw 是分水岭</strong>
+<div class="box"><span class="bt">📦 案例①：多机训练带宽只有单机的 1/10</span>
+<p><strong>现象</strong>：8 卡单机 400+ GB/s，2 机 16 卡却只有 40 GB/s。<strong>分层</strong>：先跑 <code>ib_write_bw</code>——也只有 10 Gb/s（100G 网卡）。<strong>定位</strong>：问题在网络层，不在 NCCL。<strong>根因</strong>：RoCE 交换机未配置 PFC，存在丢包 → RoCE 吞吐崩塌。<strong>修复</strong>：交换机侧启用 PFC + ECN，配置无损以太网队列。</p>
+<p><strong>沉淀</strong>：先验证下层，再怀疑上层——<code>ib_write_bw</code> 是分水岭。</p></div>
 
-案例②：8 卡比 4 卡还慢
-  现象： 4 卡 1000 samples/s，8 卡只有 850 samples/s
-  取证： nvidia-smi topo -m 显示 GPU4~7 与 GPU0~3 之间是 SYS
-  ★ 定位： 跨 NUMA 槽位通信，走 UPI 而非 NVLink
-  根因： 服务器无 NVSwitch，两套 CPU 各挂 4 卡，跨槽走 UPI
-  修复： 改用 4 卡/节点 × 2 节点 DP，或只使用同 NUMA 内的 4 卡
-  沉淀： <strong>加卡前先看拓扑，不是所有"8 卡"都等价</strong>
+<div class="box"><span class="bt">📦 案例②：8 卡比 4 卡还慢</span>
+<p><strong>现象</strong>：4 卡 1000 samples/s，8 卡只有 850 samples/s。<strong>取证</strong>：<code>nvidia-smi topo -m</code> 显示 GPU4~7 与 GPU0~3 之间是 SYS。<strong>定位</strong>：跨 NUMA 槽位通信，走 UPI 而非 NVLink。<strong>根因</strong>：服务器无 NVSwitch，两套 CPU 各挂 4 卡，跨槽只能走 UPI。<strong>修复</strong>：改用 4 卡/节点 × 2 节点 DP，或只使用同 NUMA 内的 4 卡。</p>
+<p><strong>沉淀</strong>：加卡前先看拓扑——不是所有「8 卡」都等价。</p></div>
 
-案例③：训练跑到第 N 步 hang 住，无报错
-  现象： 固定步数后挂起，日志无 NCCL error
-  取证： NCCL_DEBUG=INFO 显示卡在某一 collective；
-         dmesg 有 IB 端口错误计数增长
-  ★ 定位： 网络间歇丢包导致 RDMA 重传超时
-  根因： 光模块故障/线缆接触不良，IB 错误计数持续累积
-  修复： 更换光模块；临时放宽 NCCL_IB_TIMEOUT 与 RETRY_CNT
-  沉淀： <strong>间歇性 hang 优先查硬件错误计数器，而非调参数</strong>
+<div class="box"><span class="bt">📦 案例③：训练跑到第 N 步 hang 住，无报错</span>
+<p><strong>现象</strong>：固定步数后挂起，日志无 NCCL error。<strong>取证</strong>：<code>NCCL_DEBUG=INFO</code> 显示卡在某一 collective；dmesg 有 IB 端口错误计数增长。<strong>定位</strong>：网络间歇丢包导致 RDMA 重传超时。<strong>根因</strong>：光模块故障 / 线缆接触不良，IB 错误计数持续累积。<strong>修复</strong>：更换光模块；临时放宽 <code>NCCL_IB_TIMEOUT</code> 与 <code>RETRY_CNT</code>。</p>
+<p><strong>沉淀</strong>：间歇性 hang 优先查硬件错误计数器，而非调参数。</p></div>
 
-案例④：显存看起来够却 OOM
-  现象： 模型+优化器状态计算下来占 70% 显存，但启动即 OOM
-  取证： NCCL_DEBUG=INFO 显示通信缓冲分配；峰值出现在 AllGather 时
-  ★ 定位： FSDP 前向 AllGather 时的瞬时峰值 + NCCL 缓冲 + 碎片
-  根因： 按"稳态"估算显存，忽略了通信瞬时峰值与 NCCL 缓冲(默认4MB×通道数)
-  修复： 减小 NCCL_BUFFSIZE、启用 activation checkpointing、
-        用更小 micro-batch
-  沉淀： <strong>显存预算要按"峰值"算，通信缓冲是常被漏掉的一项</strong></code></pre></div>
+<div class="box"><span class="bt">📦 案例④：显存看起来够却 OOM</span>
+<p><strong>现象</strong>：模型 + 优化器状态计算下来占 70% 显存，但启动即 OOM。<strong>取证</strong>：NCCL_DEBUG=INFO 显示通信缓冲分配；峰值出现在 AllGather 时。<strong>定位</strong>：FSDP 前向 AllGather 时的瞬时峰值 + NCCL 缓冲 + 碎片。<strong>根因</strong>：按「稳态」估算显存，忽略了通信瞬时峰值与 NCCL 缓冲（默认 4MB × 通道数）。<strong>修复</strong>：减小 <code>NCCL_BUFFSIZE</code>、启用 activation checkpointing、用更小 micro-batch。</p>
+<p><strong>沉淀</strong>：显存预算要按「峰值」算——通信缓冲是常被漏掉的一项。</p></div>
 
 <h3>I5.7 上线前检查清单</h3>
 <ol>
@@ -19057,30 +18996,15 @@ export TORCH_DISTRIBUTED_DEBUG=DETAIL          # 定位集合调用不匹配</co
 </ul></div>
 
 <h3>D1.1 模块生命周期：从 insmod 到 rmmod 内部发生了什么</h3>
-<div class="codeblock"><pre><code data-lang="text">编译 → .ko 文件 → 插入内核 → 符号解析 → 调用 init → 运行 → 卸载
-
-① 编译： 必须匹配<strong>目标板正在运行的内核源码树</strong>(或 headers)，
-         否则 vermagic 校验失败： "version magic '...' should be '...'"
-   make -C /lib/modules/$(uname -r)/build M=$(pwd) modules
-
-② 加载： insmod ./drv.ko          # 不解决依赖，需手工先装依赖模块
-         modprobe drv             # ★ 自动处理依赖，生产环境用这个
-         内核动作： 分配内存 → 拷贝 ELF 各 section → <strong>重定位</strong>
-                   → 解析未定义符号(查内核导出符号表 + 已加载模块)
-                   → 调用 module_init 指定的函数
-
-③ 依赖： depmod -a 生成 /lib/modules/$(uname -r)/modules.dep
-         模块间依赖记录在 .modinfo 段
-
-④ 卸载： rmmod drv / modprobe -r drv
-         前提： 引用计数为 0（无人 open、无其他模块引用）
-         ★ 若 rmmod 报 "Resource temporarily unavailable"，
-           说明还有进程 open 着设备或模块被引用
-
-⑤ 自动加载： 设备的 modalias(如 of:NfooT&lt;NULL&gt;Cvendor,dev) 由 udev
-         匹配 /lib/modules/*/modules.alias → 自动 modprobe
-         ★ 写驱动时填好 .of_match_table 与 MODULE_DEVICE_TABLE，
-           自动加载才能生效</code></pre></div>
+<div class="codeblock"><pre><code data-lang="text">编译 → .ko 文件 → 插入内核 → 符号解析 → 调用 init → 运行 → 卸载</code></pre></div>
+<p>五个环节各有要点：</p>
+<ol>
+<li><strong>编译</strong>：必须匹配<strong>目标板正在运行的内核源码树</strong>（或 headers），否则 vermagic 校验失败（报 <code>version magic '...' should be '...'</code>）；</li>
+<li><strong>加载</strong>：<code>insmod</code> 不解决依赖（需手工先装依赖模块），<code>modprobe</code> 自动处理依赖——<strong>生产环境用后者</strong>。内核动作依次为：分配内存 → 拷贝 ELF 各 section → <strong>重定位</strong> → 解析未定义符号（查内核导出符号表 + 已加载模块）→ 调用 <code>module_init</code> 指定的函数；</li>
+<li><strong>依赖</strong>：<code>depmod -a</code> 生成 <code>/lib/modules/$(uname -r)/modules.dep</code>，模块间依赖记录在 <code>.modinfo</code> 段；</li>
+<li><strong>卸载</strong>：前提是引用计数为 0（无人 open、无其他模块引用）。若 <code>rmmod</code> 报 <code>Resource temporarily unavailable</code>，说明还有进程 open 着设备或模块被引用；</li>
+<li><strong>自动加载</strong>：设备的 modalias（如 <code>of:NfooT&lt;NULL&gt;Cvendor,dev</code>）由 udev 匹配 <code>/lib/modules/*/modules.alias</code> 后自动 modprobe。<strong>写驱动时填好 <code>.of_match_table</code> 与 <code>MODULE_DEVICE_TABLE</code>，自动加载才能生效</strong>。</li>
+</ol>
 <div class="codeblock"><pre><code data-lang="bash"># 模块信息查看全家桶
 modinfo drv.ko            # 查看 license/author/parm/alias/vermagic/depends
 lsmod                     # 已加载模块 + 引用计数 + 依赖关系
@@ -19447,27 +19371,21 @@ p = kmalloc(size, GFP_NOWAIT);      /* 不睡眠也不回退其他途径，最"�
    ★ 判据： 能用 GFP_KERNEL 的上下文 = 能睡眠的上下文 */</code></pre></div>
 
 <h3>D2.7 DMA 与 Cache 一致性（★ 驱动最隐蔽的坑）</h3>
-<div class="codeblock"><pre><code data-lang="text">问题根源： CPU 有 Cache，设备 DMA 直接访问内存 —— 二者看到的数据
-          可能不一致。典型症状： 收到的数据是"上一帧"或全零。
-
-两种映射方式：
-① 一致性映射(Coherent / Consistent)
-   dma_alloc_coherent(dev, size, &amp;dma_handle, GFP_KERNEL)
-   → 返回内核虚拟地址 + DMA 总线地址
-   → 硬件保证 CPU 与设备看到一致(通常标记为 Non-cacheable 或用
-     硬件一致性) —— 简单但<strong>每次访问可能较慢</strong>
-   → 适合： 控制结构、描述符环、频繁双向访问的小块常驻内存
-
-② 流式映射(Streaming)
-   dma_addr_t dma = dma_map_single(dev, cpu_addr, size, direction);
-   /* 之后设备可用 dma 地址访问 */
-   dma_unmap_single(dev, dma, size, direction);
-   → 性能好(利用 Cache)，但<strong>必须手工同步</strong>：
-     dma_sync_single_for_cpu(dev, dma, size, DMA_FROM_DEVICE);
-         /* 设备写完，CPU 读之前调用 */
-     dma_sync_single_for_device(dev, dma, size, DMA_TO_DEVICE);
-         /* CPU 写完，通知设备读之前调用 */
-   → 适合： 一次性大块数据传输(如网络包、视频帧)</code></pre></div>
+<div class="box warn"><span class="bt">⚠️ 问题根源</span>
+<p>CPU 有 Cache，设备 DMA 直接访问内存——<strong>二者看到的数据可能不一致</strong>。典型症状：收到的数据是「上一帧」或全零。这不是玄学，是缓存一致性问题。</p></div>
+<p>两种映射方式的对比：</p>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>对比项</th><th>① 一致性映射（Coherent）</th><th>② 流式映射（Streaming）</th></tr>
+<tr><td>核心 API</td><td><code>dma_alloc_coherent(dev, size, &amp;dma_handle, GFP_KERNEL)</code></td><td><code>dma_map_single</code> / <code>dma_unmap_single</code></td></tr>
+<tr><td>一致性保证</td><td>硬件保证（通常标记 Non-cacheable 或硬件一致性）</td><td><strong>必须手工同步</strong>（见下方）</td></tr>
+<tr><td>性能</td><td>简单但每次访问可能较慢</td><td>好（充分利用 Cache）</td></tr>
+<tr><td>适用</td><td>控制结构、描述符环、频繁双向访问的小块常驻内存</td><td>一次性大块传输（网络包、视频帧）</td></tr>
+</table></div>
+<p>流式映射的两个同步调用——<strong>方向搞反是最常见的 bug</strong>：</p>
+<div class="codeblock"><pre><code data-lang="c">dma_sync_single_for_cpu(dev, dma, size, DMA_FROM_DEVICE);
+    /* 设备写完、CPU 读之前调用 */
+dma_sync_single_for_device(dev, dma, size, DMA_TO_DEVICE);
+    /* CPU 写完、通知设备读之前调用 */</code></pre></div>
 <div class="codeblock"><pre><code data-lang="c">/* 完整 DMA 传输骨架 */
 /* ① 告知内核设备的寻址能力 ★ 漏了会导致静默失败或性能极差 */
 if (dma_set_mask_and_coherent(dev, DMA_BIT_MASK(32))) {
@@ -19553,28 +19471,24 @@ cat /proc/lockdep                 # 锁依赖图(内容庞大)
 </ul></div>
 
 <h3>D3.1 设备树解决了什么问题</h3>
-<div class="codeblock"><pre><code data-lang="text">历史： ARM 平台曾把硬件信息硬编码在内核源码(mach-xxx 目录)里，
-      导致同一份内核无法在不同板卡间复用 —— 「board file 地狱」。
-解决： 把硬件描述从内核剥离，由 Bootloader 传给内核一个
-       <strong>扁平设备树(Flattened Device Tree, FDT/dtb)</strong>。
-
-核心收益：
-  ① 一份内核镜像 + 不同 dtb = 支持多种板卡
-  ② 硬件改动只需改 dts，无需改内核代码
-  ③ 驱动与硬件描述解耦： 驱动匹配 compatible 字符串即可
-
-文件组织：
-  xxx.dtsi  —— 可复用的「SoC 级」描述(类似头文件，被 include)
-  xxx.dts   —— 「板级」描述，include 对应 dtsi 并做板卡定制
-  xxx.dtso  —— Overlay 源文件，编译为 .dtbo
-  ★ 覆盖规则： 后定义的同名属性覆盖先定义的；
-              同节点再次出现则合并(而非替换)属性
-
-编译链路：
-  dtc -I dts -O dtb -o board.dtb board.dts        # 编译
-  dtc -I dtb -O dts -o board.dts board.dtb        # 反编译(排障神器★)
-  make dtbs                                        # 内核树内批量编译
-  内核源码中 dts 位置： arch/arm/boot/dts/ 、 arch/arm64/boot/dts/</code></pre></div>
+<p><strong>历史包袱</strong>：ARM 平台曾把硬件信息硬编码在内核源码（mach-xxx 目录）里，导致同一份内核无法在不同板卡间复用——人称「board file 地狱」。<strong>解决之道</strong>：把硬件描述从内核剥离，由 Bootloader 传给内核一个<strong>扁平设备树（Flattened Device Tree，FDT/dtb）</strong>。三大收益：</p>
+<ul>
+<li><strong>一份内核镜像 + 不同 dtb = 支持多种板卡</strong>；</li>
+<li>硬件改动只需改 dts，无需改内核代码；</li>
+<li>驱动与硬件描述解耦——驱动匹配 <code>compatible</code> 字符串即可。</li>
+</ul>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>文件</th><th>角色</th><th>类比</th></tr>
+<tr><td><code>xxx.dtsi</code></td><td>可复用的「SoC 级」描述，被 include</td><td>头文件</td></tr>
+<tr><td><code>xxx.dts</code></td><td>「板级」描述，include 对应 dtsi 并做板卡定制</td><td>主源文件</td></tr>
+<tr><td><code>xxx.dtso</code></td><td>Overlay 源文件，编译为 .dtbo</td><td>补丁</td></tr>
+</table></div>
+<div class="box tip"><span class="bt">💡 覆盖规则（写 dts 必知）</span>
+<p>后定义的<strong>同名属性覆盖</strong>先定义的；同节点再次出现则<strong>合并</strong>（而非替换）属性。这就是 dts 能「include dtsi 后只改差异」的原理。</p></div>
+<div class="codeblock"><pre><code data-lang="bash">dtc -I dts -O dtb -o board.dtb board.dts   # 编译
+dtc -I dtb -O dts -o board.dts board.dtb   # 反编译(排障神器★)
+make dtbs                                   # 内核树内批量编译
+# 内核源码中 dts 位置: arch/arm/boot/dts/ 、arch/arm64/boot/dts/</code></pre></div>
 
 <h3>D3.2 语法核心速查</h3>
 <div class="codeblock"><pre><code data-lang="dts">/dts-v1/;                            /* 版本声明，必须是首行 */
@@ -19667,32 +19581,28 @@ static int my_probe(struct platform_device *pdev)
 }</code></pre></div>
 
 <h3>D3.4 中断映射深入：irq_domain 与级联控制器</h3>
-<div class="codeblock"><pre><code data-lang="text">背景： 设备树里的中断号是「硬件局部编号」，不等于内核的 virq。
-      中间由 <strong>irq_domain</strong> 做映射。
+<p><strong>背景</strong>：设备树里的中断号是「硬件局部编号」，不等于内核的虚拟中断号（virq），中间由 <strong>irq_domain</strong> 完成映射。理解级联的钥匙是三个属性：</p>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>属性</th><th>含义</th></tr>
+<tr><td><code>interrupt-controller</code></td><td>声明本节点是中断控制器</td></tr>
+<tr><td><code>#interrupt-cells</code></td><td>子节点的 interrupts 属性需要几个 cell</td></tr>
+<tr><td><code>interrupt-parent</code></td><td>指定父中断控制器（子节点未写则继承）</td></tr>
+</table></div>
+<p>级联示例——GPIO 控制器同时是中断控制器，传感器的中断经它上报到 GIC：</p>
+<div class="codeblock"><pre><code data-lang="dts">gpio1: gpio@40000000 {
+    gpio-controller;
+    #gpio-cells = &lt;2&gt;;
+    interrupt-controller;              /* ★ 也是中断控制器 */
+    #interrupt-cells = &lt;2&gt;;            /* pin 号 + 触发类型 */
+    interrupt-parent = &lt;&amp;gic&gt;;          /* 它自己挂在 GIC 上 */
+    interrupts = &lt;GIC_SPI 66 IRQ_TYPE_LEVEL_HIGH&gt;;
+};
 
-三要素：
-  ① interrupt-controller   —— 声明本节点是中断控制器
-  ② #interrupt-cells       —— 描述 interrupts 属性需要几个 cell
-  ③ interrupt-parent       —— 子节点指定父控制器(可继承)
-
-级联示例（GPIO 控制器同时是中断控制器）：
-  gpio1: gpio@40000000 {
-      gpio-controller;
-      #gpio-cells = &lt;2&gt;;
-      interrupt-controller;              /* ★ 也是中断控制器 */
-      #interrupt-cells = &lt;2&gt;;            /* pin 号 + 触发类型 */
-      interrupt-parent = &lt;&amp;gic&gt;;          /* 它自己挂在 GIC 上 */
-      interrupts = &lt;GIC_SPI 66 IRQ_TYPE_LEVEL_HIGH&gt;;
-  };
-
-  sensor@50 {
-      interrupt-parent = &lt;&amp;gpio1&gt;;        /* 中断来自 gpio1 */
-      interrupts = &lt;5 IRQ_TYPE_EDGE_FALLING&gt;;   /* pin5，下降沿 */
-  };
-
-复杂总线(PCI)用 interrupt-map 做「地址 → 中断」的映射表：
-  interrupt-map = &lt; /* 地址三部分 */ &amp;gic GIC_SPI 20 IRQ_TYPE_LEVEL_HIGH &gt;;
-  interrupt-map-mask = &lt;0xf800 0 0 7&gt;;   /* 参与匹配的位掩码 */</code></pre></div>
+sensor@50 {
+    interrupt-parent = &amp;gpio1;         /* 中断来自 gpio1 */
+    interrupts = &lt;5 IRQ_TYPE_EDGE_FALLING&gt;;   /* pin5，下降沿 */
+};</code></pre></div>
+<p class="small muted">复杂总线（如 PCI）则用 <code>interrupt-map</code> + <code>interrupt-map-mask</code> 做「地址 → 中断」的映射表，原理相同：按掩码匹配地址段，命中后路由到指定控制器的指定中断线。</p>
 <div class="tbl-wrap"><table class="tbl">
 <tr><th>触发类型宏</th><th>含义</th><th>适用</th></tr>
 <tr><td><code>IRQ_TYPE_EDGE_RISING</code></td><td>上升沿</td><td>按键、脉冲信号</td></tr>
@@ -19804,51 +19714,34 @@ cat /proc/iomem                                 # 物理地址空间占用</code
 </ul></div>
 
 <h3>D4.1 设备模型三大件与 sysfs 视图</h3>
-<div class="codeblock"><pre><code data-lang="text">Linux 设备模型的核心目的： 用统一的框架描述「什么设备挂在什么总线上、
-由哪个驱动接管」，并向用户空间呈现为 sysfs。
-
-三大抽象：
-  struct bus_type    —— 总线(platform/i2c/spi/pci/usb/mmc...)
-                        职责：管理 device 与 driver 两个链表，负责匹配
-  struct device      —— 设备(物理或逻辑)
-  struct device_driver—— 驱动
-                        ★ 二者通过 bus 的 match() 函数配对，
-                          成功后调用 driver 的 probe()
-
-底层支撑： kobject / kset / ktype —— 提供引用计数与 sysfs 目录项能力
-
-sysfs 四大视角(同一事物的不同组织方式)：
-  /sys/devices/...   按<strong>物理拓扑</strong>组织(真实层次，含桥与总线)
-  /sys/bus/&lt;bus&gt;/devices|drivers    按<strong>总线</strong>分类(符号链接)
-  /sys/class/&lt;class&gt;/               按<strong>功能</strong>分类(如 net/rtc/gpio)
-  /sys/dev/char|block/              按<strong>设备号</strong>索引
-  ★ 排障时常用 /sys/bus/platform/devices 与 /sys/class 交叉查看</code></pre></div>
+<p>Linux 设备模型的核心目的：用统一的框架描述「什么设备挂在什么总线上、由哪个驱动接管」，并向用户空间呈现为 sysfs。三大抽象：</p>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>抽象</th><th>职责</th></tr>
+<tr><td><code>struct bus_type</code></td><td>总线（platform/i2c/spi/pci/usb/mmc...）——管理 device 与 driver 两个链表，<strong>负责匹配</strong></td></tr>
+<tr><td><code>struct device</code></td><td>设备（物理或逻辑）</td></tr>
+<tr><td><code>struct device_driver</code></td><td>驱动——device 与 driver 通过 bus 的 <code>match()</code> 函数配对，成功后调用 <code>probe()</code></td></tr>
+</table></div>
+<p class="small muted">底层支撑：kobject / kset / ktype——提供引用计数与 sysfs 目录项能力。</p>
+<p>sysfs 有四个视角，是<strong>同一事物的不同组织方式</strong>：</p>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>路径</th><th>组织方式</th></tr>
+<tr><td><code>/sys/devices/...</code></td><td>按<strong>物理拓扑</strong>（真实层次，含桥与总线）</td></tr>
+<tr><td><code>/sys/bus/&lt;bus&gt;/devices|drivers</code></td><td>按<strong>总线</strong>分类（符号链接）</td></tr>
+<tr><td><code>/sys/class/&lt;class&gt;/</code></td><td>按<strong>功能</strong>分类（如 net/rtc/gpio）</td></tr>
+<tr><td><code>/sys/dev/char|block/</code></td><td>按<strong>设备号</strong>索引</td></tr>
+</table></div>
+<p class="small muted">排障时常用 <code>/sys/bus/platform/devices</code> 与 <code>/sys/class</code> 交叉查看。</p>
 
 <h3>D4.2 probe 全链路与 deferred probe（★ 高频排障点）</h3>
-<div class="codeblock"><pre><code data-lang="text">probe 触发的两条路径：
-  ① 驱动注册时： driver_register → bus_add_driver → driver_attach
-     → 遍历总线上所有未绑定的 device，逐个 match
-  ② 设备注册时： device_register → bus_probe_device
-     → 遍历总线上所有 driver，逐个 match
-  ★ 「后到者主动」，所以加载顺序不影响最终结果
-
-匹配函数(bus-&gt;match)的典型实现(platform 总线)：
-  优先级： of_driver_match_device(设备树 compatible)
-         &gt; acpi_driver_match_device(ACPI ID)
-         &gt; platform_match_id(id_table .name)
-         &gt; 回退比较 driver->name 与 platform_device->name
-  ★ 结论： 有设备树时，compatible 字符串决定一切
-
-deferred probe（延迟探测）：
-  当驱动依赖的资源尚未就绪(时钟/regulator/GPIO 的 provider 还没 probe)，
-  probe 应返回 <strong>-EPROBE_DEFER</strong>，内核会把该设备放入
-  deferred_probe_pending_list，待有新驱动注册成功时再重试。
-  ★ 这不是错误！是正常的依赖协调机制。
-  ★ 若一直 defer，启动结束时会在 /sys/kernel/debug/
-    devices_deferred 中列出，可据此定位缺失的依赖。
-
-查看延迟探测状态：
-  cat /sys/kernel/debug/devices_deferred</code></pre></div>
+<p>probe 的触发有两条路径——<strong>「后到者主动」</strong>，所以驱动与设备的注册顺序不影响最终结果：</p>
+<ol>
+<li><strong>驱动注册时</strong>：<code>driver_register</code> → <code>bus_add_driver</code> → <code>driver_attach</code> → 遍历总线上所有未绑定的 device，逐个 match；</li>
+<li><strong>设备注册时</strong>：<code>device_register</code> → <code>bus_probe_device</code> → 遍历总线上所有 driver，逐个 match。</li>
+</ol>
+<p>匹配函数（<code>bus-&gt;match</code>，以 platform 总线为例）的优先级：<strong>设备树 compatible</strong> &gt; ACPI ID &gt; <code>id_table</code> 中的 .name &gt; 回退比较 driver 与 device 的 name。<strong>结论：有设备树时，compatible 字符串决定一切。</strong></p>
+<div class="box tip"><span class="bt">💡 deferred probe（延迟探测）——不是错误，是机制</span>
+<p>当驱动依赖的资源尚未就绪（时钟/regulator/GPIO 的 provider 还没 probe），probe 应返回 <strong><code>-EPROBE_DEFER</code></strong>，内核会把该设备放入延迟队列（deferred_probe_pending_list），待有新驱动注册成功时自动重试。这是<strong>正常的依赖协调机制</strong>。若一直 defer，启动结束时会在 <code>/sys/kernel/debug/devices_deferred</code> 中列出——据此可定位缺失的依赖。</p></div>
+<div class="codeblock"><pre><code data-lang="bash">cat /sys/kernel/debug/devices_deferred   # 查看延迟探测的设备清单</code></pre></div>
 <div class="codeblock"><pre><code data-lang="c">/* 正确处理依赖获取：一律用 devm_ + 判错，让 defer 自然发生 */
 static int my_probe(struct platform_device *pdev)
 {
@@ -19872,26 +19765,22 @@ static int my_probe(struct platform_device *pdev)
 }</code></pre></div>
 
 <h3>D4.3 devm 资源管理：把 release 从代码里删掉</h3>
-<div class="codeblock"><pre><code data-lang="text">原理： devm_*(device-managed) 系列把资源登记到设备的资源链表，
-      在 <strong>driver unbinding 或 probe 失败时自动释放</strong>，
-      释放顺序与申请顺序<strong>相反</strong>(栈式)。
-
-价值： ① remove() 里几乎不用写释放代码，杜绝泄漏
-      ② probe 中途失败时自动回滚已申请资源，不用写 goto 链
-      ③ 出错路径不会漏释放
-
-常用 devm_ 接口（记住这些足够覆盖 90% 场景）：
-  devm_kzalloc / devm_kmalloc      内存
-  devm_ioremap_resource            寄存器映射 ★
-  devm_request_irq / devm_request_threaded_irq   中断 ★
-  devm_gpiod_get / _optional       GPIO
-  devm_clk_get / devm_clk_get_optional   时钟
-  devm_regulator_get               电源
-  devm_pinctrl_get                 引脚
-  devm_dma_alloc_coherent          DMA 内存
-  devm_hwmon_device_register_with_info   hwmon
-  devm_device_add_group            sysfs 属性组
-  devm_add_action_or_reset         自定义清理动作(兜底神器★)</code></pre></div>
+<p><strong>原理</strong>：<code>devm_*</code>（device-managed）系列把资源登记到设备的资源链表，在 <strong>driver unbinding 或 probe 失败时自动释放</strong>，释放顺序与申请顺序<strong>相反</strong>（栈式）。由此带来三大价值：</p>
+<ul>
+<li><code>remove()</code> 里几乎不用写释放代码，<strong>杜绝泄漏</strong>；</li>
+<li>probe 中途失败时自动回滚已申请资源，<strong>不用写 goto 链</strong>；</li>
+<li>出错路径不会漏释放。</li>
+</ul>
+<p>常用 devm_ 接口（记住这些足够覆盖 90% 场景）：</p>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>资源</th><th>接口</th><th>资源</th><th>接口</th></tr>
+<tr><td>内存</td><td><code>devm_kzalloc</code></td><td>寄存器映射 ★</td><td><code>devm_ioremap_resource</code></td></tr>
+<tr><td>中断 ★</td><td><code>devm_request_irq</code> / <code>_threaded_irq</code></td><td>GPIO</td><td><code>devm_gpiod_get</code> / <code>_optional</code></td></tr>
+<tr><td>时钟</td><td><code>devm_clk_get</code> / <code>_optional</code></td><td>电源</td><td><code>devm_regulator_get</code></td></tr>
+<tr><td>引脚</td><td><code>devm_pinctrl_get</code></td><td>DMA 内存</td><td><code>devm_dma_alloc_coherent</code></td></tr>
+<tr><td>hwmon</td><td><code>devm_hwmon_device_register_with_info</code></td><td>sysfs 属性组</td><td><code>devm_device_add_group</code></td></tr>
+<tr><td colspan="3"><strong>自定义清理动作（兜底神器 ★）</strong></td><td><code>devm_add_action_or_reset</code></td></tr>
+</table></div>
 <div class="box warn"><span class="bt">⚠️ devm 的两个陷阱</span>
 <p><strong>① 中断可能在 probe 完成前触发</strong>：<code>devm_request_irq</code> 之后、probe 返回之前，中断就可能到来。若此时 ISR 访问尚未初始化的成员（如未分配的缓冲），会崩溃。<strong>正确顺序：先分配所有 ISR 需要的数据结构 → 最后再 request_irq。</strong><br>
 <strong>② devm 的生命周期绑定在 device 上，不是 driver</strong>：如果资源需要比设备更长的生命周期，或需要在 remove 中精确控制释放时机，就不能用 devm，需手工管理并用 <code>devm_add_action_or_reset</code> 或显式释放。</p></div>
@@ -19921,18 +19810,22 @@ cat /sys/bus/i2c/devices/0-0050/uevent   # 查看设备的 uevent 变量
 #   ③ 用户空间有 udev/mdev 在运行(嵌入式常用 busybox mdev -s)</code></pre></div>
 
 <h3>D4.5 电源管理：系统休眠与 runtime PM</h3>
-<div class="codeblock"><pre><code data-lang="text">两套机制，目标不同：
-  系统级睡眠(suspend-to-RAM)  整机进入低功耗，由用户/策略触发
-  Runtime PM                  设备空闲时单独关电，不影响系统其他部分
-
-系统休眠的回调阶段(按顺序)：
-  prepare → suspend → suspend_late → suspend_noirq → (进入睡眠)
-  → resume_noirq → resume_early → resume → complete
-  ★ 关键区别：
-    suspend       —— 此时仍可睡眠、设备仍可访问(但用户进程已冻结)
-    suspend_late  —— 中断仍开，但不可访问可能被关的设备
-    suspend_noirq —— <strong>中断已关闭</strong>，只能做寄存器保存等最简操作
-  ★ 唤醒是<strong>完全逆序</strong>，且 resume 阶段要重新初始化硬件</code></pre></div>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>机制</th><th>范围</th><th>触发者</th></tr>
+<tr><td><strong>系统级睡眠</strong>（suspend-to-RAM）</td><td>整机进入低功耗</td><td>用户 / 电源策略</td></tr>
+<tr><td><strong>Runtime PM</strong></td><td>设备空闲时<strong>单独</strong>关电</td><td>驱动按 usage_count 自治</td></tr>
+</table></div>
+<p>系统休眠的回调阶段按固定顺序执行（唤醒是<strong>完全逆序</strong>）：</p>
+<div class="codeblock"><pre><code data-lang="text">休眠： prepare → suspend → suspend_late → suspend_noirq → (睡眠)
+唤醒： resume_noirq → resume_early → resume → complete</code></pre></div>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>阶段</th><th>此时还能做什么</th></tr>
+<tr><td><code>suspend</code></td><td>仍可睡眠、设备仍可访问（用户进程已冻结）</td></tr>
+<tr><td><code>suspend_late</code></td><td>中断仍开，但<strong>不可再访问</strong>可能被关的设备</td></tr>
+<tr><td><code>suspend_noirq</code></td><td><strong>中断已关闭</strong>——只能做寄存器保存等最简操作</td></tr>
+</table></div>
+<div class="box warn"><span class="bt">⚠️ 最常见的 PM bug</span>
+<p><strong>唤醒后设备失效</strong>——因为休眠期间硬件可能掉电、寄存器全丢。resume 回调必须<strong>重新初始化硬件</strong>（恢复寄存器上下文），而不是假设设备还保持休眠前的状态。</p></div>
 <div class="codeblock"><pre><code data-lang="c">/* 现代写法：用宏定义 PM 回调，自动处理 CONFIG_PM 开关 */
 static int my_suspend(struct device *dev)
 {
@@ -20150,32 +20043,17 @@ spi_write_then_read(spi, txbuf, n_tx, rxbuf, n_rx);   /* 常用(先写命令再�
 </table></div>
 
 <h3>D5.4 存储类：块设备与 MTD</h3>
-<div class="codeblock"><pre><code data-lang="text">两条路线，选错会走很多弯路：
-  块设备(block)  —— 带控制器、可做磨损均衡/坏块管理、对外呈现为磁盘
-                    eMMC / SD / U 盘 / SSD / NVMe
-                    → 上层可跑文件系统(ext4/f2fs)，接口 /dev/sdX
-  MTD            —— 裸 Flash，<strong>无控制器</strong>，需软件管理擦写与坏块
-                    NOR / NAND / SPI-NOR
-                    → /dev/mtdX，配 JFFS2/UBIFS，或用 UBI 卷管理
-
-★ 判据： 硬件是否自带 FTL(Flash Translation Layer)？
-         有 → 块设备；无(裸 Flash) → MTD
-
-块设备现代骨架（blk-mq 多队列，取代老的 request_fn）：
-  blk_mq_alloc_tag_set(&amp;tag_set)       # 分配标签集
-  blk_mq_alloc_queue(&amp;tag_set)         # 分配请求队列
-  alloc_disk(minors)                   # 分配 gendisk
-  设置 queue-&gt;queue_ops(→ struct blk_mq_ops { .queue_rq, ... })
-  disk->fops = &amp;my_block_ops;          # struct block_device_operations
-  set_capacity(disk, sectors); add_disk(disk);
-  ★ 核心回调 queue_rq： 从请求中取出 bio，转成硬件 DMA 描述符
-
-MTD 驱动要点：
-  mtd_device_register(mtd, partitions, nr)     # 注册分区
-  mtd-&gt;_read / _write / _erase                 # 三个核心操作
-  nand_scan / spi_nor_scan                     # 探测芯片参数
-  配套： UBI(卷管理+磨损均衡) → UBIFS(文件系统)
-  用户态工具： mtdinfo / flash_eraseall / nanddump / ubinfo</code></pre></div>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>对比项</th><th>块设备（block）</th><th>MTD</th></tr>
+<tr><td>硬件形态</td><td>带控制器：eMMC / SD / U 盘 / SSD / NVMe</td><td>裸 Flash：NOR / NAND / SPI-NOR（<strong>无控制器</strong>）</td></tr>
+<tr><td>磨损均衡/坏块</td><td>控制器硬件完成</td><td><strong>软件负责</strong>（UBI 等）</td></tr>
+<tr><td>用户接口</td><td><code>/dev/sdX</code>、<code>/dev/mmcblk*</code>（磁盘）</td><td><code>/dev/mtdX</code></td></tr>
+<tr><td>文件系统</td><td>ext4 / f2fs 直接可跑</td><td>JFFS2 / UBIFS（经 UBI 卷管理）</td></tr>
+</table></div>
+<div class="box tip"><span class="bt">💡 一句话判据</span>
+<p>硬件是否自带 <strong>FTL（Flash Translation Layer）</strong>？<strong>有 → 块设备；无（裸 Flash）→ MTD。</strong>选错路线会在坏块管理和磨损均衡上走大量弯路。</p></div>
+<p>块设备现代骨架（blk-mq 多队列，取代老的 request_fn）：<code>blk_mq_alloc_tag_set</code> 分配标签集 → <code>blk_mq_alloc_queue</code> 分配请求队列 → <code>alloc_disk</code> 分配 gendisk → 设置 <code>queue-&gt;queue_ops</code>（<code>struct blk_mq_ops</code>）与 <code>disk-&gt;fops</code> → <code>set_capacity</code> + <code>add_disk</code>。<strong>核心回调 <code>queue_rq</code></strong>：从请求中取出 bio，转成硬件 DMA 描述符。</p>
+<p>MTD 驱动要点：<code>mtd_device_register</code> 注册分区；<code>mtd-&gt;_read / _write / _erase</code> 三个核心操作；<code>nand_scan</code> / <code>spi_nor_scan</code> 探测芯片参数。配套栈：UBI（卷管理 + 磨损均衡）→ UBIFS（文件系统）。用户态工具：<code>mtdinfo</code> / <code>flash_eraseall</code> / <code>nanddump</code> / <code>ubinfo</code>。</p>
 
 <h3>D5.5 网络驱动：net_device 与 NAPI</h3>
 <div class="codeblock"><pre><code data-lang="c">/* 骨架 */
@@ -20229,18 +20107,20 @@ static int my_poll(struct napi_struct *napi, int budget)
 <tr><td rowspan="2"><strong>音频</strong></td><td>ALSA（核心层）</td><td>snd_card / snd_pcm / snd_ctl</td><td>提供 PCM、Control、Mixer 抽象</td></tr>
 <tr><td><strong>ASoC</strong>（嵌入式专用）</td><td>Machine / Platform(CPU DAI) / Codec</td><td>★ 三件套分离，靠 <code>dai_link</code> 在 Machine 驱动里绑定；DAPM 管理电源路由</td></tr>
 </table></div>
-<div class="codeblock"><pre><code data-lang="text">ASoC 三件套分工（理解这个，音频驱动就入门了）：
-  Codec 驱动   —— 描述音频编解码芯片(如 WM8960)，提供 DAI 与控件
-  Platform驱动 —— 描述 SoC 端(如 I2S/PCM 控制器、DMA)
-  Machine 驱动 —— ★ 把二者用 dai_link 连起来，描述板级连线
-  ★ 大部分嵌入式工作 = 写/改 Machine 驱动 + 复用现成 Codec 驱动
-
-调试命令：
-  aplay -l / arecord -l           # 列出声卡与设备
-  amixer contents                 # 查看所有混音控件(★ 调音量/路由)
-  alsamixer                       # 交互式
-  cat /proc/asound/cards
-  # 显示： modetest(libdrm) 查看 connector/CRTC 状态</code></pre></div>
+<p>ASoC 三件套分工——<strong>理解这个，音频驱动就入门了</strong>：</p>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>组件</th><th>描述什么</th><th>举例</th></tr>
+<tr><td><strong>Codec 驱动</strong></td><td>音频编解码芯片，提供 DAI 与控件</td><td>WM8960 等芯片驱动（通常现成）</td></tr>
+<tr><td><strong>Platform 驱动</strong></td><td>SoC 端的 I2S/PCM 控制器与 DMA</td><td>各 SoC 厂商提供</td></tr>
+<tr><td><strong>Machine 驱动</strong> ★</td><td>用 dai_link 把二者连起来，描述<strong>板级连线</strong></td><td><strong>嵌入式工程师的主要工作</strong></td></tr>
+</table></div>
+<div class="box tip"><span class="bt">💡 工作量分布</span>
+<p>大部分嵌入式音频工作 = <strong>写/改 Machine 驱动 + 复用现成 Codec 驱动</strong>，很少需要从零写 Codec。</p></div>
+<div class="codeblock"><pre><code data-lang="bash">aplay -l / arecord -l     # 列出声卡与设备
+amixer contents           # 查看所有混音控件(★ 调音量/路由)
+alsamixer                 # 交互式
+cat /proc/asound/cards
+# 显示侧： modetest(libdrm) 查看 connector/CRTC 状态</code></pre></div>
 
 <h3>D5.7 regmap：跨总线的寄存器抽象（★ 强烈推荐）</h3>
 <div class="codeblock"><pre><code data-lang="c">/* regmap 把「寄存器访问」从具体总线中抽离：
@@ -20574,42 +20454,25 @@ ls /sys/bus/platform/devices/              # 设备是否生成</code></pre></di
 <p>用 <code>devmem2</code> 直接读写寄存器：如果<strong>手工操作硬件正常，而驱动不正常</strong> → 问题在软件（时序、配置顺序、并发）；如果<strong>手工操作也不正常</strong> → 问题在硬件（供电、连线、时钟）。这一招能在一分钟内完成软硬责任划分，是 bring-up 阶段最高性价比的技巧。</p></div>
 
 <h3>D6.9 典型案例集（四条推理链）</h3>
-<div class="codeblock"><pre><code data-lang="text">案例①：加载模块立即 Oops，pc 在 probe+0x24
-  现象： insmod 瞬间崩溃，地址 0x0000000000000008
-  分析： 地址≈0 说明空指针 + 偏移 8 → 访问某结构体第 2 个成员
-  解码： faddr2line vmlinux my_probe+0x24/0x100 → mydrv.c:87
-  根因： devm_kzalloc 失败返回 NULL 未检查，直接 p->field = x，
-         而 field 恰在偏移 8 处
-  修复： 加判空并返回 -ENOMEM；全面排查所有分配点
-  沉淀： <strong>地址接近 0 = 空指针 + 成员偏移；偏移值能反推是哪个成员</strong>
+<div class="box"><span class="bt">📦 案例①：加载模块立即 Oops，pc 在 probe+0x24</span>
+<p><strong>现象</strong>：insmod 瞬间崩溃，访问地址 <code>0x0000000000000008</code>。<strong>分析</strong>：地址≈0 说明空指针 + 偏移 8 → 访问某结构体第 2 个成员。<strong>解码</strong>：<code>faddr2line vmlinux my_probe+0x24/0x100</code> → mydrv.c:87。<strong>根因</strong>：<code>devm_kzalloc</code> 失败返回 NULL 未检查，直接 <code>p-&gt;field = x</code>，而 field 恰在偏移 8 处。<strong>修复</strong>：加判空并返回 <code>-ENOMEM</code>，全面排查所有分配点。</p>
+<p><strong>沉淀</strong>：地址接近 0 = 空指针 + 成员偏移；<strong>偏移值能反推是哪个成员</strong>。</p></div>
 
-案例②：运行几小时后死机，日志最后一行是 list_del corruption
-  现象： 长时间运行后崩溃，难以复现
-  取证： 开启 KASAN 与 KCSAN 后重跑，很快报出 data race
-  根因： 中断处理与 read() 同时操作链表，只用了 mutex（中断不能用）
-  修复： 改用 spin_lock_irqsave 保护共享链表
-  沉淀： <strong>间歇性崩溃 = 并发问题，优先上 KCSAN/lockdep 而非人肉猜</strong>
+<div class="box"><span class="bt">📦 案例②：运行几小时后死机，日志最后一行是 list_del corruption</span>
+<p><strong>现象</strong>：长时间运行后崩溃，难以复现。<strong>取证</strong>：开启 KASAN 与 KCSAN 后重跑，很快报出 data race。<strong>根因</strong>：中断处理与 <code>read()</code> 同时操作链表，只用了 mutex（中断上下文不能用 mutex）。<strong>修复</strong>：改用 <code>spin_lock_irqsave</code> 保护共享链表。</p>
+<p><strong>沉淀</strong>：间歇性崩溃 = 并发问题——<strong>优先上 KCSAN/lockdep，而非人肉猜</strong>。</p></div>
 
-案例③：设备第一次能用，之后再也无响应
-  现象： 首包成功，后续全部超时
-  取证： /proc/interrupts 中该中断计数只有 1
-  根因： 设备树把电平触发写成了边沿触发；设备保持低电平但边沿只来一次
-  修复： 设备树改 IRQ_TYPE_LEVEL_HIGH
-  沉淀： <strong>第一次成功后续失效，先查中断计数与触发类型</strong>
+<div class="box"><span class="bt">📦 案例③：设备第一次能用，之后再也无响应</span>
+<p><strong>现象</strong>：首包成功，后续全部超时。<strong>取证</strong>：<code>/proc/interrupts</code> 中该中断计数只有 1。<strong>根因</strong>：设备树把电平触发写成了边沿触发——设备保持低电平但边沿只发生一次。<strong>修复</strong>：设备树改 <code>IRQ_TYPE_LEVEL_HIGH</code>。</p>
+<p><strong>沉淀</strong>：第一次成功后续失效，<strong>先查中断计数与触发类型</strong>。</p></div>
 
-案例④：休眠唤醒后设备失效，但驱动无报错
-  现象： rtcwake 唤醒后读写设备全超时，dmesg 干净
-  分析： resume 回调只做了 clk_enable，未恢复寄存器
-  根因： 休眠期间硬件掉电，寄存器恢复默认值（如 DMA 使能位被清）
-  修复： resume 中完整重初始化，恢复关键寄存器上下文
-  沉淀： <strong>PM 相关的"无报错失效"，几乎都是 resume 恢复不完整</strong>
+<div class="box"><span class="bt">📦 案例④：休眠唤醒后设备失效，但驱动无报错</span>
+<p><strong>现象</strong>：rtcwake 唤醒后读写设备全超时，dmesg 干净。<strong>分析</strong>：resume 回调只做了 <code>clk_enable</code>，未恢复寄存器。<strong>根因</strong>：休眠期间硬件掉电，寄存器恢复默认值（如 DMA 使能位被清）。<strong>修复</strong>：resume 中完整重初始化，恢复关键寄存器上下文。</p>
+<p><strong>沉淀</strong>：PM 相关的「无报错失效」，<strong>几乎都是 resume 恢复不完整</strong>。</p></div>
 
-案例⑤：驱动一切正常，但用户程序 open 失败(EACCES)
-  现象： 内核日志显示设备创建成功，open 仍报权限不足
-  取证： ls -l /dev/mydev 显示 660 且属组非用户所在组
-  根因： udev 规则未配置，默认权限受限
-  修复： 添加 udev 规则指定 GROUP 与 MODE(生产环境不要用 0666)
-  沉淀： <strong>驱动层"正常"不等于用户可用，权限是独立一层</strong></code></pre></div>
+<div class="box"><span class="bt">📦 案例⑤：驱动一切正常，但用户程序 open 失败（EACCES）</span>
+<p><strong>现象</strong>：内核日志显示设备创建成功，open 仍报权限不足。<strong>取证</strong>：<code>ls -l /dev/mydev</code> 显示 660 且属组非用户所在组。<strong>根因</strong>：udev 规则未配置，默认权限受限。<strong>修复</strong>：添加 udev 规则指定 GROUP 与 MODE（生产环境不要用 0666）。</p>
+<p><strong>沉淀</strong>：驱动层「正常」不等于用户可用——<strong>权限是独立一层</strong>。</p></div>
 
 <h3>D6.10 调试检查清单（按此顺序过一遍）</h3>
 <ol>

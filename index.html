@@ -18195,6 +18195,35 @@ while(running){
 <tr><td><strong>Recovery</strong></td><td>重新训练（速率变更/均衡重调）</td><td>★ Gen3+ 每次提速都必经此态做 EQ</td></tr>
 <tr><td>Hot Reset / Loopback / Disable</td><td>热复位 / 环回测试 / 禁用</td><td>调试与复位手段</td></tr>
 </table></div>
+<div class="fig"><figure>
+<svg viewBox="0 0 900 330" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="LTSSM 链路训练状态机流程图">
+<style>.ls{fill:#eef4fd;stroke:#0969da;stroke-width:1.5}.lw{fill:#f1f5f9;stroke:#64748b;stroke-width:1.5}.lg{fill:#dcfce7;stroke:#16a34a;stroke-width:1.5}.tx{font:12px sans-serif;fill:#1f2937}.ts{font:11px sans-serif;fill:#64748b}.tt{font:bold 12.5px sans-serif;fill:#1f2937}</style>
+<defs><marker id="aLtssm" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="#0969da"/></marker></defs>
+<rect x="30" y="60" width="110" height="44" rx="8" class="ls"/><text x="85" y="87" text-anchor="middle" class="tt">Detect</text>
+<rect x="200" y="60" width="110" height="44" rx="8" class="ls"/><text x="255" y="87" text-anchor="middle" class="tt">Polling</text>
+<rect x="370" y="60" width="140" height="44" rx="8" class="ls"/><text x="440" y="87" text-anchor="middle" class="tt">Configuration</text>
+<rect x="580" y="60" width="90" height="44" rx="8" class="lg"/><text x="625" y="87" text-anchor="middle" class="tt">L0</text>
+<rect x="740" y="60" width="130" height="44" rx="8" class="ls"/><text x="805" y="87" text-anchor="middle" class="tt">Recovery</text>
+<line x1="140" y1="82" x2="198" y2="82" stroke="#0969da" stroke-width="1.5" marker-end="url(#aLtssm)"/>
+<line x1="310" y1="82" x2="368" y2="82" stroke="#0969da" stroke-width="1.5" marker-end="url(#aLtssm)"/>
+<line x1="510" y1="82" x2="578" y2="82" stroke="#0969da" stroke-width="1.5" marker-end="url(#aLtssm)"/>
+<line x1="670" y1="82" x2="738" y2="82" stroke="#0969da" stroke-width="1.5" marker-end="url(#aLtssm)"/>
+<path d="M 805 58 C 805 18 625 18 625 56" fill="none" stroke="#16a34a" stroke-width="1.5" marker-end="url(#aLtssm)"/>
+<text x="715" y="26" text-anchor="middle" class="ts">速率变更 / EQ 均衡后回到 L0</text>
+<text x="85" y="128" text-anchor="middle" class="ts">无对端 → 空槽位</text>
+<text x="440" y="128" text-anchor="middle" class="ts">宽度 / Lane 号 / 极性协商</text>
+<text x="625" y="128" text-anchor="middle" class="ts">唯一工作态</text>
+<rect x="300" y="200" width="90" height="44" rx="8" class="lw"/><text x="345" y="227" text-anchor="middle" class="tt">L0s</text>
+<rect x="460" y="200" width="90" height="44" rx="8" class="lw"/><text x="505" y="227" text-anchor="middle" class="tt">L1</text>
+<rect x="620" y="200" width="90" height="44" rx="8" class="lw"/><text x="665" y="227" text-anchor="middle" class="tt">L2</text>
+<line x1="390" y1="222" x2="458" y2="222" stroke="#64748b" stroke-width="1.5" marker-end="url(#aLtssm)"/>
+<line x1="550" y1="222" x2="618" y2="222" stroke="#64748b" stroke-width="1.5" marker-end="url(#aLtssm)"/>
+<path d="M 625 106 C 625 170 430 170 345 198" fill="none" stroke="#64748b" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#aLtssm)"/>
+<text x="345" y="270" text-anchor="middle" class="ts">ASPM 省电链：休眠越深越省电，唤醒越慢</text>
+<text x="345" y="290" text-anchor="middle" class="ts">（L0s 秒回 / L1 需协商 / L2 主电源可移除）</text>
+</svg>
+<figcaption>图 I1-1 LTSSM 主链（Detect → Polling → Configuration → L0 ↔ Recovery）：提速必经 Recovery 做均衡；ASPM 休眠链 L0s → L1 → L2 代价递增</figcaption>
+</figure></div>
 <p>Gen3 及以上引入<strong>均衡（Equalization, EQ）</strong>：速率到 8GT/s 以上后接收端无法仅靠固定参数恢复信号，需在 Recovery 状态交换 TS1/TS2 中的 EQ 参数（preset / coefficient），分 4 个 phase 迭代收敛。大量「Gen1 稳定但 Gen3 起不来」的问题正源于此。结合 LTSSM 状态机，故障可以按「卡在哪个状态」直接归类：</p>
 <div class="tbl-wrap"><table class="tbl">
 <tr><th>典型现象</th><th>LTSSM 卡点</th><th>根因与处置</th></tr>
@@ -18304,6 +18333,20 @@ for (i = 0; i &lt; nvec; i++) {
 <tr><td>UpdateFC DLLP</td><td>8B</td><td>信用归还</td><td>由缓冲大小影响</td></tr>
 <tr><td>SKP 有序集</td><td>周期性插入</td><td>时钟补偿（~1/1180 符号）</td><td>不可省，量极小</td></tr>
 </table></div>
+<div class="fig"><figure>
+<svg viewBox="0 0 900 210" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="单个 TLP 链路占用分解">
+<style>.tx{font:12px sans-serif;fill:#1f2937}.ts{font:11px sans-serif;fill:#64748b}.tb{font:bold 12px sans-serif;fill:#1f2937}</style>
+<rect x="30" y="70" width="773" height="44" rx="6" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+<rect x="803" y="70" width="36" height="44" fill="#dbeafe" stroke="#0969da" stroke-width="1.5"/>
+<rect x="839" y="70" width="18" height="44" fill="#fed7aa" stroke="#d97706" stroke-width="1.5"/>
+<rect x="857" y="70" width="13" height="44" fill="#fecaca" stroke="#dc2626" stroke-width="1.5"/>
+<text x="415" y="96" text-anchor="middle" class="tb">Data Payload 256B（有效数据）</text>
+<text x="465" y="52" text-anchor="middle" class="ts">单 TLP 链路占用共 278 字节 —— 有效占比 92.1%，开销仅 7.9%</text>
+<text x="530" y="160" text-anchor="middle" class="tx">🟩 负载 256B（92.1%）　🟦 TLP 头 12B（4.3%）　🟧 Seq+LCRC 6B（2.2%）　🟥 物理帧 4B（1.4%）</text>
+<text x="530" y="188" text-anchor="middle" class="ts">结论：负载越大摊销越好 —— MPS 从 128B 提到 256B 是零成本的第一优先级调优</text>
+</svg>
+<figcaption>图 I2-1 Gen3 x8 写方向、MPS=256B 时的单 TLP 链路占用分解： overhead 大头是 TLP 头，负载越长性价比越高</figcaption>
+</figure></div>
 <div class="box tip"><span class="bt">📐 手算示范：Gen3 x8、MPS=256B、3DW 头、写方向</span>
 <ol>
 <li>每 TLP 链路占用 = 12(头) + 256(负载) + 6(Seq+LCRC) + 4(物理帧) = <strong>278 字节</strong>；</li>
@@ -18479,6 +18522,31 @@ pci=nommconf         # 排除 MMCONFIG 访问问题(老平台)</code></pre></div
 <tr><td><strong>有 P2P</strong></td><td>GPU0 显存 →(PCIe Switch 直转)→ GPU1 显存</td><td>1 跳，直通</td></tr>
 <tr><td>无 P2P</td><td>GPU0 显存 → 主机内存 → GPU1 显存</td><td>2 跳 + 额外拷贝：<strong>带宽约减半、延迟翻倍</strong>，还占用 CPU 内存带宽</td></tr>
 </table></div>
+<div class="fig"><figure>
+<svg viewBox="0 0 900 390" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="P2P 有无的两种数据路径对比">
+<style>.gpu{fill:#eef4fd;stroke:#0969da;stroke-width:1.5}.hw{fill:#f1f5f9;stroke:#64748b;stroke-width:1.5}.tx{font:bold 12.5px sans-serif;fill:#1f2937}.ts{font:11px sans-serif;fill:#64748b}.ok{stroke:#16a34a;stroke-width:2}.bad{stroke:#dc2626;stroke-width:2;stroke-dasharray="6 4"}</style>
+<defs><marker id="aP2p1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="#16a34a"/></marker><marker id="aP2p2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="#dc2626"/></marker></defs>
+<text x="30" y="34" class="tx">✅ 有 P2P：</text>
+<rect x="110" y="56" width="120" height="46" rx="8" class="gpu"/><text x="170" y="84" text-anchor="middle" class="tx">GPU0 显存</text>
+<rect x="370" y="56" width="170" height="46" rx="8" class="hw"/><text x="455" y="84" text-anchor="middle" class="tx">PCIe Switch</text>
+<rect x="680" y="56" width="120" height="46" rx="8" class="gpu"/><text x="740" y="84" text-anchor="middle" class="tx">GPU1 显存</text>
+<line x1="230" y1="79" x2="368" y2="79" class="ok" marker-end="url(#aP2p1)"/>
+<line x1="540" y1="79" x2="678" y2="79" class="ok" marker-end="url(#aP2p1)"/>
+<text x="455" y="130" text-anchor="middle" class="ts">1 跳 · Switch 内直转 · 全带宽 · 不占 CPU</text>
+<line x1="60" y1="160" x2="840" y2="160" stroke="#e2e8f0" stroke-width="1"/>
+<text x="30" y="200" class="tx">❌ 无 P2P：</text>
+<rect x="110" y="222" width="120" height="46" rx="8" class="gpu"/><text x="170" y="250" text-anchor="middle" class="tx">GPU0 显存</text>
+<rect x="300" y="222" width="150" height="46" rx="8" class="hw"/><text x="375" y="250" text-anchor="middle" class="tx">Root Complex</text>
+<rect x="530" y="222" width="150" height="46" rx="8" class="hw"/><text x="605" y="250" text-anchor="middle" class="tx">主机内存（中转）</text>
+<rect x="730" y="222" width="120" height="46" rx="8" class="gpu"/><text x="790" y="250" text-anchor="middle" class="tx">GPU1 显存</text>
+<line x1="230" y1="245" x2="298" y2="245" class="bad" marker-end="url(#aP2p2)"/>
+<line x1="450" y1="245" x2="528" y2="245" class="bad" marker-end="url(#aP2p2)"/>
+<line x1="680" y1="245" x2="728" y2="245" class="bad" marker-end="url(#aP2p2)"/>
+<text x="450" y="300" text-anchor="middle" class="ts">2 跳 + 一次拷贝 · 带宽约减半 · 延迟翻倍 · 挤占 CPU 内存带宽</text>
+<text x="450" y="348" text-anchor="middle" class="ts">底层实现：GPU1 暴露 BAR 窗口，GPU0 的 DMA 按地址路由直写 —— 就是 I1 的 Address Routing</text>
+</svg>
+<figcaption>图 I3-1 有/无 P2P 的数据路径对比：ACS 开启时会退化成下方的绕行路径——「能连但慢」的真相</figcaption>
+</figure></div>
 <p><strong>底层实现</strong>：GPU1 把 BAR 窗口暴露出来，GPU0 的 DMA 引擎按地址路由直接写 GPU1 的显存——走的正是 I1 讲的 Address Routing。</p>
 <div class="box warn"><span class="bt">⚠️ ACS（Access Control Services）陷阱</span>
 <p>Switch 开启 ACS 后，出于安全隔离考虑，所有 P2P 请求被<strong>强制上送到 Root Complex 再转发回来</strong>（P2P Request Redirect）——结果是「P2P 功能可用，但性能大幅下降甚至被判为不可用」。</p>
@@ -18651,9 +18719,41 @@ numactl --show
 
 <h3>I4.3 Ring AllReduce：为什么它带宽最优</h3>
 <p>把 N 个 GPU 连成一个环，数据切成 N 块沿环单向流动。算法分两阶段，共 <strong>2(N-1) 步</strong>，每步传输 S/N：</p>
-<div class="codeblock"><pre><code data-lang="text">        ┌─── GPU0 ─── GPU1 ───┐
-数据沿环  │                     │  单向流动
-单向流动  └── GPU3 ─── GPU2 ←──┘</code></pre></div>
+<div class="fig"><figure>
+<svg viewBox="0 0 900 430" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Ring AllReduce 两阶段数据流">
+<style>.g0{fill:#eef4fd;stroke:#0969da;stroke-width:1.5}.g1{fill:#dcfce7;stroke:#16a34a;stroke-width:1.5}.tx{font:bold 12.5px sans-serif;fill:#1f2937}.ts{font:11px sans-serif;fill:#64748b}.tt{font:bold 13px sans-serif;fill:#1f2937}.cd{fill:#f8fafc;stroke:#cbd5e1;stroke-width:1.5}</style>
+<defs><marker id="aRing" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="#0969da"/></marker></defs>
+<rect x="540" y="40" width="120" height="46" rx="10" class="g0"/><text x="600" y="68" text-anchor="middle" class="tx">GPU0</text>
+<rect x="740" y="170" width="120" height="46" rx="10" class="g0"/><text x="800" y="198" text-anchor="middle" class="tx">GPU1</text>
+<rect x="540" y="300" width="120" height="46" rx="10" class="g0"/><text x="600" y="328" text-anchor="middle" class="tx">GPU2</text>
+<rect x="340" y="170" width="120" height="46" rx="10" class="g0"/><text x="400" y="198" text-anchor="middle" class="tx">GPU3</text>
+<line x1="662" y1="90" x2="782" y2="166" stroke="#0969da" stroke-width="1.8" marker-end="url(#aRing)"/>
+<line x1="800" y1="218" x2="664" y2="296" stroke="#0969da" stroke-width="1.8" marker-end="url(#aRing)"/>
+<line x1="538" y1="322" x2="402" y2="220" stroke="#0969da" stroke-width="1.8" marker-end="url(#aRing)"/>
+<line x1="400" y1="168" x2="538" y2="90" stroke="#0969da" stroke-width="1.8" marker-end="url(#aRing)"/>
+<text x="760" y="120" class="ts">每步 S/N</text>
+<text x="755" y="270" class="ts">每步 S/N</text>
+<text x="430" y="285" class="ts">每步 S/N</text>
+<text x="425" y="120" class="ts">每步 S/N</text>
+<text x="600" y="205" text-anchor="middle" class="ts">数据块沿环单向流动</text>
+<rect x="20" y="40" width="280" height="112" rx="8" class="cd"/>
+<text x="36" y="66" class="tt">阶段① Reduce-Scatter（N-1 步）</text>
+<text x="36" y="90" class="ts">块沿途逐跳「累加」：</text>
+<text x="36" y="110" class="ts">GPUi 发出自己的第 (i-k) 块给下游，</text>
+<text x="36" y="130" class="ts">收到的块累加进本地对应块</text>
+<rect x="20" y="168" width="280" height="112" rx="8" class="cd"/>
+<text x="36" y="194" class="tt">阶段② All-Gather（N-1 步）</text>
+<text x="36" y="218" class="ts">已归约完的块沿途「传播」：</text>
+<text x="36" y="238" class="ts">每跳一发一收，走完一圈后</text>
+<text x="36" y="258" class="ts">每个 GPU 持有完整归约结果</text>
+<rect x="20" y="296" width="280" height="100" rx="8" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+<text x="36" y="322" class="tt">⭐ 关键结论</text>
+<text x="36" y="346" class="ts">每卡总传输 = 2(N-1)S/N ≈ 2S</text>
+<text x="36" y="366" class="ts">与卡数 N 无关 → 带宽最优</text>
+<text x="36" y="386" class="ts">步数 2(N-1) → 延迟 O(N)</text>
+</svg>
+<figcaption>图 I4-1 Ring AllReduce：数据切 N 块沿环流动，①沿途累加 ②沿途传播——单卡传输量恒定为 2S，与集群规模无关</figcaption>
+</figure></div>
 <p><strong>阶段① Reduce-Scatter（N-1 步）</strong>——每一步：GPU<sub>i</sub> 把自己的第 (i−k) 块发给 GPU<sub>i+1</sub>，同时接收 GPU<sub>i−1</sub> 发来的块并<strong>累加</strong>到本地对应块。结束时每个 GPU 各持有「某一块的完整归约结果」（N 块各归约一次）。每卡传输 (N−1) × S/N。</p>
 <p><strong>阶段② All-Gather（N-1 步）</strong>——每一步：GPU<sub>i</sub> 把自己刚归约完的那块发给 GPU<sub>i+1</sub>，并接收上游的块。结束时每个 GPU 持有完整的归约结果（N 块全都有）。每卡传输 (N−1) × S/N。</p>
 <div class="box tip"><span class="bt">⭐ 关键结论：为什么 Ring 是「带宽最优」</span>
@@ -18900,6 +19000,30 @@ ib_write_bw -d mlx5_0 --use_cuda=0 &lt;server_ip&gt;</code></pre></div>
 <tr><td>未重叠</td><td>反向算完所有层 → 一次性 AllReduce 全部梯度</td><td>T = T<sub>backward</sub> + T<sub>comm</sub></td><td>通信<strong>完全暴露</strong></td></tr>
 <tr><td><strong>重叠后</strong></td><td>反向算完一个桶 → 立即对该桶发起 AllReduce</td><td>T ≈ T<sub>backward</sub> + T<sub>comm</sub>(最后一桶)</td><td>大部分通信<strong>被计算掩盖</strong></td></tr>
 </table></div>
+<div class="fig"><figure>
+<svg viewBox="0 0 900 320" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="通信与计算重叠时序对比">
+<style>.tx{font:bold 12px sans-serif;fill:#1f2937}.ts{font:11px sans-serif;fill:#64748b}</style>
+<defs><marker id="aOvl" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="#64748b"/></marker></defs>
+<text x="30" y="64" class="tx">未重叠</text>
+<rect x="110" y="46" width="480" height="36" rx="6" fill="#dbeafe" stroke="#0969da" stroke-width="1.5"/><text x="350" y="69" text-anchor="middle" class="tx">T_backward（反向计算）</text>
+<rect x="590" y="46" width="240" height="36" rx="6" fill="#fecaca" stroke="#dc2626" stroke-width="1.5"/><text x="710" y="69" text-anchor="middle" class="tx">T_comm（一次性 AllReduce）</text>
+<text x="30" y="180" class="tx">重叠后</text>
+<rect x="110" y="162" width="700" height="36" rx="6" fill="#dbeafe" stroke="#0969da" stroke-width="1.5"/><text x="300" y="185" text-anchor="middle" class="tx">T_backward（反向计算，逐层推进）</text>
+<rect x="180" y="162" width="100" height="36" fill="#c4b5fd" fill-opacity="0.75" stroke="#6366f1" stroke-width="1.5"/>
+<rect x="320" y="162" width="100" height="36" fill="#c4b5fd" fill-opacity="0.75" stroke="#6366f1" stroke-width="1.5"/>
+<rect x="460" y="162" width="100" height="36" fill="#c4b5fd" fill-opacity="0.75" stroke="#6366f1" stroke-width="1.5"/>
+<rect x="600" y="162" width="100" height="36" fill="#c4b5fd" fill-opacity="0.75" stroke="#6366f1" stroke-width="1.5"/>
+<rect x="810" y="162" width="60" height="36" rx="6" fill="#fecaca" stroke="#dc2626" stroke-width="1.5"/><text x="840" y="185" text-anchor="middle" class="ts">尾桶</text>
+<text x="330" y="152" text-anchor="middle" class="ts">每算完一个桶（紫）立即 AllReduce，与后续反向计算并行</text>
+<line x1="590" y1="100" x2="590" y2="150" stroke="#64748b" stroke-width="1.2" stroke-dasharray="4 3"/>
+<line x1="870" y1="100" x2="870" y2="150" stroke="#64748b" stroke-width="1.2" stroke-dasharray="4 3"/>
+<line x1="590" y1="128" x2="868" y2="128" stroke="#64748b" stroke-width="1.5" marker-end="url(#aOvl)"/>
+<text x="728" y="120" text-anchor="middle" class="ts">被「藏」进计算里的通信时间</text>
+<text x="30" y="256" class="ts">█ 反向计算　█ 梯度桶 AllReduce　█ 暴露在外的通信（只有最后一桶）</text>
+<text x="30" y="284" class="ts">桶太小 → 通信次数多、延迟累积；桶太大 → 重叠度低。默认 25MB，按模型调</text>
+</svg>
+<figcaption>图 I5-1 梯度分桶通信重叠时序：通信被摊进反向计算的过程中，总耗时只多出「最后一桶」的尾部通信</figcaption>
+</figure></div>
 <p>默认桶大小 25MB（DDP），可按模型调：<strong>太小</strong>则通信次数多（延迟累积）；<strong>太大</strong>则重叠度低（尾部暴露）。</p>
 <div class="box tip"><span class="bt">📐 最小性能模型：判断能否重叠</span>
 <p>T<sub>comm</sub>(N) = S<sub>data</sub> / BW<sub>effective</sub> + Latency(N)，其中 AllReduce 的 S<sub>data</sub> ≈ 2S(N−1)/N；T<sub>comp</sub> = 2 × 参数量 × batch / FLOPS<sub>effective</sub>。</p>
@@ -19005,6 +19129,37 @@ export TORCH_DISTRIBUTED_DEBUG=DETAIL          # 定位集合调用不匹配</co
 <li><strong>卸载</strong>：前提是引用计数为 0（无人 open、无其他模块引用）。若 <code>rmmod</code> 报 <code>Resource temporarily unavailable</code>，说明还有进程 open 着设备或模块被引用；</li>
 <li><strong>自动加载</strong>：设备的 modalias（如 <code>of:NfooT&lt;NULL&gt;Cvendor,dev</code>）由 udev 匹配 <code>/lib/modules/*/modules.alias</code> 后自动 modprobe。<strong>写驱动时填好 <code>.of_match_table</code> 与 <code>MODULE_DEVICE_TABLE</code>，自动加载才能生效</strong>。</li>
 </ol>
+<div class="fig"><figure>
+<svg viewBox="0 0 900 330" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="内核模块加载生命周期流程">
+<style>.st1{fill:#eef4fd;stroke:#0969da;stroke-width:1.5}.er{fill:#fecaca;stroke:#dc2626;stroke-width:1.5}.ok{fill:#dcfce7;stroke:#16a34a;stroke-width:1.5}.tx{font:bold 12px sans-serif;fill:#1f2937}.ts{font:11px sans-serif;fill:#64748b}</style>
+<defs><marker id="aMod" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="#0969da"/></marker><marker id="aModR" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="#dc2626"/></marker></defs>
+<rect x="30" y="50" width="150" height="46" rx="8" class="st1"/><text x="105" y="70" text-anchor="middle" class="tx">源码 + Makefile</text><text x="105" y="88" text-anchor="middle" class="ts">匹配目标内核源码树</text>
+<rect x="240" y="50" width="90" height="46" rx="8" class="st1"/><text x="285" y="78" text-anchor="middle" class="tx">.ko 文件</text>
+<rect x="390" y="50" width="140" height="46" rx="8" class="st1"/><text x="460" y="70" text-anchor="middle" class="tx">insmod / modprobe</text><text x="460" y="88" text-anchor="middle" class="ts">modprobe 自动解依赖 ★</text>
+<rect x="590" y="50" width="130" height="46" rx="8" class="st1"/><text x="655" y="70" text-anchor="middle" class="tx">vermagic 校验</text><text x="655" y="88" text-anchor="middle" class="ts">内核版本匹配?</text>
+<rect x="590" y="160" width="170" height="52" rx="8" class="er"/><text x="675" y="182" text-anchor="middle" class="tx">version magic 报错</text><text x="675" y="200" text-anchor="middle" class="ts">换内核源码树或 headers 重编</text>
+<rect x="60" y="170" width="170" height="46" rx="8" class="st1"/><text x="145" y="190" text-anchor="middle" class="tx">重定位 + 符号解析</text><text x="145" y="208" text-anchor="middle" class="ts">查内核导出符号表</text>
+<rect x="290" y="170" width="150" height="46" rx="8" class="st1"/><text x="365" y="190" text-anchor="middle" class="tx">调用 module_init</text><text x="365" y="208" text-anchor="middle" class="ts">probe/注册设备</text>
+<rect x="300" y="260" width="130" height="40" rx="8" class="ok"/><text x="365" y="285" text-anchor="middle" class="tx">模块运行中</text>
+<rect x="490" y="170" width="60" height="46" rx="8" class="st1"/><text x="520" y="198" text-anchor="middle" class="tx">rmmod</text>
+<rect x="610" y="170" width="180" height="46" rx="8" class="er"/><text x="700" y="190" text-anchor="middle" class="tx">引用计数 ≠ 0 ?</text><text x="700" y="208" text-anchor="middle" class="ts">报 EAGAIN：还有进程 open</text>
+<rect x="850" y="170" width="0" height="0" class="ok"/>
+<line x1="180" y1="73" x2="238" y2="73" stroke="#0969da" stroke-width="1.5" marker-end="url(#aMod)"/>
+<line x1="330" y1="73" x2="388" y2="73" stroke="#0969da" stroke-width="1.5" marker-end="url(#aMod)"/>
+<line x1="530" y1="73" x2="588" y2="73" stroke="#0969da" stroke-width="1.5" marker-end="url(#aMod)"/>
+<path d="M 655 96 C 655 130 675 130 675 158" fill="none" stroke="#dc2626" stroke-width="1.5" marker-end="url(#aModR)"/>
+<text x="745" y="130" class="ts">不匹配 ↓</text>
+<path d="M 590 84 C 480 140 230 140 148 168" fill="none" stroke="#16a34a" stroke-width="1.5" marker-end="url(#aMod)"/>
+<text x="355" y="128" class="ts">匹配 ✓ 进入内核</text>
+<line x1="230" y1="193" x2="288" y2="193" stroke="#0969da" stroke-width="1.5" marker-end="url(#aMod)"/>
+<line x1="440" y1="193" x2="488" y2="193" stroke="#0969da" stroke-width="1.5" marker-end="url(#aMod)"/>
+<line x1="550" y1="193" x2="608" y2="193" stroke="#0969da" stroke-width="1.5" marker-end="url(#aMod)"/>
+<path d="M 700 216 C 700 250 470 255 432 262" fill="none" stroke="#16a34a" stroke-width="1.5" marker-end="url(#aMod)"/>
+<text x="580" y="252" class="ts">= 0 → 卸载成功</text>
+<path d="M 365 216 C 365 232 365 240 365 258" fill="none" stroke="#0969da" stroke-width="1.5" marker-end="url(#aMod)"/>
+</svg>
+<figcaption>图 D1-1 内核模块生命周期：vermagic 校验失败是「加载即报错」的第一根因；rmmod 报 EAGAIN 查引用计数（谁还 open 着）</figcaption>
+</figure></div>
 <div class="codeblock"><pre><code data-lang="bash"># 模块信息查看全家桶
 modinfo drv.ko            # 查看 license/author/parm/alias/vermagic/depends
 lsmod                     # 已加载模块 + 引用计数 + 依赖关系
@@ -19386,6 +19541,27 @@ p = kmalloc(size, GFP_NOWAIT);      /* 不睡眠也不回退其他途径，最"�
     /* 设备写完、CPU 读之前调用 */
 dma_sync_single_for_device(dev, dma, size, DMA_TO_DEVICE);
     /* CPU 写完、通知设备读之前调用 */</code></pre></div>
+<div class="fig"><figure>
+<svg viewBox="0 0 900 340" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="DMA 数据搬运链路">
+<style>.st1{fill:#eef4fd;stroke:#0969da;stroke-width:1.5}.hw{fill:#f1f5f9;stroke:#64748b;stroke-width:1.5}.ok{fill:#dcfce7;stroke:#16a34a;stroke-width:1.5}.tx{font:bold 12px sans-serif;fill:#1f2937}.ts{font:11px sans-serif;fill:#64748b}</style>
+<defs><marker id="aDma" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="#0969da"/></marker><marker id="aDmaG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="#16a34a"/></marker></defs>
+<rect x="30" y="50" width="170" height="46" rx="8" class="st1"/><text x="115" y="70" text-anchor="middle" class="tx">① CPU 填描述符环</text><text x="115" y="88" text-anchor="middle" class="ts">地址/长度/标志批量提交</text>
+<rect x="240" y="50" width="150" height="46" rx="8" class="st1"/><text x="315" y="70" text-anchor="middle" class="tx">② 写 doorbell</text><text x="315" y="88" text-anchor="middle" class="ts">一次提交整批</text>
+<rect x="430" y="50" width="190" height="46" rx="8" class="st1"/><text x="525" y="70" text-anchor="middle" class="tx">③ DMA 引擎读描述符</text><text x="525" y="88" text-anchor="middle" class="ts">head/tail 指针消费</text>
+<rect x="660" y="50" width="160" height="46" rx="8" class="st1"/><text x="740" y="70" text-anchor="middle" class="tx">④ 硬件搬运数据</text><text x="740" y="88" text-anchor="middle" class="ts">不经 CPU</text>
+<rect x="300" y="200" width="150" height="46" rx="8" class="hw"/><text x="375" y="228" text-anchor="middle" class="tx">DDR 内存</text>
+<rect x="560" y="200" width="150" height="46" rx="8" class="hw"/><text x="635" y="228" text-anchor="middle" class="tx">设备 / 显存 / FIFO</text>
+<line x1="375" y1="198" x2="635" y2="198" stroke="#16a34a" stroke-width="2" marker-end="url(#aDmaG)"/>
+<line x1="635" y1="252" x2="375" y2="252" stroke="#16a34a" stroke-width="2" marker-end="url(#aDmaG)"/>
+<text x="505" y="192" text-anchor="middle" class="ts">发送方向</text>
+<text x="505" y="274" text-anchor="middle" class="ts">接收方向</text>
+<line x1="740" y1="98" x2="680" y2="196" stroke="#0969da" stroke-width="1.5" marker-end="url(#aDma)"/>
+<rect x="560" y="288" width="290" height="40" rx="8" class="ok"/><text x="705" y="308" text-anchor="middle" class="tx">⑤ 完成 → MSI-X 中断 → ISR 处理</text><text x="705" y="322" text-anchor="middle" class="ts">流式映射别忘了 sync_single_for_cpu</text>
+<path d="M 115 98 C 115 150 230 160 298 196" fill="none" stroke="#0969da" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#aDma)"/>
+<text x="130" y="170" class="ts">描述符指向的 buffer 须是 DMA 地址</text>
+</svg>
+<figcaption>图 D2-1 DMA 数据搬运链路：CPU 只负责「填描述符 + 敲 doorbell」，搬运与完成通知全由硬件完成——这就是零拷贝的来源</figcaption>
+</figure></div>
 <div class="codeblock"><pre><code data-lang="c">/* 完整 DMA 传输骨架 */
 /* ① 告知内核设备的寻址能力 ★ 漏了会导致静默失败或性能极差 */
 if (dma_set_mask_and_coherent(dev, DMA_BIT_MASK(32))) {
@@ -19489,6 +19665,33 @@ cat /proc/lockdep                 # 锁依赖图(内容庞大)
 dtc -I dtb -O dts -o board.dts board.dtb   # 反编译(排障神器★)
 make dtbs                                   # 内核树内批量编译
 # 内核源码中 dts 位置: arch/arm/boot/dts/ 、arch/arm64/boot/dts/</code></pre></div>
+<div class="fig"><figure>
+<svg viewBox="0 0 900 340" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="设备树从源文件到驱动 probe 的完整数据流">
+<style>.st1{fill:#eef4fd;stroke:#0969da;stroke-width:1.5}.f2{fill:#f1f5f9;stroke:#64748b;stroke-width:1.5}.ok{fill:#dcfce7;stroke:#16a34a;stroke-width:1.5}.tx{font:bold 12px sans-serif;fill:#1f2937}.ts{font:11px sans-serif;fill:#64748b}</style>
+<defs><marker id="aDt" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="#0969da"/></marker></defs>
+<rect x="30" y="50" width="130" height="46" rx="8" class="st1"/><text x="95" y="70" text-anchor="middle" class="tx">.dts / .dtsi</text><text x="95" y="88" text-anchor="middle" class="ts">板级 + SoC 描述</text>
+<rect x="200" y="50" width="100" height="46" rx="8" class="st1"/><text x="250" y="78" text-anchor="middle" class="tx">dtc 编译</text>
+<rect x="340" y="50" width="100" height="46" rx="8" class="st1"/><text x="390" y="78" text-anchor="middle" class="tx">dtb 二进制</text>
+<rect x="480" y="50" width="150" height="46" rx="8" class="st1"/><text x="555" y="70" text-anchor="middle" class="tx">Bootloader 传递</text><text x="555" y="88" text-anchor="middle" class="ts">U-Boot 加载到内存</text>
+<rect x="670" y="50" width="120" height="46" rx="8" class="st1"/><text x="730" y="70" text-anchor="middle" class="tx">内核解析</text><text x="730" y="88" text-anchor="middle" class="ts">unflattening</text>
+<rect x="60" y="180" width="190" height="46" rx="8" class="st1"/><text x="155" y="200" text-anchor="middle" class="tx">生成 platform_device</text><text x="155" y="218" text-anchor="middle" class="ts">含 compatible / 资源</text>
+<rect x="310" y="180" width="190" height="46" rx="8" class="st1"/><text x="405" y="200" text-anchor="middle" class="tx">bus match()</text><text x="405" y="218" text-anchor="middle" class="ts">按 compatible 匹配</text>
+<rect x="560" y="180" width="140" height="46" rx="8" class="st1"/><text x="630" y="208" text-anchor="middle" class="tx">driver probe()</text>
+<rect x="740" y="180" width="140" height="46" rx="8" class="ok"/><text x="810" y="200" text-anchor="middle" class="tx">获取资源</text><text x="810" y="218" text-anchor="middle" class="ts">reg/irq/gpio/clk</text>
+<rect x="310" y="280" width="390" height="40" rx="8" class="f2"/><text x="505" y="300" text-anchor="middle" class="tx">访问真实硬件（寄存器 / 中断 / 引脚 / 时钟）</text><text x="505" y="314" text-anchor="middle" class="ts">硬件描述与驱动代码彻底解耦：改板子=改 dts，不动内核</text>
+<line x1="160" y1="73" x2="198" y2="73" stroke="#0969da" stroke-width="1.5" marker-end="url(#aDt)"/>
+<line x1="300" y1="73" x2="338" y2="73" stroke="#0969da" stroke-width="1.5" marker-end="url(#aDt)"/>
+<line x1="440" y1="73" x2="478" y2="73" stroke="#0969da" stroke-width="1.5" marker-end="url(#aDt)"/>
+<line x1="630" y1="73" x2="668" y2="73" stroke="#0969da" stroke-width="1.5" marker-end="url(#aDt)"/>
+<path d="M 730 96 C 730 140 155 130 155 178" fill="none" stroke="#0969da" stroke-width="1.5" marker-end="url(#aDt)"/>
+<line x1="250" y1="203" x2="308" y2="203" stroke="#0969da" stroke-width="1.5" marker-end="url(#aDt)"/>
+<line x1="500" y1="203" x2="558" y2="203" stroke="#0969da" stroke-width="1.5" marker-end="url(#aDt)"/>
+<line x1="700" y1="203" x2="738" y2="203" stroke="#0969da" stroke-width="1.5" marker-end="url(#aDt)"/>
+<line x1="810" y1="226" x2="620" y2="278" stroke="#16a34a" stroke-width="1.5" marker-end="url(#aDt)"/>
+<text x="745" y="262" class="ts">probe 中按需取用</text>
+</svg>
+<figcaption>图 D3-1 设备树数据流：从 dts 源文件到驱动拿到资源的完整链路——compatible 是贯穿始终的匹配钥匙</figcaption>
+</figure></div>
 
 <h3>D3.2 语法核心速查</h3>
 <div class="codeblock"><pre><code data-lang="dts">/dts-v1/;                            /* 版本声明，必须是首行 */
@@ -19741,6 +19944,35 @@ cat /proc/iomem                                 # 物理地址空间占用</code
 <p>匹配函数（<code>bus-&gt;match</code>，以 platform 总线为例）的优先级：<strong>设备树 compatible</strong> &gt; ACPI ID &gt; <code>id_table</code> 中的 .name &gt; 回退比较 driver 与 device 的 name。<strong>结论：有设备树时，compatible 字符串决定一切。</strong></p>
 <div class="box tip"><span class="bt">💡 deferred probe（延迟探测）——不是错误，是机制</span>
 <p>当驱动依赖的资源尚未就绪（时钟/regulator/GPIO 的 provider 还没 probe），probe 应返回 <strong><code>-EPROBE_DEFER</code></strong>，内核会把该设备放入延迟队列（deferred_probe_pending_list），待有新驱动注册成功时自动重试。这是<strong>正常的依赖协调机制</strong>。若一直 defer，启动结束时会在 <code>/sys/kernel/debug/devices_deferred</code> 中列出——据此可定位缺失的依赖。</p></div>
+<div class="fig"><figure>
+<svg viewBox="0 0 900 430" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="probe 匹配与 deferred probe 流程">
+<style>.st1{fill:#eef4fd;stroke:#0969da;stroke-width:1.5}.gy{fill:#f1f5f9;stroke:#64748b;stroke-width:1.5}.ok{fill:#dcfce7;stroke:#16a34a;stroke-width:1.5}.df{fill:#fef3c7;stroke:#d97706;stroke-width:1.5}.tx{font:bold 12px sans-serif;fill:#1f2937}.ts{font:11px sans-serif;fill:#64748b}</style>
+<defs><marker id="aPr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="#0969da"/></marker><marker id="aPrO" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="#d97706"/></marker></defs>
+<rect x="30" y="50" width="200" height="46" rx="8" class="st1"/><text x="130" y="70" text-anchor="middle" class="tx">device / driver 注册</text><text x="130" y="88" text-anchor="middle" class="ts">「后到者主动」</text>
+<rect x="280" y="50" width="130" height="46" rx="8" class="st1"/><text x="345" y="78" text-anchor="middle" class="tx">bus match()</text>
+<rect x="460" y="50" width="180" height="46" rx="8" class="st1"/><text x="550" y="70" text-anchor="middle" class="tx">匹配？(compatible)</text><text x="550" y="88" text-anchor="middle" class="ts">of → acpi → id_table → name</text>
+<rect x="470" y="160" width="160" height="46" rx="8" class="gy"/><text x="550" y="188" text-anchor="middle" class="tx">保持空闲</text>
+<rect x="700" y="50" width="130" height="46" rx="8" class="st1"/><text x="765" y="78" text-anchor="middle" class="tx">调用 probe()</text>
+<rect x="650" y="160" width="230" height="46" rx="8" class="st1"/><text x="765" y="180" text-anchor="middle" class="tx">资源就绪？</text><text x="765" y="198" text-anchor="middle" class="ts">时钟 / regulator / GPIO 的 provider</text>
+<rect x="400" y="160" width="180" height="46" rx="8" class="df"/><text x="490" y="180" text-anchor="middle" class="tx">返回 -EPROBE_DEFER</text><text x="490" y="198" text-anchor="middle" class="ts">不是错误，是机制 ★</text>
+<rect x="400" y="260" width="180" height="46" rx="8" class="df"/><text x="490" y="280" text-anchor="middle" class="tx">进入延迟队列</text><text x="490" y="298" text-anchor="middle" class="ts">pending_list</text>
+<rect x="620" y="290" width="260" height="52" rx="8" class="ok"/><text x="750" y="312" text-anchor="middle" class="tx">✓ probe 成功 · 绑定完成</text><text x="750" y="330" text-anchor="middle" class="ts">devm 资源已登记，卸载自动释放</text>
+<path d="M 550 96 L 550 158" fill="none" stroke="#64748b" stroke-width="1.5" marker-end="url(#aPr)"/><text x="565" y="132" class="ts">否</text>
+<path d="M 640 73 L 698 73" fill="none" stroke="#0969da" stroke-width="1.5" marker-end="url(#aPr)"/><text x="660" y="64" class="ts">是</text>
+<path d="M 765 96 L 765 158" fill="none" stroke="#0969da" stroke-width="1.5" marker-end="url(#aPr)"/>
+<path d="M 650 190 L 582 186" fill="none" stroke="#d97706" stroke-width="1.5" marker-end="url(#aPrO)"/><text x="612" y="176" class="ts">未就绪</text>
+<path d="M 490 206 L 490 258" fill="none" stroke="#d97706" stroke-width="1.5" marker-end="url(#aPrO)"/>
+<path d="M 490 306 C 490 360 700 380 752 344" fill="none" stroke="#d97706" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#aPrO)"/>
+<text x="560" y="382" class="ts">新 provider 注册成功 → 自动重试</text>
+<path d="M 765 206 L 765 288" fill="none" stroke="#16a34a" stroke-width="1.5" marker-end="url(#aPr)"/><text x="782" y="248" class="ts">就绪</text>
+<text x="30" y="180" class="ts">排障入口：</text>
+<text x="30" y="200" class="ts">cat /sys/kernel/debug/</text>
+<text x="30" y="218" class="ts">  devices_deferred</text>
+<text x="30" y="248" class="ts">一直 defer = 某个</text>
+<text x="30" y="266" class="ts">provider 没编进内核</text>
+</svg>
+<figcaption>图 D4-1 probe 匹配与 deferred probe：匹配失败→空闲；资源未就绪→-EPROBE_DEFER 进延迟队列，provider 就绪后自动重试</figcaption>
+</figure></div>
 <div class="codeblock"><pre><code data-lang="bash">cat /sys/kernel/debug/devices_deferred   # 查看延迟探测的设备清单</code></pre></div>
 <div class="codeblock"><pre><code data-lang="c">/* 正确处理依赖获取：一律用 devm_ + 判错，让 defer 自然发生 */
 static int my_probe(struct platform_device *pdev)
@@ -20096,6 +20328,32 @@ static int my_poll(struct napi_struct *napi, int budget)
     }
     return work;
 }</code></pre></div>
+<div class="fig"><figure>
+<svg viewBox="0 0 900 360" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="NAPI 收包流程">
+<style>.st1{fill:#eef4fd;stroke:#0969da;stroke-width:1.5}.hw{fill:#f1f5f9;stroke:#64748b;stroke-width:1.5}.ok{fill:#dcfce7;stroke:#16a34a;stroke-width:1.5}.tx{font:bold 12px sans-serif;fill:#1f2937}.ts{font:11px sans-serif;fill:#64748b}</style>
+<defs><marker id="aNapi" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="#0969da"/></marker></defs>
+<rect x="30" y="50" width="150" height="46" rx="8" class="hw"/><text x="105" y="78" text-anchor="middle" class="tx">包到达网卡</text>
+<rect x="230" y="50" width="150" height="46" rx="8" class="hw"/><text x="305" y="70" text-anchor="middle" class="tx">硬件 RX 队列</text><text x="305" y="88" text-anchor="middle" class="ts">DMA 直写内存</text>
+<rect x="430" y="50" width="180" height="46" rx="8" class="st1"/><text x="520" y="70" text-anchor="middle" class="tx">硬中断（仅第一个包）</text><text x="520" y="88" text-anchor="middle" class="ts">唤醒处理</text>
+<rect x="660" y="50" width="210" height="46" rx="8" class="st1"/><text x="765" y="70" text-anchor="middle" class="tx">关接收中断</text><text x="765" y="88" text-anchor="middle" class="ts">+ napi_schedule 调度轮询</text>
+<rect x="330" y="170" width="240" height="46" rx="8" class="st1"/><text x="450" y="190" text-anchor="middle" class="tx">NAPI poll(budget)</text><text x="450" y="208" text-anchor="middle" class="ts">软轮询批量收包</text>
+<rect x="630" y="170" width="200" height="46" rx="8" class="st1"/><text x="730" y="190" text-anchor="middle" class="tx">处理完？work &lt; budget</text><text x="730" y="208" text-anchor="middle" class="ts">队列空了？</text>
+<rect x="620" y="280" width="220" height="46" rx="8" class="ok"/><text x="730" y="300" text-anchor="middle" class="tx">napi_complete + 开中断</text><text x="730" y="318" text-anchor="middle" class="ts">回到中断待命（低负载）</text>
+<rect x="90" y="280" width="220" height="46" rx="8" class="st1"/><text x="200" y="300" text-anchor="middle" class="tx">继续下一轮轮询</text><text x="200" y="318" text-anchor="middle" class="ts">高负载：持续批量处理</text>
+<line x1="180" y1="73" x2="228" y2="73" stroke="#0969da" stroke-width="1.5" marker-end="url(#aNapi)"/>
+<line x1="380" y1="73" x2="428" y2="73" stroke="#0969da" stroke-width="1.5" marker-end="url(#aNapi)"/>
+<line x1="610" y1="73" x2="658" y2="73" stroke="#0969da" stroke-width="1.5" marker-end="url(#aNapi)"/>
+<path d="M 765 96 L 765 110 C 765 135 560 140 470 166" fill="none" stroke="#0969da" stroke-width="1.5" marker-end="url(#aNapi)"/>
+<line x1="570" y1="193" x2="628" y2="193" stroke="#0969da" stroke-width="1.5" marker-end="url(#aNapi)"/>
+<path d="M 730 216 L 730 278" fill="none" stroke="#16a34a" stroke-width="1.5" marker-end="url(#aNapi)"/><text x="745" y="250" class="ts">是（队列空）</text>
+<path d="M 628 205 C 500 240 340 250 215 278" fill="none" stroke="#0969da" stroke-width="1.5" marker-end="url(#aNapi)"/><text x="400" y="245" class="ts">否（还有包）</text>
+<path d="M 200 278 C 200 230 300 220 328 205" fill="none" stroke="#0969da" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#aNapi)"/>
+<text x="30" y="130" class="ts">★ 中断只在「第一包」出现一次，</text>
+<text x="30" y="148" class="ts">之后转入轮询——高吞吐下</text>
+<text x="30" y="166" class="ts">不再有中断风暴</text>
+</svg>
+<figcaption>图 D5-1 NAPI 收包流程：中断只唤醒一次，随后关中断转轮询——低负载走中断（低延迟），高负载走轮询（高吞吐）</figcaption>
+</figure></div>
 <div class="box tip"><span class="bt">💡 NAPI 为什么快</span>
 <p>纯中断模式在高速收包时会<strong>中断风暴</strong>——每包一次中断，CPU 全耗在上下文切换上。NAPI 的做法：<strong>第一个包用中断唤醒，随后关闭接收中断并转为轮询</strong>，一次处理一批（budget），处理完再开中断。低负载时走中断（低延迟），高负载时转轮询（高吞吐），兼顾两者。</p></div>
 
@@ -20221,6 +20479,28 @@ regmap_field_write(en, 1);
 <tr><td>⑨</td><td>kdump + crash 事后分析</td><td>高（需预留内存）</td><td>完整崩溃现场转储</td></tr>
 <tr><td>⑩</td><td>示波器 / 逻辑分析仪</td><td>硬件成本</td><td>时序、电平、协议正确性</td></tr>
 </table></div>
+<div class="fig"><figure>
+<svg viewBox="0 0 900 440" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="驱动问题分层排查决策树">
+<style>.st1{fill:#eef4fd;stroke:#0969da;stroke-width:1.5}.hw{fill:#f1f5f9;stroke:#64748b;stroke-width:1.5}.ok{fill:#dcfce7;stroke:#16a34a;stroke-width:1.5}.er{fill:#fecaca;stroke:#dc2626;stroke-width:1.5}.tx{font:bold 12px sans-serif;fill:#1f2937}.ts{font:11px sans-serif;fill:#64748b}</style>
+<defs><marker id="aDbg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="#0969da"/></marker></defs>
+<rect x="340" y="30" width="220" height="46" rx="8" class="er"/><text x="450" y="58" text-anchor="middle" class="tx">驱动问题现象</text>
+<rect x="320" y="120" width="260" height="56" rx="8" class="st1"/><text x="450" y="142" text-anchor="middle" class="tx">第一步：分层定责</text><text x="450" y="162" text-anchor="middle" class="ts">strace 看应用调了什么 · devmem2 验硬件</text>
+<rect x="80" y="230" width="200" height="66" rx="8" class="st1"/><text x="180" y="252" text-anchor="middle" class="tx">接口层</text><text x="180" y="270" text-anchor="middle" class="ts">设备节点？权限？udev？</text><text x="180" y="286" text-anchor="middle" class="ts">→ strace 看 open/write 返回值</text>
+<rect x="350" y="230" width="200" height="66" rx="8" class="st1"/><text x="450" y="252" text-anchor="middle" class="tx">内核层</text><text x="450" y="270" text-anchor="middle" class="ts">dmesg → 动态调试 → ftrace</text><text x="450" y="286" text-anchor="middle" class="ts">→ /proc/interrupts · debugfs 状态</text>
+<rect x="620" y="230" width="200" height="66" rx="8" class="hw"/><text x="720" y="252" text-anchor="middle" class="tx">硬件层</text><text x="720" y="270" text-anchor="middle" class="ts">devmem2 手读寄存器</text><text x="720" y="286" text-anchor="middle" class="ts">→ 示波器/逻辑分析仪</text>
+<rect x="80" y="340" width="740" height="72" rx="8" class="ok"/><text x="450" y="362" text-anchor="middle" class="tx">崩溃 / 死机专项</text><text x="450" y="382" text-anchor="middle" class="ts">保存 Oops 全文 + 对应 vmlinux/.ko → scripts/faddr2line 解码 pc 到源码行</text><text x="450" y="400" text-anchor="middle" class="ts">→ 对照错误类型表（D6.5）定位根因 → 修复后压测验证</text>
+<line x1="450" y1="76" x2="450" y2="118" stroke="#0969da" stroke-width="1.5" marker-end="url(#aDbg)"/>
+<path d="M 380 176 C 300 200 240 210 190 228" fill="none" stroke="#0969da" stroke-width="1.5" marker-end="url(#aDbg)"/>
+<line x1="450" y1="176" x2="450" y2="228" stroke="#0969da" stroke-width="1.5" marker-end="url(#aDbg)"/>
+<path d="M 520 176 C 600 200 660 210 710 228" fill="none" stroke="#0969da" stroke-width="1.5" marker-end="url(#aDbg)"/>
+<path d="M 180 296 L 180 338" fill="none" stroke="#0969da" stroke-width="1.5" marker-end="url(#aDbg)"/>
+<path d="M 450 296 L 450 338" fill="none" stroke="#0969da" stroke-width="1.5" marker-end="url(#aDbg)"/>
+<path d="M 720 296 C 720 320 600 330 540 338" fill="none" stroke="#0969da" stroke-width="1.5" marker-end="url(#aDbg)"/>
+<text x="215" y="325" class="ts">open 报错/权限 → 先查这里（案例⑤）</text>
+<text x="560" y="426" text-anchor="middle" class="ts">★ 90% 的问题走不到「硬件层」—— 先用廉价手段把范围切窄，再上重武器</text>
+</svg>
+<figcaption>图 D6-1 驱动问题分层排查决策树：接口层 / 内核层 / 硬件层三分天下，崩溃走 Oops 解码专项通道</figcaption>
+</figure></div>
 <div class="box tip"><span class="bt">💡 核心方法论：从轻到重，二分定位</span>
 <p>① <strong>永远从代价最低的手段开始</strong>——90% 的问题靠 printk 和状态导出就能定位；② <strong>用二分法缩小范围</strong>：先确认是硬件、驱动还是应用问题，再在驱动内部按「probe / 中断 / 数据传输」切分；③ <strong>让内核自己报错</strong>：优先开启各种 CONFIG_DEBUG_* 选项，比人肉 review 高效得多。</p></div>
 

@@ -226,7 +226,7 @@ figure.fig figcaption{font-size:12.5px;color:var(--fg2);margin-top:8px}
     <div class="search-results" id="searchResults"></div>
   </div>
   <div class="progress-line"><div id="progressBar"></div></div>
-  <div class="progress-text" id="progressText">已学 0/144 章</div>
+  <div class="progress-text" id="progressText">已学 0/147 章</div>
   <nav class="toc" id="toc">
 
     <div class="part" data-part="p1">
@@ -455,6 +455,15 @@ figure.fig figcaption{font-size:12.5px;color:var(--fg2);margin-top:8px}
         <a href="#chd4" data-ch="chd4"><span class="chk"></span><span class="no">D4</span><span class="tt">设备模型与电源管理</span></a>
         <a href="#chd5" data-ch="chd5"><span class="chk"></span><span class="no">D5</span><span class="tt">子系统全景与选型</span></a>
         <a href="#chd6" data-ch="chd6"><span class="chk"></span><span class="no">D6</span><span class="tt">驱动调试技巧大全</span></a>
+        <a href="#chd7" data-ch="chd7"><span class="chk"></span><span class="no">D7</span><span class="tt">OpenAMP 异构核间通信</span></a>
+      </div>
+    </div>
+
+    <div class="part" data-part="p16">
+      <button class="part-toggle"><span class="arrow">▼</span>第十六篇 · 低功耗与边缘智能</button>
+      <div class="chap-list">
+        <a href="#chg1" data-ch="chg1"><span class="chk"></span><span class="no">G1</span><span class="tt">低功耗系统设计</span></a>
+        <a href="#chg2" data-ch="chg2"><span class="chk"></span><span class="no">G2</span><span class="tt">边缘 AI 部署工程化</span></a>
       </div>
     </div>
 
@@ -485,7 +494,8 @@ figure.fig figcaption{font-size:12.5px;color:var(--fg2);margin-top:8px}
     <span class="meta-pill">🖥 SoC：正点原子i.MX6U ALPHA · ATK-DLRK3568 · Orange Pi Zero(H3)</span>
     <span class="meta-pill">⚙️ RTOS：FreeRTOS · RT-Thread · Zephyr · seL4</span>
     <span class="meta-pill">📡 协议：UART/I2C/SPI/CAN/USB/WiFi/BLE/LoRa/NB-IoT/PCIe</span>
-    <span class="meta-pill">🔗 互连：PCIe 协议栈 / GPUDirect · NVLink / NCCL 集合通信 / RDMA</span>
+    <span class="meta-pill">🔗 互连：PCIe 协议栈 / GPUDirect · NVLink / NCCL 集合通信 / RDMA / OpenAMP</span>
+    <span class="meta-pill">🔋 进阶：低功耗工程 / 边缘 AI 部署 / 驱动开发精进</span>
     <span class="meta-pill">🏭 项目：6 个综合实战（含 GitHub 与立创开源对照）</span>
   </div>
 </div>
@@ -514,7 +524,8 @@ figure.fig figcaption{font-size:12.5px;color:var(--fg2);margin-top:8px}
   <a class="card" href="#part12"><span class="cn">⚡</span><h3>第十二篇 · 系统性能工程</h3><p>性能分析方法论(USE法·火焰图专题)/MCU系统优化(启动·裁剪·负载)/RTOS多任务调优/三大优化战役复盘/Linux内核与容器进阶/专家技能地图（SO1~SO5+SE）</p></a>
   <a class="card" href="#part13"><span class="cn">🧩</span><h3>第十三篇 · ZYNQ 异构开发</h3><p>ZYNQ7020 架构全景(PS+PL)/AXI互联/Verilog 精要/Vivado 七步流程/PS裸机与 PS-PL 协同实战/数据采集系统（Z1~Z5 · 正点原子领航者板）</p></a>
   <a class="card" href="#part14"><span class="cn">🔗</span><h3>第十四篇 · 高速互连与集合通信</h3><p>PCIe 协议栈深潜(TLP/信用流控/LTSSM)/带宽账本与 DMA 引擎/GPUDirect·NVLink·NVSwitch 拓扑/NCCL 集合通信(原语·Ring·Tree·调优)/RDMA·RoCE 与分布式通信实战（I1~I5）</p></a>
-  <a class="card" href="#part15"><span class="cn">🐧</span><h3>第十五篇 · 驱动开发精进</h3><p>内核模块机制与编程六大禁区/并发同步·内存·DMA 一致性/设备树深度实战与 Overlay/设备模型·deferred probe·电源管理/子系统全景与选型地图/Oops 解码与调试技巧大全（D1~D6）</p></a>
+  <a class="card" href="#part15"><span class="cn">🐧</span><h3>第十五篇 · 驱动开发精进</h3><p>内核模块机制与编程六大禁区/并发同步·内存·DMA 一致性/设备树深度实战与 Overlay/设备模型·deferred probe·电源管理/子系统全景与选型地图/Oops 解码与调试技巧大全/OpenAMP 异构核间通信（D1~D7）</p></a>
+  <a class="card" href="#part16"><span class="cn">🔋</span><h3>第十六篇 · 低功耗与边缘智能</h3><p>功耗来源模型与电压平方律/功耗测量方法学与占空比账本/MCU 睡眠阶梯与 Linux 电源子系统/边缘 AI 部署五阶段流水线/量化 PTQ·QAT/NPU 工具链与算子回退/推理性能剖析与热功耗预算（G1~G2）</p></a>
 </div>
 
 <h2>开始之前：硬件锚点清单</h2>
@@ -3561,22 +3572,24 @@ tshark -r cap.pcap -z io,stat,1           # 每秒吞吐曲线(文本版)
 </table></div>
 
 <h3>19.2 快速上手五步</h3>
-<div class="codeblock"><pre><code data-lang="text">① 硬件： fx2lafw兼容仪（24MHz/8ch）。接线共地！阈值电压设为 1.65V(TTL 3.3V系统)
-② 软件： 安装 PulseView(sigrok套件)，驱动选 fx2lafw (fx2) 或 DSLogic系列原生支持
-③ 配置： 采样率 ≥ 总线速率×6 （1Mbps UART 取 12MHz；SPI 8MHz 取 48MHz超限则16M凑合）
-         样本数 = 采样率 × 预计时长 （100MSamples @12MHz ≈ 8秒窗口）
-④ 触发： 例如 "D0 falling edge" 抓起始位；复杂触发如 "CS下降沿且D0=1"
-⑤ 分析： Add decoder→选协议→绑定通道→填参数(波特率/极性/位序)→表格视图逐条核对</code></pre></div>
+<ol>
+<li><strong>硬件</strong>：fx2lafw 兼容仪（24MHz/8ch）。<strong>接线共地！</strong>阈值电压设为 1.65V（TTL 3.3V 系统）；</li>
+<li><strong>软件</strong>：安装 PulseView（sigrok 套件），驱动选 fx2lafw (fx2)，DSLogic 系列原生支持；</li>
+<li><strong>配置</strong>：采样率 ≥ 总线速率 ×6（1Mbps UART 取 12MHz；SPI 8MHz 取 48MHz，超限则 16M 凑合）；样本数 = 采样率 × 预计时长（100MSamples @12MHz ≈ 8 秒窗口）；</li>
+<li><strong>触发</strong>：例如 "D0 falling edge" 抓起始位；复杂触发如 "CS 下降沿且 D0=1"；</li>
+<li><strong>分析</strong>：Add decoder → 选协议 → 绑定通道 → 填参数（波特率/极性/位序）→ 表格视图逐条核对。</li>
+</ol>
 
 <h3>19.3 三大总线的解码判读</h3>
 <h4>I2C</h4>
-<div class="codeblock"><pre><code data-lang="text">decoder参数： sda/scl通道；地址格式7bit；
-健康标志： START→ADDR+R/W→ACK(从机拉低)→DATA...→STOP
-病灶速查：
-  ADDR后NACK → 地址错/器件未上电/被其他主机占用
-  DATA中途NACK → 从机忙(EEPROM写周期!)或寄存器不存在
-  SCL卡死在低 → 从机clock stretch失控 → ch76九步解锁流程
-  连续START重复 → 主机重试风暴，查上层超时参数</code></pre></div>
+<p>decoder 参数：sda/scl 通道，地址格式 7bit。健康事务的形状：<code>START → ADDR+R/W → ACK(从机拉低) → DATA... → STOP</code>。I2C 病灶速查表：</p>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>波形病灶</th><th>根因候选</th><th>处置</th></tr>
+<tr><td>ADDR 后 NACK</td><td>地址错 / 器件未上电 / 被其他主机占用</td><td>核对 7bit vs 8bit 地址写法</td></tr>
+<tr><td>DATA 中途 NACK</td><td><strong>从机忙（EEPROM 写周期！）</strong>或寄存器不存在</td><td>写后 ack-polling 再继续</td></tr>
+<tr><td>SCL 卡死在低</td><td>从机 clock stretching 失控</td><td>ch76 九步解锁流程</td></tr>
+<tr><td>连续 START 重复</td><td>主机重试风暴</td><td>查上层超时参数</td></tr>
+</table></div>
 <h4>SPI</h4>
 <div class="codeblock"><pre><code data-lang="text">decoder参数： MOSI/MISO/CLK/CS + CPOL/CPHA模式 + 位序
 高频陷阱： 模式配错时数据整体移位半个bit——解码出乱码但波形看着"正常"。
@@ -3584,9 +3597,9 @@ tshark -r cap.pcap -z io,stat,1           # 每秒吞吐曲线(文本版)
 Flash调试利器： 解码出 9F(JEDEC ID) 命令后应答 EF4018...
               读ID不对→查WP#/HOLD#电平、QPI使能状态残留(ch77)</code></pre></div>
 <h4>UART/RS485</h4>
-<div class="codeblock"><pre><code data-lang="text">decoder参数： 波特率/数据位/校验/停止位；RS485再挂一路A-B差分需两通道算术相减
-             （fx2不支持数学通道→直接测A对地+B对地各一路，肉眼合成）
-帧错误指纹： 停止位处仍是低=framing error(波特率失配/线路噪声)</code></pre></div>
+<p>decoder 参数：波特率/数据位/校验/停止位。RS485 再挂一路 A-B 差分需两通道算术相减——fx2 不支持数学通道，<strong>直接测 A 对地 + B 对地各一路，肉眼合成</strong>。</p>
+<div class="box tip"><span class="bt">💡 帧错误指纹</span>
+<p>停止位处仍是低 = <strong>framing error</strong>（波特率失配 / 线路噪声）——表格视图里一眼可辨。</p></div>
 
 <h3>19.4 数字域独门绝技</h3>
 <div class="codeblock"><pre><code data-lang="c">/* ① 状态机轨迹外测： 固件里预留4个GPIO输出当前状态号(二进制编码)
@@ -3624,14 +3637,16 @@ df.state.plot(drawstyle='steps-post')          # 整个系统的行为时间线�
 </table></div>
 
 <h3>19.7 完整案例：I2C 读温感全程侦破（从乱码到修复）</h3>
-<div class="codeblock"><pre><code data-lang="text">背景： 主机读 LM75 偶发读到 0xFFFF。
-① PulseView @2MHz 采 SCL/SDA 各 5 秒，Add Decoder→I2C
-② 表格视图过滤 NACK： 发现「写指针寄存器」后偶发 NACK
-③ 展开该事务逐位看： STOP 后仅 0.4µs 就 START 下一次 —— 
-   手册要求写后 tBUSFREE ≥ 4.7µs(SMBus) / 该器件需 1ms 写周期！
-④ 根因： 驱动连发两条事务未等待器件内部写完成
-⑤ 修复： 写后 ack-polling 循环(地址 ACK 即就绪) —— 复测 10 万次零错
-方法论沉淀： 协议分析仪的价值在「把时序违规变成可见的帧级证据」。</code></pre></div>
+<p><strong>案例</strong>：主机读 LM75 温度传感器，偶发读到 0xFFFF。</p>
+<ol>
+<li>PulseView @2MHz 采 SCL/SDA 各 5 秒，Add Decoder → I2C；</li>
+<li>表格视图过滤 NACK：发现「写指针寄存器」后偶发 NACK；</li>
+<li>展开该事务逐位看：<strong>STOP 后仅 0.4µs 就 START 下一次</strong>——而手册要求写后 t<sub>BUSFREE</sub> ≥ 4.7µs（SMBus），该器件需 1ms 写周期；</li>
+<li>根因：驱动连发两条事务，未等待器件内部写完成；</li>
+<li>修复：写后 ack-polling 循环（地址 ACK 即就绪）——复测 10 万次零错。</li>
+</ol>
+<div class="box tip"><span class="bt">💡 方法论沉淀</span>
+<p>协议分析仪的价值在「<strong>把时序违规变成可见的帧级证据</strong>」—— speculation 变测量，争论即终结。</p></div>
 
 <h3>19.8 触发进阶：让仪器替你熬夜蹲守</h3>
 <ul>
@@ -5523,6 +5538,9 @@ esp_wifi_set_mode(WIFI_MODE_STA); esp_wifi_start();
 <li>推导 Modem-sleep 下 DTIM=3、Beacon=100ms 的平均监听占空比。</li>
 <li>为 BLE OTA 设计分块传输协议：MTU、窗口、CRC、断点续传字段。</li>
 </ol></div>
+<div class="lab"><strong>🧪 动手实验 L32-1：WiFi 功耗三态实测（120 分钟）</strong>
+<p><strong>步骤</strong>：① 串联电流表（或功耗分析仪）给 ESP32 供电，记录 Modem-sleep / 轻度睡眠 / 深度睡眠三档电流；② 固定 DTIM=1 重测，对比监听占空比变化（验证 32.4 推导）；③ 写一个 10 秒周期的数据上报程序，测「深睡+快速重连」与「常连 Modem-sleep」两种策略的实际平均电流；④ 用电池容量算出两种策略的理论续航。</p>
+<p><strong>验收</strong>：三档电流数据表 + 两种上报策略的续航对比与选型结论。</p></div>
 </section>
 
 <section class="chapter" id="ch33">
@@ -8514,8 +8532,11 @@ M6 老化与报告: 8h 温升+jitter 分布归档</code></pre></div>
 <details class="qa"><summary>T2：IMU 数据偶发跳变导致姿态抽搐？</summary><div class="ans"><p>SPI 干扰或 DMA 缓冲未对齐。示波器查 SCK 质量；缓冲 aligned(32)+CRC 校验；软件加 3σ 离群剔除。</p></div></details>
 <details class="qa"><summary>T3：两个高优任务互抢 CPU 使速度环延迟？</summary><div class="ans"><p>回到 ch45 预算表：把遥测类任务降级并限频；用 Tracealyzer 泳道确认干扰源(ch51a)。</p></div></details>
 
-<div class="box tip"><span class="bt">🗺️ 本章知识地图（项目收束）</span>
-<p><strong>前置依赖</strong>：第五篇全部。<strong>后续衔接</strong>：CAN 遥测协议可升级 UDS；FOC 经验直通 ODrive 级项目。<strong>开源定位</strong>：SimpleFOC 的 foc.c 定点化改造练习——把浮点版移植成 Q15 是绝佳内功训练。</p></div>
+<div class="lab"><strong>🧪 动手实验 L53-1：云台任务时序实测（90 分钟）</strong>
+<p><strong>步骤</strong>：① 在 IMU 采集、姿态解算、电机控制三个任务的关键路径各翻转一个 GPIO；② 逻辑分析仪录制 10 秒，测量控制环实际周期抖动；③ 用 Tracealyzer/SystemView 导出任务切换甘特图，找出最长抢占链；④ 注入 53.2 的任一故障（如 IMU 数据延迟），观察控制环抖动与丢拍表现；⑤ 对照 53.1 的任务表验证优先级设计是否成立。</p>
+<p><strong>验收</strong>：一张实测周期抖动图 + 一份「故障注入→现象→原因」记录表。</p></div>
+  <div class="box tip"><span class="bt">🗺️ 本章知识地图（项目收束）</span>
+  <p><strong>前置依赖</strong>：第五篇全部。<strong>后续衔接</strong>：CAN 遥测协议可升级 UDS；FOC 经验直通 ODrive 级项目。<strong>开源定位</strong>：SimpleFOC 的 foc.c 定点化改造练习——把浮点版移植成 Q15 是绝佳内功训练。</p></div>
 </section>
 
 <div class="part-divider" id="part6">
@@ -8735,6 +8756,30 @@ done
 </ul></div>
 
 <h3>56.1 内核阶段十步曲</h3>
+<div class="fig"><figure>
+<svg viewBox="0 0 900 330" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="嵌入式 Linux 启动链路全景">
+<style>.st1{fill:#eef4fd;stroke:#0969da;stroke-width:1.5}.hw{fill:#f1f5f9;stroke:#64748b;stroke-width:1.5}.ok{fill:#dcfce7;stroke:#16a34a;stroke-width:1.5}.tx{font:bold 12px sans-serif;fill:#1f2937}.ts{font:11px sans-serif;fill:#64748b}</style>
+<defs><marker id="aBoot" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="#0969da"/></marker></defs>
+<rect x="30" y="50" width="130" height="52" rx="8" class="hw"/><text x="95" y="72" text-anchor="middle" class="tx">BootROM</text><text x="95" y="90" text-anchor="middle" class="ts">芯片固化 · 不可改</text>
+<rect x="210" y="50" width="150" height="52" rx="8" class="st1"/><text x="285" y="72" text-anchor="middle" class="tx">SPL + ATF</text><text x="285" y="90" text-anchor="middle" class="ts">初始化 DRAM · 安全启动</text>
+<rect x="410" y="50" width="140" height="52" rx="8" class="st1"/><text x="480" y="72" text-anchor="middle" class="tx">U-Boot</text><text x="480" y="90" text-anchor="middle" class="ts">加载内核+DTB · 目标 &lt;1s</text>
+<rect x="600" y="50" width="160" height="52" rx="8" class="st1"/><text x="680" y="72" text-anchor="middle" class="tx">Kernel</text><text x="680" y="90" text-anchor="middle" class="ts">解压 · 设备树解析 · 挂根</text>
+<rect x="620" y="170" width="160" height="52" rx="8" class="st1"/><text x="700" y="192" text-anchor="middle" class="tx">initramfs / init</text><text x="700" y="210" text-anchor="middle" class="ts">早期用户空间</text>
+<rect x="410" y="170" width="150" height="52" rx="8" class="st1"/><text x="485" y="192" text-anchor="middle" class="tx">/sbin/init</text><text x="485" y="210" text-anchor="middle" class="ts">systemd 或 BusyBox init</text>
+<rect x="210" y="170" width="150" height="52" rx="8" class="st1"/><text x="285" y="192" text-anchor="middle" class="tx">systemd 就绪</text><text x="285" y="210" text-anchor="middle" class="ts">按依赖并行拉起服务</text>
+<rect x="30" y="170" width="140" height="52" rx="8" class="ok"/><text x="100" y="192" text-anchor="middle" class="tx">业务应用</text><text x="100" y="210" text-anchor="middle" class="ts">你的产品逻辑</text>
+<line x1="160" y1="76" x2="208" y2="76" stroke="#0969da" stroke-width="1.5" marker-end="url(#aBoot)"/>
+<line x1="360" y1="76" x2="408" y2="76" stroke="#0969da" stroke-width="1.5" marker-end="url(#aBoot)"/>
+<line x1="550" y1="76" x2="598" y2="76" stroke="#0969da" stroke-width="1.5" marker-end="url(#aBoot)"/>
+<path d="M 680 102 L 700 168" fill="none" stroke="#0969da" stroke-width="1.5" marker-end="url(#aBoot)"/>
+<line x1="618" y1="196" x2="562" y2="196" stroke="#0969da" stroke-width="1.5" marker-end="url(#aBoot)"/>
+<line x1="408" y1="196" x2="362" y2="196" stroke="#0969da" stroke-width="1.5" marker-end="url(#aBoot)"/>
+<line x1="208" y1="196" x2="162" y2="196" stroke="#0969da" stroke-width="1.5" marker-end="url(#aBoot)"/>
+<text x="450" y="272" text-anchor="middle" class="ts">提速抓手：U-Boot 裁剪与静默 → 内核 printk 延后/initcall 优化 → systemd 并行化与去依赖</text>
+<text x="450" y="294" text-anchor="middle" class="ts">排障锚点：每一级都有自己的日志出口 —— 串口从第一行 print 开始盯，卡在哪一级日志就停在哪</text>
+</svg>
+<figcaption>图 56-1 嵌入式 Linux 启动链路：上电到业务的完整接力——每级只负责「初始化下一级所需的minimum」，日志逐级接管</figcaption>
+</figure></div>
 <div class="codeblock"><pre><code data-lang="text">zImage 自解压 → __start → start_kernel()
 ① setup_arch: 读 dtb,建页表,开MMU
 ② mm_init/memblock 收尾
@@ -9010,6 +9055,28 @@ all:
 	$(MAKE) -C $(KDIR) M=$(PWD) ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- modules
 # 板上： insmod hello_drv.ko ; cat /dev/hello ; echo hi > /dev/hello</code></pre></div>
 
+<div class="fig"><figure>
+<svg viewBox="0 0 900 320" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="字符设备一次 read 的数据流">
+<style>.st1{fill:#eef4fd;stroke:#0969da;stroke-width:1.5}.us{fill:#fef3c7;stroke:#d97706;stroke-width:1.5}.hw{fill:#f1f5f9;stroke:#64748b;stroke-width:1.5}.tx{font:bold 12px sans-serif;fill:#1f2937}.ts{font:11px sans-serif;fill:#64748b}</style>
+<defs><marker id="aCdev" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="#0969da"/></marker><marker id="aCdevG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="#16a34a"/></marker></defs>
+<rect x="40" y="50" width="200" height="56" rx="8" class="us"/><text x="140" y="72" text-anchor="middle" class="tx">应用（用户态）</text><text x="140" y="92" text-anchor="middle" class="ts">n = read(fd, buf, len);</text>
+<rect x="320" y="50" width="170" height="56" rx="8" class="st1"/><text x="405" y="72" text-anchor="middle" class="tx">VFS / 系统调用</text><text x="405" y="92" text-anchor="middle" class="ts">sys_read → 定位 file</text>
+<rect x="560" y="50" width="150" height="56" rx="8" class="st1"/><text x="635" y="72" text-anchor="middle" class="tx">file_operations</text><text x="635" y="92" text-anchor="middle" class="ts">my_read()</text>
+<rect x="760" y="50" width="110" height="56" rx="8" class="hw"/><text x="815" y="72" text-anchor="middle" class="tx">硬件 / 缓冲</text><text x="815" y="92" text-anchor="middle" class="ts">寄存器 · FIFO</text>
+<line x1="240" y1="78" x2="318" y2="78" stroke="#0969da" stroke-width="1.8" marker-end="url(#aCdev)"/>
+<line x1="490" y1="78" x2="558" y2="78" stroke="#0969da" stroke-width="1.8" marker-end="url(#aCdev)"/>
+<line x1="710" y1="78" x2="758" y2="78" stroke="#0969da" stroke-width="1.8" marker-end="url(#aCdev)"/>
+<path d="M 790 108 C 790 180 300 190 145 108" fill="none" stroke="#16a34a" stroke-width="1.8" marker-end="url(#aCdevG)"/>
+<text x="450" y="172" text-anchor="middle" class="ts">数据回流：copy_to_user(用户 buf, 内核缓冲, len) —— 唯一合法的用户态/内核态搬运通道</text>
+<text x="140" y="140" text-anchor="middle" class="ts">open 时 container_of 从 inode 反推设备结构</text>
+<text x="140" y="158" text-anchor="middle" class="ts">挂到 filp-&gt;private_data，read/write 共享</text>
+<text x="635" y="140" text-anchor="middle" class="ts">read/write/poll/ioctl 同一入口注册</text>
+<text x="635" y="158" text-anchor="middle" class="ts">无数据可读 → wait_event 睡眠</text>
+<text x="450" y="240" text-anchor="middle" class="ts">边界规则：用户指针一律 copy_*_user；内核栈 ≤8KB；临界区选择见 D2 篇</text>
+<text x="450" y="262" text-anchor="middle" class="ts">返回值约定：成功返回字节数；0 = EOF；负数 = -errno（-EFAULT / -ERESTARTSYS…）</text>
+</svg>
+<figcaption>图 58-1 一次 read() 的完整旅程：应用 → VFS → file_operations → 硬件，数据经 copy_to_user 回流——这条线就是字符驱动的全部骨架</figcaption>
+</figure></div>
 <h3>58.2 用户态/内核态边界规则</h3>
 <div class="tbl-wrap"><table class="tbl">
 <tr><th>规则</th><th>原因</th></tr>
@@ -9392,6 +9459,30 @@ backlight: pwm-backlight 节点配亮度表 → /sys/class/backlight/*/
 <tr><td><strong>threaded irq ★</strong></td><td>专用内核线程(可调优先级)</td><td>✅</td><td>驱动中断处理的现代默认答案</td></tr>
 </table></div>
 
+<div class="fig"><figure>
+<svg viewBox="0 0 900 380" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="中断上半部与三种下半部分派">
+<style>.st1{fill:#eef4fd;stroke:#0969da;stroke-width:1.5}.hw{fill:#f1f5f9;stroke:#64748b;stroke-width:1.5}.ok{fill:#dcfce7;stroke:#16a34a;stroke-width:1.5}.wn{fill:#fef3c7;stroke:#d97706;stroke-width:1.5}.gy{fill:#f1f5f9;stroke:#94a3b8;stroke-width:1.5;stroke-dasharray="6 4"}.tx{font:bold 12px sans-serif;fill:#1f2937}.ts{font:11px sans-serif;fill:#64748b}</style>
+<defs><marker id="aIsr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="#0969da"/></marker></defs>
+<rect x="30" y="60" width="140" height="52" rx="8" class="hw"/><text x="100" y="82" text-anchor="middle" class="tx">硬件中断到来</text><text x="100" y="100" text-anchor="middle" class="ts">设备拉起 IRQ</text>
+<rect x="220" y="60" width="90" height="52" rx="8" class="st1"/><text x="265" y="82" text-anchor="middle" class="tx">GIC</text><text x="265" y="100" text-anchor="middle" class="ts">路由到 CPU</text>
+<rect x="360" y="60" width="210" height="52" rx="8" class="wn"/><text x="465" y="80" text-anchor="middle" class="tx">上半部 ISR（硬中断上下文）</text><text x="465" y="98" text-anchor="middle" class="ts">不可睡眠 · 越快越好（µs 级）</text>
+<rect x="360" y="180" width="210" height="66" rx="8" class="ok"/><text x="465" y="202" text-anchor="middle" class="tx">短工作：直接完成</text><text x="465" y="220" text-anchor="middle" class="ts">清中断源 · 置标志 · wake_up</text><text x="465" y="236" text-anchor="middle" class="ts">≤ 几十行，立即返回</text>
+<text x="640" y="120" class="ts">工作量大？↓ 延后给下半部（三种选择）</text>
+<rect x="640" y="140" width="230" height="52" rx="8" class="st1"/><text x="755" y="158" text-anchor="middle" class="tx">threaded_irq（内核线程）★</text><text x="755" y="176" text-anchor="middle" class="ts">可睡眠 · 现代首选 · 可优先级调</text>
+<rect x="640" y="204" width="230" height="52" rx="8" class="st1"/><text x="755" y="222" text-anchor="middle" class="tx">workqueue（工作队列）</text><text x="755" y="240" text-anchor="middle" class="ts">可睡眠 · 适合推后较久的处理</text>
+<rect x="640" y="268" width="230" height="52" rx="8" class="gy"/><text x="755" y="286" text-anchor="middle" class="tx">tasklet（软中断）</text><text x="755" y="304" text-anchor="middle" class="ts">不可睡眠 · 遗留接口 · 新代码别用</text>
+<line x1="170" y1="86" x2="218" y2="86" stroke="#0969da" stroke-width="1.5" marker-end="url(#aIsr)"/>
+<line x1="310" y1="86" x2="358" y2="86" stroke="#0969da" stroke-width="1.5" marker-end="url(#aIsr)"/>
+<path d="M 465 112 L 465 178" fill="none" stroke="#16a34a" stroke-width="1.5" marker-end="url(#aIsr)"/>
+<text x="478" y="152" class="ts">轻</text>
+<path d="M 570 90 C 620 100 630 120 660 150" fill="none" stroke="#0969da" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#aIsr)"/>
+<path d="M 570 96 C 610 130 620 190 660 216" fill="none" stroke="#0969da" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#aIsr)"/>
+<path d="M 570 102 C 600 170 610 260 660 282" fill="none" stroke="#0969da" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#aIsr)"/>
+<text x="450" y="330" text-anchor="middle" class="ts">记忆：上半部「应答硬件 + 记录事件」，真正干活的全在下半部 —— 上半部每多待 1µs，全系统中断延迟就多 1µs</text>
+<text x="450" y="350" text-anchor="middle" class="ts">判据：临界区要睡眠 → threaded/workqueue；纯标志位操作 → 上半部直接做完</text>
+</svg>
+<figcaption>图 61-1 中断处理分派全景：上半部只做最紧急的事，重活按「是否需要睡眠」分流到 threaded_irq / workqueue / tasklet</figcaption>
+</figure></div>
 <h3>61.2 threaded_irq 标准范式</h3>
 <div class="codeblock"><pre><code data-lang="c">ret = request_threaded_irq(irq,
         my_hardirq_handler,    /* 上半部： 判源+清标志，快进快出 */
@@ -9737,6 +9828,30 @@ Backtrace: ... [<bf0030a8>] (mydrv_read) from ...
 ⑤ 常见病因映射： paging@bffxxxxx=ioremap越界/null deref@0x0=
    未检查指针/Oops in interrupt=ISR里睡眠了</code></pre></div>
 
+<div class="fig"><figure>
+<svg viewBox="0 0 900 320" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Oops 崩溃解码定位流程">
+<style>.st1{fill:#eef4fd;stroke:#0969da;stroke-width:1.5}.er{fill:#fecaca;stroke:#dc2626;stroke-width:1.5}.ok{fill:#dcfce7;stroke:#16a34a;stroke-width:1.5}.tx{font:bold 12px sans-serif;fill:#1f2937}.ts{font:11px sans-serif;fill:#64748b}</style>
+<defs><marker id="aOops" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="#0969da"/></marker></defs>
+<rect x="30" y="50" width="150" height="52" rx="8" class="er"/><text x="105" y="72" text-anchor="middle" class="tx">Oops / panic 发生</text><text x="105" y="90" text-anchor="middle" class="ts">串口狂刷调用栈</text>
+<rect x="230" y="50" width="160" height="52" rx="8" class="st1"/><text x="310" y="72" text-anchor="middle" class="tx">① 保存现场</text><text x="310" y="90" text-anchor="middle" class="ts">完整日志 + 别急着重启</text>
+<rect x="440" y="50" width="180" height="52" rx="8" class="st1"/><text x="530" y="72" text-anchor="middle" class="tx">② 抓关键字段</text><text x="530" y="90" text-anchor="middle" class="ts">错误类型 · 访问地址 · pc 字段</text>
+<rect x="670" y="50" width="180" height="52" rx="8" class="st1"/><text x="760" y="72" text-anchor="middle" class="tx">③ 备齐符号文件</text><text x="760" y="90" text-anchor="middle" class="ts">vmlinux + 同版本 .ko</text>
+<rect x="670" y="180" width="180" height="52" rx="8" class="st1"/><text x="760" y="202" text-anchor="middle" class="tx">④ 解码到源码行</text><text x="760" y="220" text-anchor="middle" class="ts">scripts/faddr2line</text>
+<rect x="440" y="180" width="180" height="52" rx="8" class="st1"/><text x="530" y="202" text-anchor="middle" class="tx">⑤ 定位根因</text><text x="530" y="220" text-anchor="middle" class="ts">对照错误类型表(D6.5)</text>
+<rect x="200" y="180" width="190" height="52" rx="8" class="st1"/><text x="295" y="202" text-anchor="middle" class="tx">⑥ 修复 + 验证</text><text x="295" y="220" text-anchor="middle" class="ts">压测复现场景确认不再崩</text>
+<rect x="30" y="180" width="120" height="52" rx="8" class="ok"/><text x="90" y="202" text-anchor="middle" class="tx">✓ 收尾</text><text x="90" y="220" text-anchor="middle" class="ts">记录复盘</text>
+<line x1="180" y1="76" x2="228" y2="76" stroke="#0969da" stroke-width="1.5" marker-end="url(#aOops)"/>
+<line x1="390" y1="76" x2="438" y2="76" stroke="#0969da" stroke-width="1.5" marker-end="url(#aOops)"/>
+<line x1="620" y1="76" x2="668" y2="76" stroke="#0969da" stroke-width="1.5" marker-end="url(#aOops)"/>
+<line x1="760" y1="102" x2="760" y2="178" stroke="#0969da" stroke-width="1.5" marker-end="url(#aOops)"/>
+<line x1="668" y1="206" x2="622" y2="206" stroke="#0969da" stroke-width="1.5" marker-end="url(#aOops)"/>
+<line x1="438" y1="206" x2="392" y2="206" stroke="#0969da" stroke-width="1.5" marker-end="url(#aOops)"/>
+<line x1="198" y1="206" x2="152" y2="206" stroke="#0969da" stroke-width="1.5" marker-end="url(#aOops)"/>
+<text x="450" y="280" text-anchor="middle" class="ts">pc 字段示例：my_probe+0x24/0x100 [mydrv] —— 函数内偏移 0x24，配合 faddr2line 一步直达 mydrv.c:87</text>
+<text x="450" y="300" text-anchor="middle" class="ts">地址≈0 → 空指针+成员偏移；反复崩溃在同一函数 → 先修这一处，再看是否有同类模式</text>
+</svg>
+<figcaption>图 64-1 Oops 解码六步法：保存现场 → 抓 pc 字段 → 备齐符号 → faddr2line 解码 → 对照类型表 → 修复验证——不要只看 Call trace 猜</figcaption>
+</figure></div>
 <h3>64.2 debugfs 取证宝库</h3>
 <div class="tbl-wrap"><table class="tbl">
 <tr><th>路径</th><th>内容</th></tr>
@@ -11572,15 +11687,18 @@ int flash_wait_ready(int timeout_ms){
 </ul></div>
 
 <h3>78.1 为什么 CAN 这么稳？</h3>
-<div class="codeblock"><pre><code data-lang="text">① 多主无损仲裁： ID 越小优先级越高，显性0覆盖隐性1 —— 
-   两站同时发送时按位竞争，输者自动变接收，帧不破坏零浪费
-② 错误分级处理： CRC/ACK/格式错误→错误帧重发；
-   错误计数器三级跳(Error Active→Passive→Bus Off) —— 
-   坏节点自动隔离不上累全网 ★工业可靠性精髓
-③ 差分传输+终端120Ω×2： 抗共模干扰，40m@1Mbps / 500m@125kbps
-
-标准帧结构： SOF|11bitID|RTR|控制(4b DLC)|0~8B数据|15bCRC|ACK|EOF
-CANFD 升级点： 数据段可变速率(最高8M)+64B载荷 —— 兼容仲裁段不变</code></pre></div>
+<p>CAN 能成为工业与车场的骨干总线，靠的是三个精巧机制：</p>
+<ul>
+<li><strong>多主无损仲裁</strong>：ID 越小优先级越高，显性 0 覆盖隐性 1——两站同时发送时按位竞争，<strong>输者自动变接收，帧不破坏零浪费</strong>；</li>
+<li><strong>错误分级处理</strong>：CRC/ACK/格式错误 → 错误帧重发；错误计数器三级跳（Error Active → Passive → Bus Off）——<strong>坏节点自动隔离，不上累全网</strong>，这是工业可靠性的精髓；</li>
+<li><strong>差分传输 + 终端 120Ω×2</strong>：抗共模干扰，40m@1Mbps / 500m@125kbps。</li>
+</ul>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>SOF</th><th>11bit ID</th><th>RTR</th><th>控制（4b DLC）</th><th>0~8B 数据</th><th>15b CRC</th><th>ACK</th><th>EOF</th></tr>
+<tr><td>起始</td><td>优先级仲裁</td><td>远程/数据帧</td><td>数据长度</td><td>有效载荷</td><td>校验</td><td>应答</td><td>帧结束</td></tr>
+</table></div>
+<div class="box tip"><span class="bt">💡 CAN FD 的升级点</span>
+<p>数据段可变速率（最高 8Mbps）+ 64B 载荷——<strong>仲裁段保持不变</strong>，所以经典 CAN 的仲裁与错误机制全部继承，存量设计可平滑升级。</p></div>
 
 <h3>78.2 SocketCAN 实操全集</h3>
 <div class="codeblock"><pre><code data-lang="bash"># 接口起停与配置
@@ -11598,15 +11716,14 @@ python-can / cantools(C语言版也可)  # 编程接口
 C: socket(PF_CAN,SOCK_RAW,CAN_RAW) → bind(can0) → read/write(struct can_frame)</code></pre></div>
 
 <h3>78.3 DBC 工作流：让信号有名字</h3>
-<div class="codeblock"><pre><code data-lang="text">DBC = CAN 世界的数据字典（Vector 定义，开源工具全兼容）：
-BO_ 373 MOTOR_STATUS: 6 Vector__XXX      # 报文373(0x175)，6字节
- SG_ Speed : 0|16@1+ (0.01,0) [0|600] "rpm"  XXX   # 起始位|长度@字节序+符号 (因子,偏移)
- SG_ Temp   : 16|8@1+ (1,-40) [-40|215] "degC" XXX
-Python 一行解码：
-import cantools; db=cantools.database.load('motor.dbc')
-db.decode_message(373,b'...') → {'Speed':1520.5,'Temp':63.0}
-收益： 报文定义单一事实来源；自动生成 C 结构体/文档/测试桩 —— 
-      车队协作必备。开源参考： opendbc(comma.ai 收录数百车型真实DBC)</code></pre></div>
+<p><strong>DBC = CAN 世界的数据字典</strong>（Vector 定义，开源工具全兼容）。报文布局、物理量换算（因子/偏移/量程/单位）全部声明在一处：</p>
+<div class="codeblock"><pre><code data-lang="c">BO_ 373 MOTOR_STATUS: 6 Vector__XXX      /* 报文373(0x175)，6字节 */
+ SG_ Speed : 0|16@1+ (0.01,0) [0|600] "rpm"  XXX   /* 起始位|长度@字节序+符号 (因子,偏移) */
+ SG_ Temp   : 16|8@1+ (1,-40) [-40|215] "degC" XXX</code></pre></div>
+<div class="codeblock"><pre><code data-lang="python">import cantools; db = cantools.database.load('motor.dbc')
+db.decode_message(373, b'...')   # → {'Speed': 1520.5, 'Temp': 63.0}</code></pre></div>
+<div class="box tip"><span class="bt">💡 为什么必须用 DBC</span>
+<p>报文定义<strong>单一事实来源</strong>；自动生成 C 结构体/文档/测试桩——车队协作必备。开源参考：opendbc（comma.ai 收录数百车型真实 DBC）。</p></div>
 
 <h3>78.4 应用层协议选型</h3>
 <div class="tbl-wrap"><table class="tbl">
@@ -11628,24 +11745,23 @@ db.decode_message(373,b'...') → {'Speed':1520.5,'Temp':63.0}
 </table></div>
 
 <h3>78.13 认知拓展：CANopen 对象字典与 AUTOSAR/EtherCAT 概览</h3>
-<div class="codeblock"><pre><code data-lang="text">CANopen 对象字典(Object Dictionary)核心概念：
-· OD = 设备的「数据地址空间」——每个参数/变量有一个 16bit 索引+8bit 子索引
-  0x1000: 设备类型 | 0x1001: 错误寄存器 | 0x1017: 心跳时间(ms)
-  0x2000+: 厂商自定义区 | 0x6000+: 标准化 Profile 区(如 CiA402 运动控制)
-· SDO(服务数据对象)： 读/写 OD 的异步请求-响应协议——用于配置
-· PDO(过程数据对象)： 无协议开销的实时映射传输——用于周期数据
-  PDO 映射： 将 OD 条目「绑定」到 PDO 的 8 字节载荷中——可动态重配
-
-AUTOSAR 分层架构(CP 经典平台)：
-┌─ SWC(Software Component) ← 应用层，与硬件无关
-├─ RTE(Runtime Environment) ← 虚拟功能总线，生成胶水代码
-├─ BSW 基础软件： ECU抽象层 / 微控制器抽象层(MCAL) / 服务层
-└─ Microcontroller
-嵌入式工程师的切入点： MCAL 驱动开发 + OS 配置 + COM Stack 集成。
-
-EtherCAT 一句话： 基于 Ethernet 但改了物理帧结构——主站发一个报文，
-从站「飞读飞写」后转发给下一站，回到主站时一圈完成——微秒级同步。
-嵌入式从站开发： ET9300 Slave Stack Code 或 SOES(开源)。</code></pre></div>
+<p><strong>CANopen 对象字典（Object Dictionary）</strong>：设备的「数据地址空间」——每个参数/变量有一个 16bit 索引 + 8bit 子索引。<code>0x1000</code> 设备类型、<code>0x1001</code> 错误寄存器、<code>0x1017</code> 心跳时间(ms)；<code>0x2000+</code> 厂商自定义区、<code>0x6000+</code> 标准化 Profile 区（如 CiA402 运动控制）。两种访问通道：</p>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>通道</th><th>特性</th><th>用途</th></tr>
+<tr><td><strong>SDO</strong>（服务数据对象）</td><td>读/写 OD 的异步请求-响应协议</td><td>配置类：低频、可靠</td></tr>
+<tr><td><strong>PDO</strong>（过程数据对象）</td><td>无协议开销的实时映射传输，可将 OD 条目「绑定」到 8 字节载荷——<strong>可动态重配</strong></td><td>周期数据：高频、低延迟</td></tr>
+</table></div>
+<p><strong>AUTOSAR 分层架构（CP 经典平台）</strong>——从上到下：</p>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>层</th><th>职责</th></tr>
+<tr><td>SWC（Software Component）</td><td>应用层，与硬件无关</td></tr>
+<tr><td>RTE（Runtime Environment）</td><td>虚拟功能总线，生成胶水代码</td></tr>
+<tr><td>BSW 基础软件</td><td>ECU 抽象层 / 微控制器抽象层（MCAL）/ 服务层</td></tr>
+<tr><td>Microcontroller</td><td>芯片本身</td></tr>
+</table></div>
+<p class="small muted">嵌入式工程师的切入点：<strong>MCAL 驱动开发 + OS 配置 + COM Stack 集成</strong>。</p>
+<div class="box tip"><span class="bt">💡 EtherCAT 一句话</span>
+<p>基于 Ethernet 但改了物理帧结构——主站发一个报文，从站<strong>「飞读飞写」</strong>后转发给下一站，回到主站时一圈完成，微秒级同步。嵌入式从站开发：ET9300 Slave Stack Code 或 SOES（开源）。</p></div>
 <div class="quiz"><strong>📝 思考题</strong><ol>
 <li>推导两个 ID 分别为 0x100 与 0x0F8 的节点同发时的逐位仲裁过程。</li>
 <li>用 cantools 给你的项目生成 C 编解码代码并集成 CI 回归。</li>
@@ -11690,15 +11806,15 @@ EtherCAT 一句话： 基于 Ethernet 但改了物理帧结构——主站发一
 </svg>
 <figcaption>78-1 CAN 标准帧结构与位仲裁过程：非破坏性仲裁是 CAN 实时性的根基</figcaption>
 </figure>
-<div class="codeblock"><pre><code data-lang="text">TEC(发送错误计数)/REC(接收) 规则速记：
-  成功收发 → 计数 -1(至0)； 错误 → +8(ERROR PASSIVE 界)/+8? 
-  简化记忆： 主错误+8，成功-1；TEC&gt;255 → BUS-OFF
-Bus-Off 后的两种恢复策略：
-① 自动恢复(内核 can restart-ms 参数)： 等 128×11 个隐性位序列自动回网
-② 受控重启： 应用层显式 ip link set canX type can restart —— 
-   推荐！配合退避计时避免「坏节点反复冲击总线」
-工程纪律： bus-off 必须上报云端并记录 TEC 现场 —— 
-   它几乎总是物理层问题的第一信号。</code></pre></div>
+<div class="box tip"><span class="bt">💡 TEC/REC 错误计数速记</span>
+<p>TEC（发送错误计数）/ REC（接收）：成功收发 → 计数 −1（至 0）；错误 → +8。<strong>简化记忆：主错误 +8，成功 −1；TEC &gt; 255 → BUS-OFF</strong>（节点离线，只听不说）。</p></div>
+<p>Bus-Off 后的两种恢复策略：</p>
+<ol>
+<li><strong>自动恢复</strong>（内核 <code>can restart-ms</code> 参数）：等 128×11 个隐性位序列自动回网；</li>
+<li><strong>受控重启</strong>（推荐）：应用层显式 <code>ip link set canX type can restart</code>——配合退避计时，避免「坏节点反复冲击总线」。</li>
+</ol>
+<div class="box warn"><span class="bt">⚠️ 工程纪律</span>
+<p>bus-off 必须上报云端并记录 TEC 现场——<strong>它几乎总是物理层问题的第一信号</strong>（线缆/终端电阻/干扰），不要只当软件事件处理。</p></div>
 
 <h3>78.7 完整工程：STM32 bxCAN 过滤器配置（MCU 侧补充）</h3>
 <div class="codeblock"><pre><code data-lang="c">/* 双 FIFO + 掩码过滤示例： 只收 ID 0x300~0x30F 到 FIFO0 */
@@ -11748,23 +11864,30 @@ HAL_CAN_ConfigFilter(&amp;hcan1,&amp;f);
 <tr><td>请求下载</td><td>0x34-0x37</td><td>固件刷写四件套</td><td>配合 0x31 例程检查+0x36 块传输</td></tr>
 <tr><td>复位 ECU</td><td>0x11</td><td>刷完重启生效</td><td>-</td></tr>
 </table></div>
-<div class="codeblock"><pre><code data-lang="text">多帧传输(ISO-TP)： UDS 报文超 8 字节走 FF(首帧)→FC(流控)→CF(连续帧)
-SocketCAN 上实现 ISO-TP： linux can-isotp 内核模块一行挂载：
-  ip link set vcan0 up ; isotpbind? 用 socat/isotptun 或 python-isotp
-刷写流程骨架： 编程会话 → 安全解锁 → 擦除(31 F0 60?) 例程 →
-  34(地址长度) → 36×N(块+块计数回卷) → 37 结束 → 完整性校验(31 F1?) → 11 01
-与 ch89 MCUboot 的关系： UDS 是「车规话术」的同一件事——概念一一对应。</code></pre></div>
+<p><strong>多帧传输（ISO-TP）</strong>：UDS 报文超 8 字节走 FF（首帧）→ FC（流控）→ CF（连续帧）。SocketCAN 上由 <code>can-isotp</code> 内核模块支持，用户态用 socat/isotptun 或 python-isotp。</p>
+<p><strong>UDS 刷写流程骨架</strong>（服务号序列）：</p>
+<ol>
+<li><code>10 02</code> 进入编程会话 → <code>27</code> 安全解锁；</li>
+<li>擦除例程（<code>31 F0 60</code>）；</li>
+<li><code>34</code> 请求下载（地址+长度）→ <code>36</code>×N 数据块（含块计数回卷）→ <code>37</code> 退出传输；</li>
+<li>完整性校验（<code>31 F1 01</code>）→ <code>11 01</code> 复位（ECU 重启进入新固件）。</li>
+</ol>
+<div class="box tip"><span class="bt">💡 与 ch89 MCUboot 的关系</span>
+<p>UDS 是「车规话术」的同一件事——编程会话≈MCUboot 的 recovery 模式、安全解锁≈签名验证、块传输+完整性校验≈dual-bank 搬运。<strong>概念一一对应，学会一个另一个自然通</strong>。</p></div>
 
 <h3>78.11 实战深化②：J1939 地址管理与参数组</h3>
-<div class="codeblock"><pre><code data-lang="text">29bit ID 拆解： Priority(3) | R(1) | PGN(18) | SA(8)
-PGN 再拆： PDU1 格式含目标地址(DA)， PDU2 广播群发
-关键机制：
-① 地址声明(SAE J1939-81)： 上电广播 NAME(64bit 设备身份)+竞争声明地址，
-   冲突者按 NAME 大小让位 —— 即插即用的根源
-② 参数组示例： PGN 65265 CCVS1(车速)、PGN 61444 EEC1(转速扭矩)
-③ 诊断网段： PGN 59904 请求 / 55242 DM1 活跃故障码 —— 
-   读 DM1 就能拿到整车故障灯背后的码表
-python-j1939 库可直接解析； cantools 也支持 j1939 DBC。</code></pre></div>
+<p>SAE J1939 基于 29bit 扩展 ID，位域划分：</p>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>Priority(3)</th><th>R(1)</th><th>PGN(18)</th><th>SA(8)</th></tr>
+<tr><td>报文优先级</td><td>保留</td><td>参数组编号——PDU1 含目标地址(DA)，PDU2 广播群发</td><td>源地址（设备身份）</td></tr>
+</table></div>
+<p>三个关键机制：</p>
+<ol>
+<li><strong>地址声明</strong>（SAE J1939-81）：上电广播 NAME（64bit 设备身份）+ 竞争声明地址，冲突者按 NAME 大小让位——<strong>即插即用的根源</strong>；</li>
+<li><strong>参数组示例</strong>：PGN 65265 CCVS1（车速）、PGN 61444 EEC1（转速扭矩）；</li>
+<li><strong>诊断网段</strong>：PGN 59904 请求 / 55242 DM1 活跃故障码——<strong>读 DM1 就能拿到整车故障灯背后的码表</strong>。</li>
+</ol>
+<p class="small muted">工具链：python-j1939 库可直接解析；cantools 也支持 j1939 DBC。</p>
 
 <h3>78.12 实战深化③：cantools C 代码生成工作流</h3>
 <div class="codeblock"><pre><code data-lang="bash"># 从 DBC 到嵌入式可编译资产的一条龙：
@@ -12413,16 +12536,14 @@ esp_now_send(peer_mac,payload,len);        // 单播；广播=FF:FF:FF:FF:FF:FF
 </ul></div>
 
 <h3>82.1 GATT 数据建模方法论</h3>
-<div class="codeblock"><pre><code data-lang="text">原则： 一个「可独立订阅的数据流」= 一个 Characteristic
-Service: 环境传感 FFE0
+<p><strong>设计原则：一个「可独立订阅的数据流」= 一个 Characteristic</strong>。环境传感服务的参考布局：</p>
+<div class="codeblock"><pre><code data-lang="text">Service: 环境传感 FFE0
  ├ Char FFE1 Temp      Read|Notify    (int16 x0.01°C)
  ├ Char FFE2 Humidity  Read|Notify
- └ Char FFE3 Ctrl      Write|WriteNR  (命令字节+参数)
-Descriptor: CCCD(0x2902) 自动生成 —— Notify 开关由客户端写它控制
-MTU 吞吐账本： ATT 默认 MTU23 → 有效载荷20B；
-  协商到 247 后： 每 conn interval(15ms)可发多个包，
-  DLE+2M PHY 理论 ~1.4Mbps，实际 iOS/Android 平台约 100~700KB/s。
-  高吞吐设计： 减少每包开销+批量特征+客户端 ACK 窗口管理。</code></pre></div>
+ └ Char FFE3 Ctrl      Write|WriteNR  (命令字节+参数)</code></pre></div>
+<p class="small muted">Descriptor：CCCD(0x2902) 自动生成——Notify 开关由客户端写它控制。</p>
+<div class="box tip"><span class="bt">💡 MTU 吞吐账本</span>
+<p>ATT 默认 MTU 23 → 有效载荷仅 20B；协商到 247 后每个 conn interval（15ms）可发多个包；DLE + 2M PHY 理论 ~1.4Mbps，<strong>实际 iOS/Android 平台约 100~700KB/s</strong>。高吞吐设计三招：减少每包开销 + 批量特征 + 客户端 ACK 窗口管理。</p></div>
 
 <h3>82.2 BlueZ D-Bus 编程（Linux 中心设备）</h3>
 <div class="codeblock"><pre><code data-lang="python"># python-blessed/bluezero 示意（生产可用 C sd-bus 同构）
@@ -12442,12 +12563,14 @@ C 语言： gdbus/sd-bus 注册回调处理 PropertiesChanged —— 事件驱�
 <tr><td>Nordic DFU(SMP/mcuboot manager)</td><td>包签名验证+分片传输+回滚 —— mcuboot 蓝牙传输版</td><td>nRF52/Zephyr 生态 ★成熟</td></tr>
 <tr><td>自定义 GATT DFU</td><td>FFE4 数据口+FFE5 控制口自研协议(ch30 思想移植)</td><td>ESP-IDF 等非 Nordic 平台</td></tr>
 </table></div>
-<div class="codeblock"><pre><code data-lang="text">自定义 DFU 协议骨架（可直接抄）：
-控制口命令： [CMD_START][total_len,crc] → 回 [ACK,chunk_size]
-           [CMD_DATA][seq,data...]     → 每 N 包回 CRC 校验点
-           [CMD_END] → 设备校验整体CRC → 写标志位重启 bootloader
-可靠性三件套： seq 序号去重 / 滑动窗口流控 / 断点续传(存已收长度到 NVS)
-安全两件套： 镜像签名(ECDSA)+版本单调递增防降级攻击</code></pre></div>
+<p><strong>自定义 DFU 协议骨架（可直接抄）</strong>：</p>
+<div class="codeblock"><pre><code data-lang="text">控制口命令： [CMD_START][total_len,crc] → 回 [ACK,chunk_size]
+            [CMD_DATA][seq,data...]     → 每 N 包回 CRC 校验点
+            [CMD_END]  → 设备校验整体CRC → 写标志位重启 bootloader</code></pre></div>
+<ul>
+<li><strong>可靠性三件套</strong>：seq 序号去重 / 滑动窗口流控 / 断点续传（存已收长度到 NVS）；</li>
+<li><strong>安全两件套</strong>：镜像签名（ECDSA）+ 版本单调递增防降级攻击。</li>
+</ul>
 
 <h3>82.4 常见故障排故表</h3>
 <div class="tbl-wrap"><table class="tbl">
@@ -12540,15 +12663,15 @@ static const ble_gatt_svc_def svcs[] = {
 <li>工具：nRF Sniffer + Wireshark 插件(空口取证标配)。</li>
 </ul></div>
 <h3>82.10 实战深化①：BLE 大数据分块流传输模式</h3>
-<div class="codeblock"><pre><code data-lang="text">需求： 经 BLE 传 100KB 日志/波形——远超单包能力。
-成熟模式(生产验证)：
-① 控制特征(C)： 客户端写 {CMD_START, total_len, crc}
-② 数据特征(D)： 服务端按「每 conn interval 尽量多发」推送分块
-     每块头 [seq:2B][len:1B][payload≤MTU-3]
-③ 流控： 客户端按接收速率周期性写 C {CREDIT,n} —— 慢了服务端暂停
-④ 完成： CRC 校验 → C {ACK,final} ； 断点续传记录 last_seq 于 NVS
-吞吐调优顺序(ch82.8 表)： MTU→DLE+2M PHY→每 CI 多包→最后才加频率。
-iOS 特别注意： 写 CCCD 后必须等订阅确认再开推，否则前几包静默丢。</code></pre></div>
+<p><strong>需求</strong>：经 BLE 传 100KB 日志/波形——远超单包能力。生产验证过的成熟模式：</p>
+<ol>
+<li><strong>控制特征(C)</strong>：客户端写 <code>{CMD_START, total_len, crc}</code>；</li>
+<li><strong>数据特征(D)</strong>：服务端按「每 conn interval 尽量多发」推送分块，每块头 <code>[seq:2B][len:1B][payload≤MTU-3]</code>；</li>
+<li><strong>流控</strong>：客户端按接收速率周期性写 C <code>{CREDIT,n}</code>——慢了服务端暂停；</li>
+<li><strong>完成</strong>：CRC 校验 → C <code>{ACK,final}</code>；断点续传记录 last_seq 于 NVS。</li>
+</ol>
+<div class="box warn"><span class="bt">⚠️ 吞吐调优顺序与 iOS 坑</span>
+<p>调优顺序（ch82.8 表）：<strong>MTU → DLE+2M PHY → 每 CI 多包 → 最后才加频率</strong>。iOS 特别注意：<strong>写 CCCD 后必须等订阅确认再开推，否则前几包静默丢</strong>。</p></div>
 
 <h3>82.11 实战深化②：HCI UART 主机/控制器分离架构</h3>
 <div class="tbl-wrap"><table class="tbl">
@@ -12557,20 +12680,19 @@ iOS 特别注意： 写 CCCD 后必须等订阅确认再开推，否则前几包
 <tr><td><strong>Host 与 Controller 分离</strong></td><td>Linux(BlueZ Host)+串口蓝牙模组(Controller, HCI over UART)</td><td>主机算力强/复用现有栈；P4 网关形态</td></tr>
 <tr><td>双芯片协处理</td><td>主 MCU 跑业务 + 专用 BLE 芯片跑协议，AT/HCI 桥接</td><td>主控资源紧张或认证隔离</td></tr>
 </table></div>
-<div class="codeblock"><pre><code data-lang="text">HCI UART 细节(H4/H5)： H4=裸流；H5=带滑动窗口重转发的可靠协议——
-  串口误码高的产品选 H5。 波特率切换流程： 上电低速→HCI_Set_Baudrate→高速。
-Linux 侧： btattach -B /dev/ttyS1 -S 921600 -P h4 ; BlueZ 自动接管。</code></pre></div>
+<p><strong>HCI UART 细节（H4/H5）</strong>：H4 = 裸流；H5 = 带滑动窗口重转发的可靠协议——<strong>串口误码高的产品选 H5</strong>。波特率切换流程：上电低速 → HCI_Set_Baudrate → 高速。Linux 侧一条命令接管：</p>
+<div class="codeblock"><pre><code data-lang="bash">btattach -B /dev/ttyS1 -S 921600 -P h4   # BlueZ 自动接管</code></pre></div>
 
 <h3>82.12 实战深化③：BLE Mesh 入门（照明模型实战）</h3>
-<div class="codeblock"><pre><code data-lang="text">Mesh ≠ BLE 连接： 广播中继泛洪(flood)，无连接概念。
-核心对象：
-· Provisioning： 新设备入网(OOB 认证→发 NetKey/AppKey/地址)
-· Model： Generic OnOff(开关)/Light Lightness(亮度)/Scene
-· Relay/TTL： 中继深度控制功耗与延迟的平衡(TTL=2~3 常用)
-ESP-IDF/Zephyr 都有 Mesh 协议栈；Zephyr 的 blemesh sample 是最好教材。
-规模经验值： 百灯级延迟 &lt;300ms 可达；千灯级要规划 subnet 分割。
-与 ch90? 无关——与 P4 组网对照： Mesh 适合「本地闭环」场景，
-跨互联网仍需一个网关节点做 Mesh↔MQTT 翻译。</code></pre></div>
+<p><strong>Mesh ≠ BLE 连接</strong>：广播中继泛洪（flood），无连接概念。三个核心对象：</p>
+<ul>
+<li><strong>Provisioning</strong>：新设备入网（OOB 认证 → 发 NetKey/AppKey/地址）；</li>
+<li><strong>Model</strong>：Generic OnOff（开关）/ Light Lightness（亮度）/ Scene；</li>
+<li><strong>Relay/TTL</strong>：中继深度控制功耗与延迟的平衡（TTL=2~3 常用）。</li>
+</ul>
+<p>ESP-IDF/Zephyr 都有 Mesh 协议栈；<strong>Zephyr 的 blemesh sample 是最好教材</strong>。规模经验值：百灯级延迟 &lt;300ms 可达；千灯级要规划 subnet 分割。</p>
+<div class="box tip"><span class="bt">💡 Mesh 的边界</span>
+<p>与 P4 组网对照：Mesh 适合「<strong>本地闭环</strong>」场景，跨互联网仍需一个网关节点做 <strong>Mesh ↔ MQTT 翻译</strong>——不要指望 Mesh 直接上云。</p></div>
 
 <div class="lab"><strong>🧪 动手实验 L82-2：BLE 日志回传通道（2 小时）</strong>
 <p><strong>步骤</strong>：① 实现 82.10 四特征模式(含 CREDIT 流控)；② 手机 App(bleak 脚本)拉取 50KB 日志并校验 CRC；③ 注入中断续传验证断点；④ 对比不同 PHY/MTU 配置的总耗时。<strong>验收</strong>：完整传输零差错 + 一张耗时对比表。</p></div>
@@ -13804,8 +13926,14 @@ imgtool sign --key root-ec-p256.pem --header-size 0x200 \
 <li><b>漏洞响应流程(SVPP)</b>：披露渠道/CVSS 定级/补丁 SLA——产品化安全的最后一环是流程不是代码。</li>
 </ul>
 
+<div class="quiz"><strong>📝 思考题</strong><ol>
+<li>设计威胁模型时，「防谁」的优先级如何排序？为什么说「物理接触 = 大概率沦陷」，硬件防护的边界在哪？</li>
+<li>MCUboot 全链中，签名验证发生在哪个阶段？primary/secondary 槽位各存什么，swap 升级失败如何回滚？</li>
+<li>i.MX 的 HAB 路线与 MCUboot 路线的信任根分别在哪？为什么说 HAB「烧了 SRK 就回不去」？</li>
+<li>运行时防护三板斧分别挡住哪类攻击？为什么 MPU 隔离不能替代安全启动？</li>
+</ol></div>
 <div class="box tip"><span class="bt">🗺️ 本章知识地图</span>
-<p><strong>前置依赖</strong>：ch05/06/21、ch63/89。<strong>后续衔接</strong>：S2 密钥基础设施；S4 产测含安全项验收。<strong>开源定位</strong>：mcuboot docs 设计章；NXP AN4581(i.MX HAB)？以官方最新 AN 为准。</p></div>
+  <p><strong>前置依赖</strong>：ch05/06/21、ch63/89。<strong>后续衔接</strong>：S2 密钥基础设施；S4 产测含安全项验收。<strong>开源定位</strong>：mcuboot docs 设计章；NXP AN4581(i.MX HAB)？以官方最新 AN 为准。</p></div>
 </section>
 
 
@@ -14049,8 +14177,14 @@ reset_and_expect "SELFTEST PASS" 15 && echo "PASS $SN $(date +%s)" >> trace.log
 <li><b>环保与合规收尾</b>：RoHS/REACH 声明、包装回收标识、电池运输 UN38.3——上市前法务清单别漏。</li>
 </ul>
 
+<div class="quiz"><strong>📝 思考题</strong><ol>
+<li>产线三站式（ST1 烧录 / ST2 冒烟 / ST3 老化）各自的「拦截目标」是什么？为什么冒烟测试要放在老化之前？</li>
+<li>烧录工装脚本中，如何区分「Flash 算法下载失败」与「目标未上电」？各自的现场特征与处置？</li>
+<li>老化三层筛选（高温 / 满载 / 电压拉偏）各对哪类缺陷敏感？为什么老化时间不是越长越好？</li>
+<li>某批次低温冷启动不良 3%，产测如何设计才能在线拦截而不是流到售后？（参考第85章同款案例）</li>
+</ol></div>
 <div class="box tip"><span class="bt">🗺️ 本章知识地图（第十篇收束·全库终点）</span>
-<p><strong>前置依赖</strong>：S1~S3 + ch44/ch87。<strong>毕业寄语</strong>：至此，你已走过「语言→工具→MCU→RTOS→Linux→Android→协议→安全→测试→量产」的全旅程。真正的专家之路从这里开始：挑一个方向深潜十年，同时保持每周动手。知识库会过时，但「测量驱动决策、分层控制复杂度、证据链说话」的方法论永远有效。<strong>去吧，去造那些让世界更可靠的东西。</strong></p></div>
+  <p><strong>前置依赖</strong>：S1~S3 + ch44/ch87。<strong>毕业寄语</strong>：至此，你已走过「语言→工具→MCU→RTOS→Linux→Android→协议→安全→测试→量产」的全旅程。真正的专家之路从这里开始：挑一个方向深潜十年，同时保持每周动手。知识库会过时，但「测量驱动决策、分层控制复杂度、证据链说话」的方法论永远有效。<strong>去吧，去造那些让世界更可靠的东西。</strong></p></div>
 </section>
 
 <div class="part-divider" id="part11">
@@ -14460,6 +14594,8 @@ float notch_run(biquad_t*f,float x){
   R>>P⁻ → K→0 → 几乎不信测量(测量很烂)
   R<<P⁻ → K→1 → 几乎全信测量(模型很烂)
   K 就是「自适应的滑动平均系数」—— A1 的 RC 是它的常增益特例！</code></pre></div>
+<div class="box tip"><span class="bt">💡 直觉锚点：K 是「按不确定性加权的自适应滑动平均」</span>
+<p>R ≫ P⁻（测量很烂）→ K→0 → 几乎不信测量；R ≪ P⁻（模型很烂）→ K→1 → 几乎全信测量。<strong>A1 篇的 RC 低通就是 K 为常数的特例</strong>——卡尔曼把「信谁多一点」变成了随不确定性自动调节的量。</p></div>
 
 <h3>A2.2 可运行 C 实现：双传感器温度估计</h3>
 <div class="codeblock"><pre><code data-lang="c">/* 场景： NTC 热敏(噪声大响应快) + DS18B20(准但慢 750ms) 融合 */
@@ -14499,16 +14635,19 @@ float kf_step(kf1_t*k,float z_fast,float z_slow,bool slow_valid){
 </table></div>
 
 <h3>A2.5 EKF：非线性世界的通行证（IMU 融合框架）</h3>
-<div class="codeblock"><pre><code data-lang="text">问题： 姿态角与陀螺仪是非线性关系(欧拉角三角函数/四元数乘法)
-EKF 三处换非线性件：
-① 预测用非线性 f(x,u) 直接算 x̂⁻
-② 方差传播用雅可比矩阵 F=∂f/∂x 在工作点线性化
-③ 观测同样线性化 H=∂h/∂x
-工程实现建议(姿态融合)：
-· 状态选 [四元数 q(4) + 陀螺零偏 b(3)]，误差状态(error-state)做 EKF —— 
-  数值更稳，这就是 ESKF，飞控标配(Madgwick/AHRS 库内核同源)
-· 协方差对称化 P=(P+Pᵀ)/2 防 float 累积误差发散
-何时别上 EKF： 单变量缓变过程(A2.2 已够)；强非线性突变(UKF 或粒子滤波再议)</code></pre></div>
+<p>姿态角与陀螺仪是<strong>非线性</strong>关系（欧拉角三角函数/四元数乘法），EKF 只需在三个位置「换非线性件」：</p>
+<ol>
+<li>预测：直接用非线性 <code>f(x,u)</code> 算 x̂⁻；</li>
+<li>方差传播：用雅可比矩阵 <code>F=∂f/∂x</code> 在工作点线性化；</li>
+<li>观测：同样线性化 <code>H=∂h/∂x</code>。</li>
+</ol>
+<p>姿态融合的工程实现建议：</p>
+<ul>
+<li>状态选 <strong>[四元数 q(4) + 陀螺零偏 b(3)]</strong>，用误差状态（error-state）做 EKF——数值更稳，这就是 <strong>ESKF</strong>，飞控标配（Madgwick/AHRS 库内核同源）；</li>
+<li>协方差对称化 <code>P=(P+Pᵀ)/2</code>，防 float 累积误差发散。</li>
+</ul>
+<div class="box warn"><span class="bt">⚠️ 何时别上 EKF</span>
+<p>单变量缓变过程（A2.2 的标量 KF 已够用）；强非线性突变场景（考虑 UKF 或粒子滤波）。<strong>不要为了「高级」而上 EKF</strong>——调不好的 EKF 不如调好的互补滤波。</p></div>
 
 <h3>A2.6 实测数据表：三种方案融合同一 IMU 的静态漂移与动态延迟</h3>
 <div class="tbl-wrap"><table class="tbl">
@@ -14577,9 +14716,9 @@ EKF 三处换非线性件：
   Var(x̂) = w²R + (1−w)²P⁻        （独立方差相加）
   d/dw = 0 → 2wR − 2(1−w)P⁻ = 0
   → w = P⁻/(P⁻+R)                 ★正是卡尔曼增益！
-  代回得 Var_min = P⁻R/(P⁻+R) = (1−K)P⁻   —— 即更新方程⑤。
-结论： <strong>KF 就是「按不确定性加权的自适应平均」</strong>，
-      五个公式里只有③需要「想」，其余都是代数搬运。</code></pre></div>
+  代回得 Var_min = P⁻R/(P⁻+R) = (1−K)P⁻   —— 即更新方程⑤。</code></pre></div>
+<div class="box tip"><span class="bt">🔑 结论：KF 的本质</span>
+<p><strong>KF 就是「按不确定性加权的自适应平均」</strong>——五个公式里只有③（增益）需要「想」，其余都是代数搬运。上面这段两行推导就是它的全部秘密。</p></div>
 
 <h3>A2.10 手把手数值例题：连续三步迭代</h3>
 <div class="codeblock"><pre><code data-lang="text">参数： x̂₀=25.0, P₀=100, Q=1, R=25 ； 观测序列 z=[27, 26, 30]
@@ -14606,9 +14745,9 @@ P⁻=12.4 ; K=12.4/37.4=0.332 ; x̂=26.33+0.332×3.67=27.55 ; P=8.28
   K  = P⁻·Hᵀ·(H·P⁻·Hᵀ+R)⁻¹   H=观测矩阵： 「从状态到测量的投影」
                               只测温度不测速度 → H=[1,0]
   x̂  = x̂⁻ + K(z−H·x̂⁻)
-  P   = (I−K·H)·P⁻
-读懂要点： 标量版的除法在矩阵版变成「乘 Hᵀ 再乘逆」——本质不变；
-  工程上永远用对称正定求解器/平方根分解处理，不要手写求逆。</code></pre></div>
+  P   = (I−K·H)·P⁻</code></pre></div>
+<div class="box tip"><span class="bt">💡 读懂矩阵版</span>
+<p>标量版的除法在矩阵版变成「乘 Hᵀ 再乘逆」——<strong>本质不变</strong>。工程上永远用对称正定求解器/平方根分解处理，<strong>不要手写求逆</strong>。</p></div>
 
 <figure class="fig">
 <svg viewBox="0 0 880 250" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="EKF线性化几何直觉">
@@ -14699,9 +14838,9 @@ bool kf_update_gated(kf1_t*k,float z){
 ③ 增益： K = P⁻·H/(H²P⁻+R) = 0.9/(1.8²×0.5+0.8)=0.9/2.42=0.372
 ④ 修正： 预测测量 h(x̂⁻)=81/10=8.1 ; 残差=8.6−8.1=0.5
    x̂ = 9.0 + 0.372×0.5 = 9.19V
-⑤ 更新： P=(1−K·H)·P⁻=(1−0.669)×0.5=0.166
-观察： H 随工作点变化(电压越高增益越大)——这正是「必须 EKF」的原因；
-若用固定 H=1.8 不更新，远离 9V 后滤波器会系统性失准。</code></pre></div>
+⑤ 更新： P=(1−K·H)·P⁻=(1−0.669)×0.5=0.166</code></pre></div>
+<div class="box tip"><span class="bt">💡 观察这个例子</span>
+<p>H 随工作点变化（电压越高增益越大）——<strong>这正是「必须 EKF」的原因</strong>。若用固定 H=1.8 不更新，远离 9V 后滤波器会系统性失准。</p></div>
 
 <h3>A2.18 补充：多率/异步融合的三条工程规则</h3>
 <ol>
@@ -15226,16 +15365,18 @@ float pid_safe_run(pid_safe_t*p,float pv){
 </ul></div>
 
 <h3>A5.1 前馈+反馈复合：把「已知」提前干掉</h3>
-<div class="codeblock"><pre><code data-lang="text">思想： 反馈只能「事后纠错」，可测扰动/设定变化可以「事前补偿」。
-u = u_FF + u_FB
-案例①(云台)： 载体角速度 ω_base 可测 → 前馈项 = −ω_base×Kff
-   直接抵消载体运动，PID 只处理残差 —— 追踪延迟从 80ms 降到 12ms。
-案例②(加热)： 设定值斜坡的导数作为功率前馈(能量守恒算式)，
-   PID 只补热损——跟踪误差下降一个量级且 Kp 可以更小。
-工程要点：
-· 前馈系数标定=开环辨识一次(阶跃响应斜率)，别拍脑袋；
-· 前馈通道也加限幅+滤波，防止测量噪声直灌输出；
-· 「前馈为主、反馈兜底」是高精度系统的通用配方。</code></pre></div>
+<p><strong>思想</strong>：反馈只能「事后纠错」，可测扰动/设定变化可以「事前补偿」——控制量 = <code>u = u_FF + u_FB</code>。两个经典案例：</p>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>案例</th><th>可测量</th><th>前馈项</th><th>收益</th></tr>
+<tr><td>云台增稳</td><td>载体角速度 ω_base</td><td><code>−ω_base × Kff</code> 直接抵消载体运动</td><td>PID 只处理残差，追踪延迟 <strong>80ms → 12ms</strong></td></tr>
+<tr><td>加热控温</td><td>设定值斜坡的导数</td><td>功率前馈（能量守恒算式）</td><td>跟踪误差降一个量级，且 Kp 可以更小</td></tr>
+</table></div>
+<p>工程要点：</p>
+<ul>
+<li>前馈系数标定 = <strong>开环辨识一次</strong>（阶跃响应斜率），别拍脑袋；</li>
+<li>前馈通道也加<strong>限幅 + 滤波</strong>，防止测量噪声直灌输出；</li>
+<li>「前馈为主、反馈兜底」是高精度系统的通用配方。</li>
+</ul>
 
 <h3>A5.2 串级控制：三环套娃设计法（温控案例）</h3>
 <div class="tbl-wrap"><table class="tbl">
@@ -15244,24 +15385,20 @@ u = u_FF + u_FB
 <tr><td>中环(温度率)</td><td>dT/dt? 升温速率</td><td>~1Hz</td><td>PI，抑制加热膜不均扰动</td></tr>
 <tr><td>外环(温度)</td><td>PT100 温度</td><td>0.1Hz</td><td>PI+Smith，负责最终精度 ±0.2℃</td></tr>
 </table></div>
-<div class="codeblock"><pre><code data-lang="text">串级三条铁律：
-① 内环必须显著快于外环(否则外环指令在内环眼里是噪声)；
-② 每环独立整定： 先内后外，内环闭合且稳定后再动外环；
-③ 内环饱和要向外环传信号(Anti-windup 级联)——否则外环积分照样飞。
-适用判据： 被控对象存在「中间物理量既可测又能快速影响输出」才值得串级，
-   否则单环+A5.1 前馈更简单可靠。</code></pre></div>
+<p><strong>串级三条铁律</strong>：</p>
+<ol>
+<li><strong>内环必须显著快于外环</strong>——否则外环指令在内环眼里是噪声；</li>
+<li><strong>每环独立整定</strong>：先内后外，内环闭合且稳定后再动外环；</li>
+<li><strong>内环饱和要向外环传信号</strong>（Anti-windup 级联）——否则外环积分照样飞。</li>
+</ol>
+<div class="box tip"><span class="bt">💡 适用判据：什么时候值得串级</span>
+<p>被控对象存在「<strong>中间物理量既可测又能快速影响输出</strong>」才值得串级；否则单环 + A5.1 前馈更简单可靠。串级不是免费午餐——多一个环就多一倍整定与调试工作量。</p></div>
 
 <h3>A5.3 Smith 预估器：给大滞后装「时光机」</h3>
-<div class="codeblock"><pre><code data-lang="text">痛点： 长管道温控/ web 张力等纯滞后 τ 占主导时，PID 看到 e 时已晚了 τ 秒，
-   无论怎么整定都会震荡-迟钝二选一。
-Smith 预估结构：
-   用对象模型 Gm(s)·e^(-τm s) 并联一条「无滞后虚拟反馈」，
-   控制器实际调节的是「预估的无滞后误差」。
-嵌入式实现(离散)：
-   y_pred[k] = FIR 延迟线(长度 N=τ/Ts) 取模型输出
-   e_ctrl    = set − ( y_meas_delayed_compensated )
-模型失配是软肋： τ 或增益估偏 20% 以上效果骤降——
-   对策： 在线一阶+FOPDT 辨识(继电器法顺带出模型)，定期刷新模型参数。</code></pre></div>
+<p><strong>痛点</strong>：长管道温控 / web 张力等纯滞后 τ 占主导时，PID 看到误差时已晚了 τ 秒——无论怎么整定都在「震荡」与「迟钝」之间二选一。</p>
+<p><strong>Smith 预估结构</strong>：用对象模型 <code>Gm(s)·e^(−τm·s)</code> 并联一条「无滞后虚拟反馈」，让控制器实际调节的是<strong>预估的无滞后误差</strong>。嵌入式离散实现只需一条 FIR 延迟线（长度 N = τ/Ts）取模型输出：<code>e_ctrl = set − y_meas_delayed_compensated</code>。</p>
+<div class="box warn"><span class="bt">⚠️ 模型失配是软肋</span>
+<p>τ 或增益估偏 20% 以上，效果骤降。<strong>对策</strong>：在线一阶 + FOPDT 辨识（继电器法可顺带出模型），定期刷新模型参数——Smith 预估器永远和它的模型一样好。</p></div>
 
 <h3>A5.4 LQR 全推导与云台速度环实现 ★</h3>
 <div class="codeblock"><pre><code data-lang="text">对象(云台单轴速度环简化为二阶系统)：
@@ -15270,12 +15407,14 @@ Smith 预估结构：
 代价函数： J = ∫ (xᵀQx + uᵀRu) dt
 最优解：  u = −Kx ， K=R⁻¹BᵀP ， P 由代数 Riccati 方程解得：
   AᵀP + PA − PBR⁻¹BᵀP + Q = 0
-Q/R 的直觉：
-  Q 加大对应状态分量 → 更激进压偏差(响应快/超允许忍)
-  R 加大 → 更爱惜执行器(平缓省电)
 离线求解(主机 python scipy.linalg.solve_continuous_are)得到 K 向量，
-MCU 端只需一行点积： u = −(K0*ω_err + K1*i_err) + u_ff
-—— <strong>LQR 的工程红利： 设计在 PC 完成，运行期成本≈零。</strong></code></pre></div>
+MCU 端只需一行点积： u = −(K0*ω_err + K1*i_err) + u_ff</code></pre></div>
+<div class="box tip"><span class="bt">💡 Q/R 的直觉：一个调「狠」，一个调「省」</span>
+<ul>
+<li><strong>Q 加大</strong>对应状态分量 → 更激进压偏差（响应快、超允许忍）；</li>
+<li><strong>R 加大</strong> → 更爱惜执行器（平缓省电）。</li>
+</ul>
+<p><strong>LQR 的工程红利：设计在 PC 完成（solve_continuous_are），运行期成本 ≈ 零</strong>——MCU 上就是一行点积。</p></div>
 <div class="codeblock"><pre><code data-lang="c">/* 云台速度环 LQR 实现(F407, 10kHz) */
 static const float K[2] = {-0.86f, -0.31f};   /* 主机解 Riccati 后固化 */
 float lqr_speed(float w_err, float i_meas){
@@ -15397,8 +15536,9 @@ u = −(K₀×ω_err + K₁×i_err)
   = −((−6.32)×15 + (−0.41)×0.2)
   = −(−94.8 − 0.08) = +94.9 (PWM 码值方向为正推)
 对照限幅 U_MAX=300 → 未饱和直接输出。
-再算一拍后若 ω_err 收敛到 5： u=−(−31.6−0.08)=31.7 → 输出自动回落
-—— <strong>增益固定而输出随状态自然收缩</strong>，这就是状态反馈的自洽性。</code></pre></div>
+再算一拍后若 ω_err 收敛到 5： u=−(−31.6−0.08)=31.7 → 输出自动回落</code></pre></div>
+<div class="box tip"><span class="bt">💡 观察这个例子</span>
+<p><strong>增益固定而输出随状态自然收缩</strong>——这就是状态反馈的自洽性：不需要额外逻辑，控制量随误差变小自动回零。</p></div>
 
 <h3>A5.13 部署注意事项（上线前五查）</h3>
 <ol>
@@ -15416,13 +15556,14 @@ u = −(K₀×ω_err + K₁×i_err)
 </ol></div>
 
 <h3>A5.14 补充①：离散 LQR 与 LQG 桥接</h3>
-<div class="codeblock"><pre><code data-lang="text">离散化两步走(工程标准流程)：
-① 对象离散化： x[k+1]=Ad·x[k]+Bd·u[k]  (Ad=e^(A·Ts)，用 c2d 工具)
-② 解离散 Riccati(DARE)： P=AdᵀP·Ad − AdᵀP·Bd(R+BdᵀP·Bd)⁻¹BdᵀP·Ad + Q
-   scipy: P=solve_discrete_are(Ad,Bd,Q,R); K=np.linalg.solve(R+Bd.T@P@Bd, Bd.T@P@Ad)
-LQG = LQR(状态反馈) + Kalman(状态估计) 的组合：
-  分离定理： 两者可独立设计再直接级联——估计器输出当真值喂给 LQR。
-  代价： 各自稳定≠整体最优裕度；实测验证不可省。</code></pre></div>
+<p>离散化两步走（工程标准流程）：</p>
+<ol>
+<li>对象离散化：<code>x[k+1]=Ad·x[k]+Bd·u[k]</code>（Ad = e^(A·Ts)，用 c2d 工具）；</li>
+<li>解离散 Riccati（DARE）：<code>P = solve_discrete_are(Ad,Bd,Q,R)</code>，然后 <code>K = np.linalg.solve(R+Bd.T@P@Bd, Bd.T@P@Ad)</code>。</li>
+</ol>
+<p><strong>LQG</strong> = LQR（状态反馈）+ Kalman（状态估计）的组合。<strong>分离定理</strong>：两者可独立设计再直接级联——估计器输出当真值喂给 LQR。</p>
+<div class="box warn"><span class="bt">⚠️ LQG 的代价</span>
+<p>各自稳定 <strong>≠ 整体最优裕度</strong>——LQG 没有经典 LQR 的保证裕度，鲁棒性可能变差（Doyle 反例），<strong>实测验证不可省</strong>。</p></div>
 
 <h3>A5.15 补充②：MPC 最小示例（2 状态 horizon=3 暴力求解）</h3>
 <div class="codeblock"><pre><code data-lang="c">/* 思想演示： 把「未来 N 步的代价」显式算出来选当前最优 u —— MPC 的灵魂。
@@ -16191,11 +16332,12 @@ float goz_run(goz_t*g,const q15_t*x,int n){     /* 流式逐样本 */
 <tr><td>OCV 开路电压法</td><td>静置电压查表反推 SOC</td><td>需要静置；平台期(磷酸铁锂)斜率近零失效</td></tr>
 <tr><td><strong>融合(A2 卡尔曼直接套用)</strong></td><td>库仑计做预测，OCV 做「偶尔到来的慢观测」</td><td>- ★BMS 标准答案</td></tr>
 </table></div>
-<div class="codeblock"><pre><code data-lang="text">融合要点：
-· 过程噪声 Q 由「容量×负载方差」定；
-· OCV 观测仅在满足「静置&gt;30min 或电流&lt;C/50」时触发修正；
-· 温度进 OCV 表维度(LFP 高低温曲线差异巨大)；
-· 满充事件强制 SOC 校准到 100%——消除长期漂移的用户可感知误差。</code></pre></div>
+<ul>
+<li>过程噪声 Q 由「容量 × 负载方差」定；</li>
+<li><strong>OCV 观测仅在满足「静置 &gt;30min 或电流 &lt;C/50」时触发修正</strong>——负载下 OCV 表根本不可信；</li>
+<li>温度进 OCV 表维度（LFP 高低温曲线差异巨大）；</li>
+<li><strong>满充事件强制 SOC 校准到 100%</strong>——消除长期漂移的用户可感知误差。</li>
+</ul>
 
 <h3>A9.5 实测数据表：SOC 三方案在 LFP 电池上的误差对比（10 天真实工况）</h3>
 <div class="tbl-wrap"><table class="tbl">
@@ -16234,8 +16376,9 @@ float goz_run(goz_t*g,const q15_t*x,int n){     /* 流式逐样本 */
 <div class="codeblock"><pre><code data-lang="text">单频正弦幅值恢复公式：
   A = |X[k_peak]| × 2 / (N × CG)
   CG = 窗函数相干增益(Hann=0.5, Blackman≈0.42)
-  例： N=1024, Hann 窗, 谱峰 |X|=300 → A=300×2/(1024×0.5)=1.17V
-漏掉这两步的人会把「1.17V 的信号」读成「0.586」—— 幅值差一倍的经典事故。</code></pre></div>
+  例： N=1024, Hann 窗, 谱峰 |X|=300 → A=300×2/(1024×0.5)=1.17V</code></pre></div>
+<div class="box warn"><span class="bt">⚠️ 幅值差一倍的经典事故</span>
+<p>漏掉「×2/ N」与「除窗函数相干增益 CG」这两步的人，会把 <strong>1.17V 的信号读成 0.586V</strong>——校准验收时一眼即知，别等现场打回来。</p></div>
 
 <h3>A9.9 手把手数值例题：Goertzel 系数计算</h3>
 <div class="codeblock"><pre><code data-lang="text">任务： 在 f_s=8kHz 下检测 697Hz(DTMF 低群)，N=205 样本。
@@ -16243,8 +16386,9 @@ float goz_run(goz_t*g,const q15_t*x,int n){     /* 流式逐样本 */
 ② 系数： coef = 2·cos(2π·f̂) = 2×cos(0.5475rad) = 2×0.8537 = 1.7074
 ③ 定点化(Q15)： round(1.7074×32768)=55952 → int16 存不下！
    技巧： 存 coef/2=27976(Q15)，运行期乘 2 还原 —— 或升 Q16。
-④ 判决门限： 与相邻频点(如 770Hz)的 Goertzel 输出比值 &gt;4dB 判有效。
-—— 四行代码的算法，「系数怎么来」讲清楚才算学会。</code></pre></div>
+④ 判决门限： 与相邻频点(如 770Hz)的 Goertzel 输出比值 &gt;4dB 判有效。</code></pre></div>
+<div class="box tip"><span class="bt">💡 学会的标志</span>
+<p>四行代码的算法，「<strong>系数怎么来</strong>」讲清楚才算学会——归一化频率、2·cos 系数、Q15 定点存储技巧、相邻频点比值判决，环环都有为什么。</p></div>
 
 <h3>A9.10 OCV-LUT 制作全流程（SOC 表从数据到 C 数组）</h3>
 <ol>
@@ -16273,21 +16417,28 @@ float goz_run(goz_t*g,const q15_t*x,int n){     /* 流式逐样本 */
              OCV 来自 LUT(A9.4)，I 带符号(放电为正)
 雅可比：
   F ≈ [[1, −∂V? /∂Rpolar 影响经 I],[0, e^(−Ts/τp)]]
-  H = [−dOCV/dSOC , −1]      ← dOCV/dSOC 从 LUT 差分即得 ★平台期此值≈0
-                                → LFP 平台期 SOC 不可观，EKF 自动只信库仑计！
-                                这就是「数学自动处理平台期」的优雅之处。
+  H = [−dOCV/dSOC , −1]      /* dOCV/dSOC 从 LUT 差分即得 */
 调参： Q 对角=[(充放噪声)², (极化波动)²]；R=电压采样+LUT 误差合成方差。
 验证： 混合工况实车跑一天，与放电柜真值对比 max|ΔSOC|≤3%(A9.5 表口径)。</code></pre></div>
+<div class="box tip"><span class="bt">💡 数学自动处理平台期的优雅之处</span>
+<p>dOCV/dSOC 从 LUT 差分即得——<strong>LFP 平台期此值 ≈ 0 → SOC 不可观 → EKF 自动只信库仑计</strong>；静置后 OCV 恢复可观，又自动拉回校正。不需要任何 if-else 手工切换，增益矩阵自己完成了这一切。</p></div>
 
 <h3>A9.8 补充：实数 FFT 的频谱对称性说明</h3>
-<div class="codeblock"><pre><code data-lang="text">rfft 只算一半的原因： 实信号频谱共轭对称 X[N−k]=X*[k]，
-  后半段是前半段的镜像——信息量减半，计算量也减半。
-工程要点：
-· 谱线 k 与 N−k 是同一频率的正负分量对；
-· 单边谱幅值恢复： |A|=2·|X[k]|/(N·CG) (k≠0)；DC 与 Nyquist 不乘 2；
-· 若看到「不对称」的谱 → 输入混入了复数/采样异常——诊断信号本身。</code></pre></div>
+<p><strong>rfft 只算一半的原因</strong>：实信号频谱共轭对称 <code>X[N−k]=X*[k]</code>，后半段是前半段的镜像——信息量减半，计算量也减半。工程要点：</p>
+<ul>
+<li>谱线 k 与 N−k 是同一频率的正负分量对；</li>
+<li>单边谱幅值恢复：<code>|A| = 2·|X[k]| / (N·CG)</code>（k≠0）；<strong>DC 与 Nyquist 不乘 2</strong>；</li>
+</ul>
+<div class="box tip"><span class="bt">💡 一个诊断技巧</span>
+<p>若看到「<strong>不对称</strong>」的谱 → 输入混入了复数/采样异常——此时问题不在频谱图，而在信号本身。</p></div>
+<div class="quiz"><strong>📝 思考题</strong><ol>
+<li>只在单一频率上检测 DTMF 音，为什么 Goertzel 比 FFT 更划算？N=205 这个样本数是怎么定的？</li>
+<li>单边谱幅值恢复公式 <code>|A|=2|X[k]|/(N·CG)</code> 中，DC 与 Nyquist 分量为什么「不乘 2」？</li>
+<li>LFP 电池平台期 dOCV/dSOC≈0，EKF 为什么会「自动只信库仑计」？这段数学发生在哪个矩阵里？</li>
+<li>制作 OCV-LUT 时，为什么静置判据选「30min」而不是 5min？容量标定与温度维度如何进表？</li>
+</ol></div>
 <div class="box tip"><span class="bt">🗺️ 本章知识地图</span>
-<p><strong>前置依赖</strong>：ch27、A1/A2。<strong>后续衔接</strong>：FFT 溯源结果反馈回 A1 滤波器配置；SOC 数据经 ch80A 上云形成电池健康档案。<strong>开源定位</strong>：CMSIS-DSP Fast Math 示例；TI《Battery Management》应用手册系列。</p></div>
+  <p><strong>前置依赖</strong>：ch27、A1/A2。<strong>后续衔接</strong>：FFT 溯源结果反馈回 A1 滤波器配置；SOC 数据经 ch80A 上云形成电池健康档案。<strong>开源定位</strong>：CMSIS-DSP Fast Math 示例；TI《Battery Management》应用手册系列。</p></div>
 </section>
 
 <section class="chapter" id="chfj">
@@ -16811,8 +16962,11 @@ void sampler_isr(void){
 <li>为你的产品写一份延迟预算表并标注每项的测量方法与时钟源。</li>
 </ol></div>
 
+<div class="lab"><strong>🧪 动手实验 LSO1-1：生成并读透一张火焰图（90 分钟）</strong>
+<p><strong>步骤</strong>：① 在 Linux 板或主机上跑一个 CPU 密集程序（如带忙等的示例），<code>perf record -g -a -- sleep 10</code> 采样；② <code>perf script | stackcollapse-perf.pl | flamegraph.pl &gt; out.svg</code> 生成火焰图；③ 按 SO1.6 的读法完成三层解读：找最宽的「塔基」、找「平顶」、对比两次采样找增量；④ 故意引入一次低效路径（如多一层间接调用）重采样，用火焰图定位它。</p>
+<p><strong>验收</strong>：两张火焰图 + 一段 200 字解读（指出热点函数、调用层级、优化建议）。</p></div>
 <div class="box tip"><span class="bt">🗺️ 本章知识地图</span>
-<p><strong>前置依赖</strong>：ch16 工具、ch51a 追踪。<strong>后续衔接</strong>：SO2~SO4 是本章框架的逐平台落地。<strong>开源定位</strong>：brendangregg《Systems Performance》第 2 章方法论 + FlameGraph 仓库 README。</p></div>
+  <p><strong>前置依赖</strong>：ch16 工具、ch51a 追踪。<strong>后续衔接</strong>：SO2~SO4 是本章框架的逐平台落地。<strong>开源定位</strong>：brendangregg《Systems Performance》第 2 章方法论 + FlameGraph 仓库 README。</p></div>
 </section>
 
 <section class="chapter" id="chs2">
@@ -16974,8 +17128,11 @@ SCB-&gt;VTOR = 0x20000000;
 <li>生成你自己工程的编译选项矩阵表并选定量产档位。</li>
 </ol></div>
 
+<div class="lab"><strong>🧪 动手实验 LSO2-1：启动时间「先测后砍」实战（120 分钟）</strong>
+<p><strong>步骤</strong>：① 任选一块手头的 MCU 板，用 GPIO 翻转打点测出当前启动全链耗时（复位→main→外设就绪）；② 按 SO2.2 清单挑「收益前三」的项动手（如砍无关外设初始化、延迟非关键 init、调编译器 -Os）；③ 重测并记录每一刀的单独收益；④ 用 map 文件三遍审读法找出可裁剪的最大符号，裁剪后记录 Flash/RAM 变化。</p>
+<p><strong>验收</strong>：「优化前/每刀收益/优化后」量化表 + map 审读发现清单。</p></div>
 <div class="box tip"><span class="bt">🗺️ 本章知识地图</span>
-<p><strong>前置依赖</strong>：SO1 方法论、ch06/ch56。<strong>后续衔接</strong>：SO3 把战场移入多任务世界。<strong>开源定位</strong>：Zephyr 性能调优文档；grbl 源码的极致资源利用范本。</p></div>
+  <p><strong>前置依赖</strong>：SO1 方法论、ch06/ch56。<strong>后续衔接</strong>：SO3 把战场移入多任务世界。<strong>开源定位</strong>：Zephyr 性能调优文档；grbl 源码的极致资源利用范本。</p></div>
 </section>
 
 <section class="chapter" id="chs3">
@@ -17163,8 +17320,11 @@ xTaskNotifyGiveIndexed(target_handle, 0);  /* 可跨核唤醒 */
 ③ ESP-IDF: esp_sleep_enable_timer_wakeup 配合 light sleep
 ④ 监控： esp_pm_dump() 打印各模式驻留时间占比</code></pre></div>
 
+<div class="lab"><strong>🧪 动手实验 LSO3-1：任务架构审计五查（90 分钟）</strong>
+<p><strong>步骤</strong>：① 任选一个手头的 FreeRTOS 工程，按 SO3.1 五类结构性问题逐项自查（优先级倒置风险/长临界区/轮询任务/队列深度/栈水位）；② 用 <code>uxTaskGetStackHighWaterMark</code> 记录各任务栈峰值，与分配值对比；③ 用运行时统计（<code>vTaskGetRunTimeStats</code>）找出 CPU 占比前二的任务；④ 对最长队列做一次「深度减半」压力测试，观察丢包/阻塞行为；⑤ 输出一页审计报告。</p>
+<p><strong>验收</strong>：五查打勾表 + 栈水位与 CPU 占比两张数据表 + 至少一项改进的前后对比。</p></div>
 <div class="box tip"><span class="bt">🗺️ 本章知识地图</span>
-<p><strong>前置依赖</strong>：第五篇全部、ch51a。<strong>后续衔接</strong>：SO4 综合战役把 SO1~SO3 全部串起来。<strong>开源定位</strong>：Percepio Tracealyzer 应用笔记；Zephyr tracing 文档。</p></div>
+  <p><strong>前置依赖</strong>：第五篇全部、ch51a。<strong>后续衔接</strong>：SO4 综合战役把 SO1~SO3 全部串起来。<strong>开源定位</strong>：Percepio Tracealyzer 应用笔记；Zephyr tracing 文档。</p></div>
 </section>
 
 <section class="chapter" id="chs4">
@@ -17428,8 +17588,11 @@ L2 深挖层(临时)： 自动 perf record -F299 -g --sleep 30 +
 <li>你的产品适合引入 io_uring 吗？给出判定流程。</li>
 </ol></div>
 
+<div class="lab"><strong>🧪 动手实验 LSO5-1：内核调参与 cgroup 治理对照（120 分钟）</strong>
+<p><strong>步骤</strong>：① 用 <code>vmstat 1</code> + <code>free -h</code> 记录基线；② 制造内存压力（如 <code>stress-ng --vm</code>），观察 watermark/kswapd 行为（SO5.8 的联动）；③ 调整 <code>vm.swappiness</code> 与 <code>vm.min_free_kbytes</code> 各测一轮，记录换页行为差异；④ 用 cgroup v2 给两个争用进程分别设置 <code>cpu.max</code>，对照限流前后的吞吐与延迟；⑤ 写下每个参数的「语义级解释」（SO5.1 框架：它改变的是什么队列/阈值）。</p>
+<p><strong>验收</strong>：四组对照数据 + 一页「参数语义笔记」。</p></div>
 <div class="box tip"><span class="bt">🗺️ 本章知识地图</span>
-<p><strong>前置依赖</strong>：ch65/SO1。<strong>后续衔接</strong>：SE 专家地图收束全篇。<strong>开源定位</strong>：BPF Compiler Collection 文档、io_uring 仓库、systemd.exec 资源控制段。</p></div>
+  <p><strong>前置依赖</strong>：ch65/SO1。<strong>后续衔接</strong>：SE 专家地图收束全篇。<strong>开源定位</strong>：BPF Compiler Collection 文档、io_uring 仓库、systemd.exec 资源控制段。</p></div>
 </section>
 
 <section class="chapter" id="chse">
@@ -17857,8 +18020,14 @@ BOOT.BIN = [FSBL.elf][bitstream][u-boot.elf] 由 bootgen 打包</code></pre></di
 <div class="lab"><strong>🧪 动手实验 LZ2-1：GPIO 打点画启动瀑布图（45 分钟）</strong>
 <p><strong>步骤</strong>：① 在 FSBL/U-Boot/内核各阶段入口翻转独立 GPIO(ch56 方法)；② 逻辑分析仪一次抓全链；③ 标注每段耗时并计算可压缩空间。<strong>验收</strong>：一张带实测数据的启动瀑布图。</p></div>
 
+<div class="quiz"><strong>📝 思考题</strong><ol>
+<li>ZYNQ 的启动链为什么必须先跑 FSBL？BootROM→FSBL→U-Boot 各级分别初始化了什么？</li>
+<li>GP 口 AXI 与 HP 口 AXI 各适合承载什么数据？为什么高带宽数据流必须走 S_AXI_HP 而不是 M_AXI_GP？</li>
+<li>PS 与 PL 的时钟由谁提供？PL 时钟异常时会出现什么「能跑但错」的现象？</li>
+<li>DDR 控制器在 PS 侧而 PL 也能访问它——这条路径经过了哪些 AXI 通道？带宽预算怎么算？</li>
+</ol></div>
 <div class="box tip"><span class="bt">🗺️ 本章知识地图</span>
-<p><strong>前置依赖</strong>：ch02 内存模型、ch21 中断直觉。<strong>后续衔接</strong>：Z3 PL 快速入门将教你在 Vivado 里创建第一个工程。<strong>开源定位</strong>：UG585(Zynq TRM)；正点原子《领航者 ZYNQ 开发指南》第 2 章。</p></div>
+  <p><strong>前置依赖</strong>：ch02 内存模型、ch21 中断直觉。<strong>后续衔接</strong>：Z3 PL 快速入门将教你在 Vivado 里创建第一个工程。<strong>开源定位</strong>：UG585(Zynq TRM)；正点原子《领航者 ZYNQ 开发指南》第 2 章。</p></div>
 </section>
 
 <section class="chapter" id="chz3">
@@ -17939,8 +18108,14 @@ set_property PULLUP true [get_ports {rst_n}]</code></pre></div>
 <div class="lab"><strong>🧪 动手实验 LZ3-1：从零到 LED 闪烁全流程（90 分钟）</strong>
 <p><strong>步骤</strong>：① 按 Z3.2 七步完成 led_blink 工程；② 修改计数器阈值观察频率变化；③ 添加第二个 LED 实现双灯交替；④ 用 ILA(Integrated Logic Analyzer)在线抓取内部信号波形。<strong>验收</strong>：LED 闪烁 + ILA 波形截图。</p></div>
 
+<div class="quiz"><strong>📝 思考题</strong><ol>
+<li>阻塞赋值与非阻塞赋值的本质区别是什么？「时序逻辑用非阻塞、组合逻辑用阻塞」背后的仿真语义原因？</li>
+<li>Vivado 七步流程中，哪一步最容易「综合过但上板错」？时序违例应在哪一步就发现？</li>
+<li>XDC 约束里 <code>PACKAGE_PIN</code> 与 <code>IOSTANDARD</code> 缺一个会发生什么？约束文件是给谁看的？</li>
+<li>Verilog 的 reg 一定会综合成寄存器吗？举例说明 wire 与 reg 的选择依据。</li>
+</ol></div>
 <div class="box tip"><span class="bt">🗺️ 本章知识地图</span>
-<p><strong>前置依赖</strong>：Z2 架构。<strong>后续衔接</strong>：Z4 将把 PL 与 PS 通过 AXI 总线连接起来。<strong>开源定位</strong>：正点原子《领航者 FPGA 开发指南》；Vivado UG892/UG949。</p></div>
+  <p><strong>前置依赖</strong>：Z2 架构。<strong>后续衔接</strong>：Z4 将把 PL 与 PS 通过 AXI 总线连接起来。<strong>开源定位</strong>：正点原子《领航者 FPGA 开发指南》；Vivado UG892/UG949。</p></div>
 </section>
 
 <section class="chapter" id="chz4">
@@ -17999,8 +18174,14 @@ int main(void){
 <div class="lab"><strong>🧪 动手实验 LZ4-1：自定义 AXI-Lite IP 全流程（2 小时）</strong>
 <p><strong>步骤</strong>：① 按 Z4.1 创建 my_led_ip；② 在 Block Design 中例化并连接 M_AXI_GP0；③ 生成 bitstream；④ 导出 XSA 到 Vitis；⑤ 编写裸机应用读写 PL 寄存器；⑥ 示波器观察 LED 波形验证。<strong>验收</strong>：ARM 能成功读写 PL 寄存器并控制 LED。</p></div>
 
+<div class="quiz"><strong>📝 思考题</strong><ol>
+<li>AXI-Lite 自定义 IP 中，读寄存器通道的 <code>arready/valid</code> 握手与写通道有什么对称性？写出最小读响应时序。</li>
+<li>裸机程序用 MMIO 访问 PL 寄存器前，必须先完成哪两件事？（地址映射与时钟/复位）</li>
+<li>为什么 PS 写 PL 寄存器「成功了但读回是 0」？列出三个可能根因及各自的取证方法。</li>
+<li>Vivado 修改 IP 后重新生成输出产物，为什么 Vitis 侧也必须重新编译？哪些头文件会变？</li>
+</ol></div>
 <div class="box tip"><span class="bt">🗺️ 本章知识地图</span>
-<p><strong>前置依赖</strong>：Z3 PL 入门。<strong>后续衔接</strong>：Z5 综合实战将把 AXI-Lite 升级为 AXI-FIFO/DMA 高带宽方案。<strong>开源定位</strong>：UG1037(AXI Reference)；正点原子《领航者嵌入式 Linux 开发指南》第 8~10 章。</p></div>
+  <p><strong>前置依赖</strong>：Z3 PL 入门。<strong>后续衔接</strong>：Z5 综合实战将把 AXI-Lite 升级为 AXI-FIFO/DMA 高带宽方案。<strong>开源定位</strong>：UG1037(AXI Reference)；正点原子《领航者嵌入式 Linux 开发指南》第 8~10 章。</p></div>
 </section>
 
 <section class="chapter" id="chz5">
@@ -20788,6 +20969,313 @@ ls /sys/bus/platform/devices/              # 设备是否生成</code></pre></di
 
 <div class="box tip"><span class="bt">🗺️ 本章知识地图</span>
 <p><strong>前置依赖</strong>：D1~D5 全部、第64章内核调试专题（Oops/debugfs/kgdb/kdump 基础概念）。<strong>本篇定位</strong>：第64章讲「有哪些工具」，本章讲「怎么组合使用、怎么解到源码行、怎么形成推理链」——建议两章对照阅读。<strong>横向联动</strong>：第18章示波器与逻辑分析仪、第12篇火焰图与 USE 法、第85章 PCIe 排障。<strong>开源定位</strong>：内核 <code>Documentation/dev-tools/</code>（<code>kasan.rst</code>、<code>ftrace.rst</code>、<code>kgdb.rst</code>）、<code>Documentation/admin-guide/bug-hunting.rst</code>、<code>scripts/faddr2line</code>。</p></div>
+</section>
+
+<section class="chapter" id="chd7">
+<div class="ch-head">
+<span class="part-tag">第十五篇 · 异构通信</span>
+<h2>D7 · OpenAMP 实战：remoteproc 与 rpmsg 核间通信</h2>
+<p class="ch-sub">i.MX8、STM32MP1、ZYNQ——A 核跑 Linux + M 核跑实时任务的异构 SoC 已成主流。本章讲清「Linux 怎么管住另一个核」：固件加载（remoteproc）与核间通信（rpmsg）。</p>
+</div>
+<div class="goals"><strong>🎯 学习目标</strong><ul>
+<li>理解 OpenAMP 生态三件套：remoteproc / rpmsg / virtio 的分工</li>
+<li>掌握 remoteproc 全生命周期：加载、启动、停止、崩溃恢复</li>
+<li>写出 A 核 Linux 与 M 核互通的 rpmsg 字符设备通信骨架</li>
+<li>能排查固件加载失败、rpmsg 断链、共享内存数据损坏三大类问题</li>
+</ul></div>
+
+<h3>D7.1 异构多核：为什么需要 OpenAMP</h3>
+<p>一块 SoC 两个世界：<strong>A 核跑 Linux</strong>（界面、网络、云协议），<strong>M 核跑 RTOS/裸机</strong>（µs 级实时采集、PWM、安全关断）。两者必须协同——谁来加载 M 核的固件？谁来传递数据？</p>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>组件</th><th>角色</th><th>类比</th></tr>
+<tr><td><strong>remoteproc</strong></td><td>Linux 内核框架：管理远端处理器固件的生命周期（加载/启动/停止/恢复）</td><td>「进程管理器」——不过管的是另一个核</td></tr>
+<tr><td><strong>rpmsg</strong></td><td>基于 virtio 的核间消息总线，提供带 endpoint 地址的可靠通道</td><td>「socket」——跨核的面向连接通信</td></tr>
+<tr><td>virtio / vring</td><td>共享内存上的环形缓冲区 + 握手中断，rpmsg 的传输层</td><td>「共享内存 DMA 环」</td></tr>
+<tr><td>OpenAMP 库</td><td>远端（M 核）侧的对应实现（也要跑 rpmsg/remoteproc 从端）</td><td>「对端的协议栈」</td></tr>
+</table></div>
+<div class="box tip"><span class="bt">💡 与其他方案的边界</span>
+<p><strong>共享内存裸写</strong>（UIO/自定协议）：最快，但无生命周期管理与标准协议；<strong>rpmsg</strong>：标准化、有发现机制，性能足够（一般可达 Mbps 级）；<strong>跨核驱动复用</strong>（如 M 核当外设）：需 remoteproc。经验：<strong>先 rpmsg 后定制</strong>，标准通道能满足就别自造协议。</p></div>
+
+<h3>D7.2 remoteproc：M 核固件的全生命周期</h3>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>阶段</th><th>内核动作</th><th>用户接口</th></tr>
+<tr><td>加载</td><td>解析 ELF（.elf 含资源表 resource table），分配 M 核内存、拷贝段</td><td><code>echo fw.elf &gt; /sys/class/remoteproc/remoteproc0/firmware</code></td></tr>
+<tr><td>启动</td><td>释放 M 核复位、建立 virtio 队列、通知对端</td><td><code>echo start &gt; .../state</code></td></tr>
+<tr><td>运行</td><td>监视崩溃（M 核异常时回调 rproc crash handler）</td><td><code>cat .../state</code>（running/offline/crashed）</td></tr>
+<tr><td>停止</td><td>复位 M 核、回收资源</td><td><code>echo stop &gt; .../state</code></td></tr>
+<tr><td>恢复</td><td>按 recovery 策略自动重载固件重启</td><td><code>cat .../recovery</code>（enabled/disabled）</td></tr>
+</table></div>
+<div class="codeblock"><pre><code data-lang="text">resource table（资源表）是固件 ELF 中的一个特殊段：
+  声明 M 核需要哪些资源 —— vring 共享内存位置/大小、
+  使用的 vdev 数量、trace 缓冲区、reserved memory 映射等。
+★ 常见坑： 固件没链入 resource table → remoteproc 加载后 virtio
+  建不起来 → rpmsg 永远不出设备节点（dmesg 有 rproc 报错）。
+
+典型启动序列（以 STM32MP1 为例）：
+  echo fw.elf &gt; /sys/class/remoteproc/remoteproc0/firmware
+  echo start &gt; /sys/class/remoteproc/remoteproc0/state
+  dmesg | grep rproc        # 观察： 加载段 → 启动 → vdev 通告
+  ls /dev/rpmsg*            # 成功标志： 出现 rpmsg ctrl 与通道设备</code></pre></div>
+
+<h3>D7.3 rpmsg：跨核 socket 的使用骨架</h3>
+<div class="codeblock"><pre><code data-lang="c">/* A 核（Linux）侧： rpmsg 出来的是标准字符设备 */
+int fd = open("/dev/rpmsg0", O_RDWR);
+write(fd, buf, len);              /* 发给 M 核 endpoint */
+n = read(fd, buf, sizeof(buf));   /* 收 M 核消息（阻塞） */
+/* 若需主动创建通道： ioctl(rpmsg_ctrl_fd, RPMSG_CREATE_EPT_IOCTL, &amp;info) */
+
+/* M 核（OpenAMP 库）侧伪码 */
+rpmsg_init();                                  /* 平台初始化(共享内存/中断) */
+struct rpmsg_endpoint ept;
+rpmsg_create_ept(&amp;ept, rpmsg_cb, RPMSG_ADDR_ANY, RPMSG_NS_EPT);
+/* 回调 rpmsg_cb 收到 Linux 发来的消息；回消息用 rpmsg_send(&amp;ept,...) */
+/* 名称服务公告(NS)会让 Linux 侧自动出现 /dev/rpmsgX */</code></pre></div>
+<div class="box warn"><span class="bt">⚠️ 三个必懂的一致性要点</span>
+<p>① <strong>vring 缓冲的内存属性</strong>：两端看到的共享内存必须同为非缓存（或用缓存维护），配置不对称 = 偶发数据损坏（回到 D2.7 的坑）；② <strong>消息大小受 rpmsg 缓冲限制</strong>（通常 ≤512B/包），大块数据用「rpmsg 传通知 + 共享内存传数据」模式；③ <strong>中断方向</strong>：核间中断（IPI/SWI）配置不对称会导致「对端收到了但不醒来」。</p></div>
+
+<h3>D7.4 平台落地与设备树要点</h3>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>平台</th><th>M 核侧</th><th>关键 dts 节点</th><th>注意事项</th></tr>
+<tr><td>STM32MP1</td><td>Cortex-M4（OpenAMP + HAL）</td><td><code>m4_rproc</code> + rsc-table 保留内存</td><td>M4 使用的外设要在 dts 中声明为 M4 所有，避免 Linux 抢占</td></tr>
+<tr><td>i.MX8M</td><td>Cortex-M7/M4</td><td><code>imx_rproc</code> + TCM/DDR 区域</td><td>注意 M 核时钟父级与电源域，suspend 期间 M 核是否存活要明确</td></tr>
+<tr><td>ZYNQ UltraScale+</td><td>R5（裸机/FreeRTOS）</td><td><code>zynqmp_r5_rproc</code> + RPU 节点</td><td>R5 运行模式（split/lockstep）与 ATF 配置联动</td></tr>
+</table></div>
+<div class="codeblock"><pre><code data-lang="dts">/* 以 STM32MP1 为骨架的 remoteproc 节点要点 */
+m4_rproc: m4@10000000 {
+    compatible = "st,stm32mp1-m4";
+    reg = &lt;...&gt;;                        /* M 核地址空间 */
+    memory-region = &lt;&amp;vdev0vring0, &amp;vdev0vring1,
+                    &amp;vdev0buffer, &amp;mcursc_table&gt;;   /* ★ 保留内存四件套 */
+    st,syscfg = &lt;...&gt;;
+    status = "okay";
+};
+/* reserved-memory 中给 vring 与 rsc-table 划定的区域必须
+   与 M 核固件 resource table 中的声明严格一致 —— 不一致是新手第一大坑 */</code></pre></div>
+
+<h3>D7.5 调试与排故表</h3>
+<div class="codeblock"><pre><code data-lang="bash"># remoteproc 侧取证
+dmesg | grep -iE 'rproc|remoteproc|virtio rpmsg'   # 加载/启动/vdev 全过程
+cat /sys/kernel/debug/remoteproc/remoteproc0/crash # 崩溃记录(支持的平台)
+cat /sys/class/remoteproc/remoteproc0/state        # 当前状态
+
+# rpmsg 侧取证
+ls /dev/rpmsg*                          # 通道是否生成
+cat /sys/kernel/debug/virtio*/          # virtio 设备与队列状态
+# M 核 trace 缓冲(resource table 里声明的话)：
+cat /sys/kernel/debug/remoteproc/remoteproc0/trace0   # M 核 printf 直达 Linux！</code></pre></div>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>现象</th><th>根因候选</th><th>定位路径</th></tr>
+<tr><td><code>echo start</code> 后 state 仍 offline</td><td>固件缺 resource table / ELF 格式不匹配</td><td>dmesg rproc 报错；用 <code>readelf -S fw.elf</code> 确认段存在</td></tr>
+<tr><td>/dev/rpmsg* 不出现</td><td>vdev 通告失败：vring 地址与 dts 保留内存不一致 ★</td><td>对比固件 rsc table 与 dts memory-region；两端逐字节核对</td></tr>
+<tr><td>通信偶发数据损坏</td><td>共享内存缓存属性不一致 / 忘记同步</td><td>检查两端 MMU/MPU 配置；加 CRC 定位；对齐 D2.7 流式同步</td></tr>
+<tr><td>M 核 crash 后 Linux 卡死</td><td>crash handler 未注册 / vring 未清理</td><td>开 recovery；查内核 rproc recovery 日志</td></tr>
+<tr><td>Linux suspend 后 M 核失联</td><td>电源域/时钟在 suspend 被关闭</td><td>检查平台 power domain；必要时把 M 核外设从 suspend 白名单排除</td></tr>
+</table></div>
+
+<div class="quiz"><strong>📝 思考题</strong><ol>
+<li>remoteproc 与 D4 的 platform driver 生命周期有何相似？M 核固件崩了之后 Linux 侧如何感知与恢复？</li>
+<li>rpmsg 单包通常 ≤512B，要传 1MB 图像怎么设计？（提示：通知与数据分离）画出共享内存环形缓冲的读写同步。</li>
+<li>为什么 vring 必须放在「两端都能以相同属性访问」的内存？各自带 cache 的 A/M 核如何保证一致性？</li>
+<li>对比 UIO/VFIO（第85章）与 OpenAMP：自研 FPGA 加速板与「M 核跑实时控制」分别该选哪条路？</li>
+</ol></div>
+<details class="qa"><summary>参考答案要点</summary><div class="ans">
+<p><strong>1</strong>：相似点都是「注册→匹配→probe→remove」生命周期；M 核崩溃靠 rproc crash handler 感知，recovery 队列自动重载重启（类比 deferred probe 的重试思路）。<strong>2</strong>：rpmsg 只传通知与元数据；1MB 数据写进双方约定的共享内存环形缓冲，rpmsg 消息只携带「offset+len+seq」，对端用中断唤醒消费；同步用 head/tail 索引 + 内存屏障。<strong>3</strong>：缓存属性不对称会让一端读 dirty cache；A 核侧 io-remap 为 non-cacheable 或用 dma_sync 维护，M 核 MPU 配 region 为 non-cacheable。<strong>4</strong>：FPGA 加速板选 UIO/VFIO（纯数据通道、用户态直通高性能）；M 核实时控制选 OpenAMP（要生命周期管理与标准协议），两者不冲突可并存。</p>
+</div></details>
+
+<div class="lab"><strong>🧪 动手实验 LD7-1：打通 Linux↔M 核的 rpmsg  echo（120 分钟，需异构板卡）</strong>
+<p><strong>步骤</strong>：① 在 M 核侧编译 OpenAMP echo 固件（用厂商示例即可）；② 核对 dts 保留内存与固件 resource table 的一致性；③ remoteproc 加载启动，确认 /dev/rpmsg0 出现；④ 写 Linux 侧收发小程序，验证 echo 往返；⑤ 故意把 vring 地址改偏 0x100，复现「rpmsg 不出设备」并用 dmesg 定位；⑥ 开启 M 核 trace 缓冲，在 Linux 侧读 M 核日志。</p>
+<p><strong>验收</strong>：echo 往返截图 + 故障复现与定位记录 + M 核 trace 输出。</p></div>
+
+<div class="box tip"><span class="bt">🗺️ 本章知识地图</span>
+<p><strong>前置依赖</strong>：D2 DMA 一致性、D4 设备模型、第85章 UIO/VFIO、ZYNQ 篇 PS-PL 协同。<strong>后续衔接</strong>：IPC 性能优化可用 I5 的通信账本方法量化；安全启动可延伸到 M 核固件签名（S1）。<strong>开源定位</strong>：OpenAMP 官方仓库与 <code>openamp-system-reference</code>、内核 <code>Documentation/staging/remoteproc.rst</code>、各厂商Wiki 的 remoteproc 章节。</p></div>
+</section>
+
+<div class="part-divider" id="part16">
+  <div class="pd-kicker">PART 16 · LOW POWER &amp; EDGE INTELLIGENCE</div>
+  <h1>第十六篇 · 低功耗与边缘智能</h1>
+  <p>嵌入式产品的两大终极约束：<strong>电池能撑多久</strong>、<strong>智能放到哪里跑</strong>。本篇两章分别攻克——G1 建立从「电压平方律」到「功耗实测」的低功耗方法论（MCU 与 Linux 两侧通吃），G2 打通从「训练好的模型」到「NPU 上稳定运行」的部署流水线。它们不是孤立技能：边缘 AI 的性能上限往往由功耗与热预算决定，两章必须合读。</p>
+</div>
+
+<section class="chapter" id="chg1">
+<div class="ch-head">
+<span class="part-tag">第十六篇 · 低功耗</span>
+<h2>G1 · 低功耗系统设计：从平方律到实测方法论</h2>
+<p class="ch-sub">「省电」不是编译选项，是贯穿硬件选型、软件架构、通信协议的系统工程。本章给出一套「测得出、算得准、降得下」的方法论。</p>
+</div>
+<div class="goals"><strong>🎯 学习目标</strong><ul>
+<li>掌握功耗来源模型（动态/静态）与「电压平方律」的工程含义</li>
+<li>建立正确的功耗测量方法学（选仪器、抓毛刺、算平均）</li>
+<li>掌握 MCU 睡眠阶梯与 Linux 电源子系统的双视角策略</li>
+<li>用「占空比账本」估算电池续航并验证</li>
+</ul></div>
+
+<h3>G1.1 功耗从哪里来：一个公式管总</h3>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>成分</th><th>公式/来源</th><th>工程抓手</th></tr>
+<tr><td>动态功耗</td><td><strong>P = C·V²·f</strong>（开关翻转）</td><td><strong>降压收益最大（平方）</strong>，其次降频，再省翻转</td></tr>
+<tr><td>静态功耗</td><td>漏电流（工艺与温度相关）</td><td>选低漏工艺芯片；深度睡眠断电域</td></tr>
+<tr><td>外设/电源链</td><td>LDO 压差热耗、传感器待机电流、上拉电阻常通电流</td><td>DC-DC 替代 LDO（大压差时）；外设按需上下电</td></tr>
+</table></div>
+<div class="box tip"><span class="bt">💡 平方律的直接推论</span>
+<p>电压从 3.3V 降到 1.8V，同等频率下动态功耗降到 <strong>(1.8/3.3)² ≈ 30%</strong>——比任何软件技巧都狠。所以 DVFS（调压调频）是 Linux 侧第一优先级，MCU 选型时也要看「最低运行电压」与「睡眠电流」而非只看主频。</p></div>
+
+<h3>G1.2 测量方法学：测不准就省不了</h3>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>工具</th><th>量程/能力</th><th>适用</th></tr>
+<tr><td>万用表（µA 档）</td><td>稳态平均电流</td><td>睡眠电流基线（µA~mA 级）</td></tr>
+<tr><td>功耗分析仪（PPK2/Joulescope）</td><td>nA~A 高速采样 ★</td><td><strong>抓毛刺、看占空比波形、算真实平均</strong></td></tr>
+<tr><td>示波器 + 采样电阻</td><td>看电流波形轮廓</td><td>快速定位「谁在什么时刻耗电」</td></tr>
+</table></div>
+<div class="box warn"><span class="bt">⚠️ 三个测量陷阱</span>
+<p>① <strong>采样率不够会漏掉尖峰</strong>——WiFi 发射突发 300mA 只有几 ms，平均电流计算必须包含它；② <strong>仪器串联压降</strong>可能让板子欠压复位（低功耗仪用分流器+高侧采样解决）；③ <strong>算平均不能简单平均</strong>——要按占空比积分：I_avg = Σ(Iᵢ·tᵢ)/T。</p></div>
+
+<h3>G1.3 MCU 侧：睡眠阶梯与事件驱动</h3>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>睡眠档位</th><th>典型电流</th><th>唤醒代价</th><th>适用</th></tr>
+<tr><td>Run</td><td>几 mA~几十 mA</td><td>—</td><td>正在干活</td></tr>
+<tr><td>Idle/Sleep</td><td>百 µA 级</td><td>µs 级</td><td>任务间隙（RTOS idle hook）</td></tr>
+<tr><td>Stop/Deep Sleep</td><td>1~10 µA</td><td>µs~ms（恢复时钟）</td><td>短周期休眠（秒级上报）</td></tr>
+<tr><td>Standby/Shutdown</td><td><strong>0.1~1 µA</strong></td><td>ms 级（≈复位重启）</td><td>长周期休眠（分钟~小时）</td></tr>
+</table></div>
+<p>配套三板斧：<strong>① 事件驱动架构</strong>——用「事件 + 睡眠」替代「轮询 + 忙等」（RTOS 的 tickless 模式见第49章）；<strong>② 外设时钟门控</strong>——不用就关时钟，别让「闲置外设」偷电；<strong>③ 唤醒源精简</strong>——只留必要的唤醒源，每个唤醒源都是一次「白起床」的可能。</p>
+
+<h3>G1.4 Linux 侧：电源子系统双引擎</h3>
+<div class="codeblock"><pre><code data-lang="bash"># CPUFreq(DVFS) 与 CPUIdle 配合：空闲降频又下潜
+cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor   # 建议 schedutil
+cat /sys/devices/system/cpu/cpu0/cpuidle/current_driver
+cat /sys/devices/system/cpu/cpuidle/.../latency             # 各 idle 态唤醒代价
+
+# PM QoS：让「有实时需求的模块」阻止系统进入深睡
+echo 0 &gt; /dev/cpu_dma_latency          # 例：锁住最低延迟(阻止 idle 下潜)
+
+# suspend 全景（驱动侧见 D4.5）
+echo mem &gt; /sys/power/state            # 挂起到 RAM
+cat /sys/power/pm_wakeup_irq           # 谁唤醒的
+wakeup_count                           # 唤醒计数——排查「谁在偷唤醒」★</code></pre></div>
+<div class="box tip"><span class="bt">💡 Linux 低功耗排障三板斧</span>
+<p>① <strong>powertop</strong>：看「谁在阻止 idle / 谁在频繁唤醒」（wakeups/s 排行榜）；② <strong>唤醒计数差分</strong>：睡前记 wakeup_count，醒后对比，定位偷唤醒设备；③ <strong>温度与 DVFS 联动</strong>：thermal governor 会限频——「性能掉」可能不是 CPU 弱而是热（与 G2 联动）。</p></div>
+
+<h3>G1.5 占空比账本：续航是可以算出来的</h3>
+<div class="codeblock"><pre><code data-lang="text">例：电池 2000mAh，设备「采 1s + 发 2s + 睡 357s」(6 分钟周期)
+  采集   1s × 8mA    = 8 mAs
+  发送   2s × 120mA  = 240 mAs   ← 通信是大头(ch32 的 DTIM/重连账)
+  睡眠 357s × 5µA    = 1.8 mAs
+  周期耗电 = 249.8 mAs / 360s → 平均 I ≈ 0.69 mA
+  理论续航 = 2000mAh / 0.69mA ≈ 2900h ≈ 4 个月
+
+推论： 想延长续航先攻「发送时段」——
+  ① 攒批上报摊薄连接成本  ② 压缩 payload 缩短发射时间
+  ③ NB-IoT/LoRa 替代 WiFi/BLE(应用允许时)  ④ 睡眠电流再抠一个 0</code></pre></div>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>现象</th><th>根因候选</th><th>定位路径</th></tr>
+<tr><td>睡眠电流比标称大 10 倍</td><td>某 GPIO 浮空漏电 / 上拉常通 / LED 待机</td><td>逐个断开外设定位；万用表 µA 档 + 二分法</td></tr>
+<tr><td>理论算够实测不够</td><td>漏算通信重试/心跳/DNS 等突发</td><td>功耗分析仪抓完整周期（含意外尖峰）</td></tr>
+<tr><td>Linux 待机功耗高</td><td>设备阻止 idle / 频繁唤醒</td><td>powertop 唤醒排行 + wakeup_count 差分</td></tr>
+<tr><td>休眠后唤醒慢/丢第一包</td><td>网络栈重建/重连开销</td><td>权衡「保持连接」与「重连」成本（ch32 账本）</td></tr>
+</table></div>
+
+<div class="quiz"><strong>📝 思考题</strong><ol>
+<li>为什么「降 1V」比「降 500MHz」对动态功耗的贡献更大？DVFS governor 里 schedutil 相比 ondemand 的优势？</li>
+<li>你的设备理论续航 6 个月、实测 2 个月。列出测量与账本两方面的排查步骤。</li>
+<li>Stop 与 Standby 模式差一个量级的睡眠电流，代价是什么？如何按「上报周期」选择档位？</li>
+<li>PM QoS 解决什么矛盾？举一个「必须锁住 CPU 不下潜」的合法场景。</li>
+</ol></div>
+<details class="qa"><summary>参考答案要点</summary><div class="ans">
+<p><strong>1</strong>：P=CV²f 中 V 是平方项——降 1V 对功耗的贡献远大于降频；schedutil 内建调度器信息、调频更跟手且无 ondemand 的采样抖动。<strong>2</strong>：先查测量（采样率漏尖峰？串联压降？平均算法），再查账本（漏算重试/心跳/DNS）；用功耗分析仪录完整周期逐段积分对账。<strong>3</strong>：Stop 保 RAM 与唤醒源但代价小，Standby 省电多但≈重启（RAM 内容丢失）；上报周期 &gt; 分钟选 Standby、秒级选 Stop——按「唤醒重建成本/睡眠时长」比值决策。<strong>4</strong>：QoS 让模块声明「我不能容忍多少延迟」；合法场景如中断密集的实时采集服务、或唤醒后需立即响应的控制回路首包处理。</p>
+</div></details>
+
+<div class="lab"><strong>🧪 动手实验 LG1-1：占空比账本实测闭环（150 分钟）</strong>
+<p><strong>步骤</strong>：① 用功耗分析仪（或示波器+采样电阻）录制设备完整工作周期波形；② 按 G1.5 方法积分算出平均电流与各阶段占比；③ 找出「最贵的一秒」，实施一项针对性优化（批上报/缩短发射/加深睡眠）；④ 重测并对比账本；⑤ 用电池容量换算续航并给出「设计 vs 实测」偏差分析。</p>
+<p><strong>验收</strong>：两张功耗波形图（优化前/后）+ 账本对照表 + 续航偏差归因。</p></div>
+
+<div class="box tip"><span class="bt">🗺️ 本章知识地图</span>
+<p><strong>前置依赖</strong>：第32章 ESP32 功耗、第49章 tickless、D4 电源管理框架、第85章设备功耗直觉。<strong>后续衔接</strong>：G2 的 NPU 推理功耗与热预算直接复用本章方法。<strong>开源定位</strong>：内核 <code>Documentation/admin-guide/pm/</code>、powertop 源码、ST/NXP 应用笔记（AN 系列低功耗模式对比）。</p></div>
+</section>
+
+<section class="chapter" id="chg2">
+<div class="ch-head">
+<span class="part-tag">第十六篇 · 边缘智能</span>
+<h2>G2 · 边缘 AI 部署工程化：从模型文件到 NPU 上稳定运行</h2>
+<p class="ch-sub">「模型在 PC 上跑通」与「在边缘设备上稳定跑」之间隔着一整条工程流水线：量化、转换、算子适配、内存带宽、功耗热预算。本章打通它。</p>
+</div>
+<div class="goals"><strong>🎯 学习目标</strong><ul>
+<li>掌握边缘部署流水线五阶段与各阶段验收门</li>
+<li>理解量化（PTQ/QAT）的精度-性能权衡与评估方法</li>
+<li>会用 NPU 工具链检查算子支持，设计 NPU/CPU 混合调度</li>
+<li>建立推理性能剖析与热/功耗约束下的调优思路</li>
+</ul></div>
+
+<h3>G2.1 部署流水线全景：五个阶段五个门</h3>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>阶段</th><th>工作</th><th>验收门</th></tr>
+<tr><td>① 模型收敛</td><td>PC/云上训练，得到 fp32 模型</td><td>基准数据集指标达标</td></tr>
+<tr><td>② 量化/压缩</td><td>PTQ 或 QAT 转 int8/fp16；剪枝蒸馏可选</td><td><strong>量化后精度损失 ≤ 预设阈值（如 &lt;1%）</strong></td></tr>
+<tr><td>③ 转换/编译</td><td>ONNX → 目标格式（RKNN / TFLite / Vitis-AI）</td><td>全部算子转换成功，无回退警告</td></tr>
+<tr><td>④ 板端集成</td><td>预处理/后处理流水线 + 推理调度</td><td>端到端延迟与吞吐达标</td></tr>
+<tr><td>⑤ 压力验证</td><td>长稳、温度、功耗、并发场景</td><td>72h 无内存泄漏，热稳定不降频到不达标</td></tr>
+</table></div>
+<div class="box tip"><span class="bt">💡 最容易忽略的门：算子支持检查</span>
+<p>转换工具遇到不支持的算子会<strong>静默回退到 CPU</strong>（或直接报错）。跑转换时务必看日志里的 <code>unsupported/fallback</code> 字样——一个回退算子可能让「NPU 加速」名存实亡。转换前用工具链的 op-support 查询接口预检。</p></div>
+
+<h3>G2.2 量化：精度与性能的兑换率</h3>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>方式</th><th>做法</th><th>代价/收益</th><th>适用</th></tr>
+<tr><td><strong>PTQ</strong>（训练后量化）</td><td>几百~几千张校准图，统计激活范围转 int8</td><td>成本最低；敏感模型可能掉点 1~5%</td><td>大多数视觉模型首选</td></tr>
+<tr><td><strong>QAT</strong>（量化感知训练）</td><td>训练中插入伪量化节点</td><td>掉点可追回；需训练资源与数据</td><td>PTQ 掉点超标时</td></tr>
+<tr><td>混合量化</td><td>敏感层保持 fp16，其余 int8</td><td>精度/性能折中</td><td>NPU 支持 fp16 时</td></tr>
+</table></div>
+<p>量化评估必须用<strong>同一套验证集跑转换前后的对比</strong>（不只看 top-1：检测看 mAP、分割看 mIoU），并把「量化前后输出差异可视化」——哪些样本掉分、掉在哪一层，往往能定位到具体算子。</p>
+
+<h3>G2.3 板端运行时：让 NPU 真正跑满</h3>
+<div class="codeblock"><pre><code data-lang="text">推理总延迟 = 预处理(CPU) + 推理(NPU) + 后处理(CPU)
+                ↓ 三段任何一个都是瓶颈
+
+典型调优顺序：
+① 预处理： 缩放/色彩转换交给硬件(VPU/GPU)或 NEON 优化，
+   用「DMA 零拷贝」把摄像头帧直送 NPU 输入缓冲
+② 推理： 查每层耗时 profile(工具链都有)，找到「最贵一层」——
+   通常是某回退算子或某大卷积；换算子/合并层/降分辨率
+③ 后处理： 检测框解码/NMS 用向量化实现，别让 CPU 解码拖垮 NPU
+④ 流水线： 采集/预处理/推理/后处理四段用队列解耦并行——
+   吞吐由「最慢一段」决定，别让它们串行</code></pre></div>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>工具链</th><th>目标硬件</th><th>格式</th><th>特点</th></tr>
+<tr><td>RKNN-Toolkit2</td><td>RK3566/3568/3588</td><td>.rknn</td><td>量化+转换一体，板端 runtime + C API</td></tr>
+<tr><td>TFLite Micro</td><td>MCU / 轻量 Linux</td><td>.tflite</td><td>无 OS 依赖，算子集小而稳，TinyML 事实标准</td></tr>
+<tr><td>Vitis-AI</td><td>Xilinx DPU（含 ZYNQ 系）</td><td>.xmodel</td><td>与 PL 协同，量化器+编译器完整</td></tr>
+<tr><td>TensorRT（对照）</td><td>Jetson GPU</td><td>.engine</td><td>边缘 GPU 路线的参照系</td></tr>
+</table></div>
+
+<h3>G2.4 功耗与热：性能的隐形天花板（联动 G1）</h3>
+<div class="box warn"><span class="bt">⚠️ NPU 满载是一台「小暖炉」</span>
+<p>长时间推理会让 SoC 温度上升 → thermal governor 限频 → <strong>推理吞吐「越跑越慢」</strong>。验证策略：跑 30 分钟以上看吞吐曲线是否平稳；用 G1 方法测推理时段功耗；必要时按「推理 → 休息」占空比设计，或降低分辨率/帧率换热余量。</p></div>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>现象</th><th>根因候选</th><th>定位路径</th></tr>
+<tr><td>NPU 利用率低、延迟超标</td><td>算子回退 CPU / 预处理串行拖累</td><td>工具链逐层 profile；查转换日志回退项</td></tr>
+<tr><td>量化后精度骤降</td><td>敏感层 int8 溢出 / 校准集不具代表性</td><td>逐层对比输出；换校准集或对该层用 fp16</td></tr>
+<tr><td>跑几十分钟后变慢</td><td>热限频 / 内存泄漏</td><td>看温度与频率曲线；long-run 内存监控（第12篇）</td></tr>
+<tr><td>多路并发时抖动</td><td>NPU 上下文切换开销 / 带宽争抢</td><td>合并模型多 batch；用零拷贝减少搬运</td></tr>
+</table></div>
+
+<div class="quiz"><strong>📝 思考题</strong><ol>
+<li>PTQ 与 QAT 的本质区别是什么？为什么 PTQ 只需要「几百张校准图」而 QAT 要全量训练数据？</li>
+<li>推理延迟 30ms 中预处理占 18ms——该换更强的 NPU 吗？用流水线思维给出两种不加硬件的优化方案。</li>
+<li>为什么「转换日志里的回退警告」比「精度掉 0.5%」更需要立即处理？</li>
+<li>结合 G1：一个 5W 的边缘盒子跑 15W 峰值推理，系统层有哪些合法的「降峰」手段？</li>
+</ol></div>
+<details class="qa"><summary>参考答案要点</summary><div class="ans">
+<p><strong>1</strong>：PTQ 不动训练只靠校准数据统计分布，QAT 把量化误差塞进训练循环让权重「适应量化」——所以 QAT 需要全量数据与训练算力。<strong>2</strong>：不该先换 NPU——预处理是 CPU 段；方案①硬件/NEON 加速预处理并流水线化，方案②采集-预处理-推理三段队列并行，让 NPU 不被喂数据卡住。<strong>3</strong>：回退算子把整段计算拉回 CPU，可能让 NPU 路径名存实亡——性能数量级问题；而 0.5% 精度是可调优的质量问题。<strong>4</strong>：推理占空比设计（跑 N 帧歇一下）、分辨率/帧率降档、模型多 batch 改小 batch、限频运行（接受稍慢但稳定）、热预算内调度（呼应 G1 账本）。</p>
+</div></details>
+
+<div class="lab"><strong>🧪 动手实验 LG2-1：一条模型的完整落地（180 分钟，需 NPU 板卡或可换 CPU 参照）</strong>
+<p><strong>步骤</strong>：① 选一个现成模型（如 YOLO-n/MobileNet），完成 PTQ 量化并用验证集测精度损失；② 转换到目标格式，逐条检查日志确认无算子回退；③ 板端写预处理-推理-后处理流水线，测量各段耗时并算出吞吐；④ 对「最慢一段」实施一项优化（零拷贝/NEON 预处理/批处理）重测；⑤ 连续跑 30 分钟记录吞吐与温度曲线，检查热限频影响。</p>
+<p><strong>验收</strong>：量化精度对比表 + 四段延迟剖析图 + 优化前后吞吐对比 + 30 分钟稳定性曲线。</p></div>
+
+<div class="box tip"><span class="bt">🎓 第十六篇收束寄语</span>
+<p>低功耗与边缘智能看起来是两个领域，实则共享同一套底层思维：<strong>一切性能都是预算问题</strong>——功耗预算、热预算、内存带宽预算、NPU 算力预算。你在 G1 学会的「测量→账本→定向优化」闭环，放到 G2 就是「逐层 profile→找最贵一段→定向优化」；反过来，G2 的流水线思维也能用来设计低功耗系统的「采集-处理-上报」管线。预算思维一旦建立，你在嵌入式领域几乎不再有「玄学性能问题」。</p></div>
+
+<div class="box tip"><span class="bt">🗺️ 本章知识地图</span>
+<p><strong>前置依赖</strong>：G1 功耗方法论、第12篇性能剖析、第四篇 NPU 平台、D7 异构调度（NPU 常与 M 核任务共存）。<strong>横向联动</strong>：ch44 NPU 应用、ch87~92 项目集的 AI 盒子实战。<strong>开源定位</strong>：rknn-toolkit2 与 rknpu 驱动仓库、TFLite Micro 仓库的 examples、Vitis-AI 文档的 quantization 章节。</p></div>
 </section>
 
 <div class="part-divider" id="partapp"><h3>B5 · Zephyr west 与 ESP-IDF 命令速查</h3>

@@ -226,7 +226,7 @@ figure.fig figcaption{font-size:12.5px;color:var(--fg2);margin-top:8px}
     <div class="search-results" id="searchResults"></div>
   </div>
   <div class="progress-line"><div id="progressBar"></div></div>
-  <div class="progress-text" id="progressText">已学 0/138 章</div>
+  <div class="progress-text" id="progressText">已学 0/144 章</div>
   <nav class="toc" id="toc">
 
     <div class="part" data-part="p1">
@@ -446,6 +446,18 @@ figure.fig figcaption{font-size:12.5px;color:var(--fg2);margin-top:8px}
       </div>
     </div>
 
+    <div class="part" data-part="p15">
+      <button class="part-toggle"><span class="arrow">▼</span>第十五篇 · Linux 驱动开发精进</button>
+      <div class="chap-list">
+        <a href="#chd1" data-ch="chd1"><span class="chk"></span><span class="no">D1</span><span class="tt">模块机制与编程范式</span></a>
+        <a href="#chd2" data-ch="chd2"><span class="chk"></span><span class="no">D2</span><span class="tt">并发同步、内存与 DMA</span></a>
+        <a href="#chd3" data-ch="chd3"><span class="chk"></span><span class="no">D3</span><span class="tt">设备树深度实战</span></a>
+        <a href="#chd4" data-ch="chd4"><span class="chk"></span><span class="no">D4</span><span class="tt">设备模型与电源管理</span></a>
+        <a href="#chd5" data-ch="chd5"><span class="chk"></span><span class="no">D5</span><span class="tt">子系统全景与选型</span></a>
+        <a href="#chd6" data-ch="chd6"><span class="chk"></span><span class="no">D6</span><span class="tt">驱动调试技巧大全</span></a>
+      </div>
+    </div>
+
     <div class="part" data-part="papp">
       <button class="part-toggle"><span class="arrow">▼</span>附录 · 题库与速查</button>
       <div class="chap-list">
@@ -502,6 +514,7 @@ figure.fig figcaption{font-size:12.5px;color:var(--fg2);margin-top:8px}
   <a class="card" href="#part12"><span class="cn">⚡</span><h3>第十二篇 · 系统性能工程</h3><p>性能分析方法论(USE法·火焰图专题)/MCU系统优化(启动·裁剪·负载)/RTOS多任务调优/三大优化战役复盘/Linux内核与容器进阶/专家技能地图（SO1~SO5+SE）</p></a>
   <a class="card" href="#part13"><span class="cn">🧩</span><h3>第十三篇 · ZYNQ 异构开发</h3><p>ZYNQ7020 架构全景(PS+PL)/AXI互联/Verilog 精要/Vivado 七步流程/PS裸机与 PS-PL 协同实战/数据采集系统（Z1~Z5 · 正点原子领航者板）</p></a>
   <a class="card" href="#part14"><span class="cn">🔗</span><h3>第十四篇 · 高速互连与集合通信</h3><p>PCIe 协议栈深潜(TLP/信用流控/LTSSM)/带宽账本与 DMA 引擎/GPUDirect·NVLink·NVSwitch 拓扑/NCCL 集合通信(原语·Ring·Tree·调优)/RDMA·RoCE 与分布式通信实战（I1~I5）</p></a>
+  <a class="card" href="#part15"><span class="cn">🐧</span><h3>第十五篇 · 驱动开发精进</h3><p>内核模块机制与编程六大禁区/并发同步·内存·DMA 一致性/设备树深度实战与 Overlay/设备模型·deferred probe·电源管理/子系统全景与选型地图/Oops 解码与调试技巧大全（D1~D6）</p></a>
 </div>
 
 <h2>开始之前：硬件锚点清单</h2>
@@ -19024,6 +19037,1616 @@ export TORCH_DISTRIBUTED_DEBUG=DETAIL          # 定位集合调用不匹配</co
 <p><strong>前置依赖</strong>：I3 拓扑、I4 NCCL 核心。<strong>横向联动</strong>：第85章 PCIe 基础、ch12 性能方法论（USE 法在本章体现为「网络→GPU→通信→应用」四层体检）、第4篇异构计算概念。<strong>开源定位</strong>：linux-rdma/perftest（RDMA 测速工具）、ofiwg/libfabric、openucx/ucx（通信框架抽象层）、NVIDIA/nccl-tests。</p></div>
 </section>
 
+<div class="part-divider" id="part15">
+  <div class="pd-kicker">PART 15 · LINUX DEVICE DRIVER ENGINEERING</div>
+  <h1>第十五篇 · 嵌入式 Linux 驱动开发精进</h1>
+  <p>第六篇带你「写出能跑的驱动」，本篇带你「写出能上产品的驱动」。沿着一条工程师真实成长曲线展开：<strong>先立规矩</strong>（模块机制与内核编程禁区）→ <strong>再守并发</strong>（同步原语、内存与 DMA 一致性）→ <strong>再懂配置</strong>（设备树深度实战）→ <strong>再明框架</strong>（设备模型与电源管理）→ <strong>再开眼界</strong>（子系统全景与选型地图）→ <strong>最后能救火</strong>（调试技巧与 OOPS 分析）。全篇以「现象 → 机理 → 代码骨架 → 排障路径」组织，力求你在真实项目中遇到问题时，能直接翻到对应小节找到抓手。</p>
+</div>
+
+<section class="chapter" id="chd1">
+<div class="ch-head">
+<span class="part-tag">第十五篇 · 驱动基础</span>
+<h2>D1 · 内核模块机制与驱动编程范式</h2>
+<p class="ch-sub">同样是写 C，内核态与用户态是两套规则。本章把「模块怎么被加载」和「内核里什么不能做」讲透——这是驱动工程师的第一道门槛。</p>
+</div>
+<div class="goals"><strong>🎯 学习目标</strong><ul>
+<li>掌握内核模块从编译、加载、依赖解析到卸载的完整生命周期</li>
+<li>熟记内核编程的六大禁区及其对应的崩溃形态</li>
+<li>写出结构完整、ABI 规范的字符设备骨架（含 ioctl 与 mmap）</li>
+<li>掌握模块参数、sysfs 与 debugfs 三种运行时接口的设计选择</li>
+</ul></div>
+
+<h3>D1.1 模块生命周期：从 insmod 到 rmmod 内部发生了什么</h3>
+<div class="codeblock"><pre><code data-lang="text">编译 → .ko 文件 → 插入内核 → 符号解析 → 调用 init → 运行 → 卸载
+
+① 编译： 必须匹配<strong>目标板正在运行的内核源码树</strong>(或 headers)，
+         否则 vermagic 校验失败： "version magic '...' should be '...'"
+   make -C /lib/modules/$(uname -r)/build M=$(pwd) modules
+
+② 加载： insmod ./drv.ko          # 不解决依赖，需手工先装依赖模块
+         modprobe drv             # ★ 自动处理依赖，生产环境用这个
+         内核动作： 分配内存 → 拷贝 ELF 各 section → <strong>重定位</strong>
+                   → 解析未定义符号(查内核导出符号表 + 已加载模块)
+                   → 调用 module_init 指定的函数
+
+③ 依赖： depmod -a 生成 /lib/modules/$(uname -r)/modules.dep
+         模块间依赖记录在 .modinfo 段
+
+④ 卸载： rmmod drv / modprobe -r drv
+         前提： 引用计数为 0（无人 open、无其他模块引用）
+         ★ 若 rmmod 报 "Resource temporarily unavailable"，
+           说明还有进程 open 着设备或模块被引用
+
+⑤ 自动加载： 设备的 modalias(如 of:NfooT&lt;NULL&gt;Cvendor,dev) 由 udev
+         匹配 /lib/modules/*/modules.alias → 自动 modprobe
+         ★ 写驱动时填好 .of_match_table 与 MODULE_DEVICE_TABLE，
+           自动加载才能生效</code></pre></div>
+<div class="codeblock"><pre><code data-lang="bash"># 模块信息查看全家桶
+modinfo drv.ko            # 查看 license/author/parm/alias/vermagic/depends
+lsmod                     # 已加载模块 + 引用计数 + 依赖关系
+cat /proc/modules         # lsmod 的数据来源(更原始)
+cat /sys/module/drv/...   # 模块在 sysfs 中的目录(参数、引用计数、sections)
+modprobe -c | grep drv    # 查看模块的配置(别名/选项)
+modprobe --show-depends drv   # 查看依赖链
+
+# 排障常用
+dmesg -w &amp;                # 实时看内核日志
+modprobe -v drv           # 详细模式，看加载过程
+rmmod -f drv              # 强制卸载(危险：可能导致内核崩溃，仅调试用)
+cat /sys/module/drv/refcnt    # 或 holders/ 目录查看谁引用了它</code></pre></div>
+
+<h3>D1.2 模块骨架与关键宏</h3>
+<div class="codeblock"><pre><code data-lang="c">#include &lt;linux/module.h&gt;
+#include &lt;linux/init.h&gt;
+
+static int __init drv_init(void)
+{
+    pr_info("drv: loaded\n");
+    return 0;
+}
+
+static void __exit drv_exit(void)
+{
+    pr_info("drv: unloaded\n");
+}
+
+module_init(drv_init);          /* 加载时调用 */
+module_exit(drv_exit);          /* 卸载时调用(内置模块时无意义) */
+
+MODULE_LICENSE("GPL");          /* ★ 必填！非 GPL 会污染内核(taint)，
+                                     且无法使用 EXPORT_SYMBOL_GPL 符号 */
+MODULE_AUTHOR("your name");
+MODULE_DESCRIPTION("xxx driver");
+MODULE_VERSION("1.0");
+
+/* 设备树匹配表 —— 决定自动加载与 probe 调用 */
+static const struct of_device_id drv_of_match[] = {
+    { .compatible = "vendor,dev" },
+    { /* sentinel */ }
+};
+MODULE_DEVICE_TABLE(of, drv_of_match);   /* ★ 必须，否则 modules.alias 无条目 */
+
+int exported_var;
+EXPORT_SYMBOL(exported_var);             /* 导出给任意模块 */
+EXPORT_SYMBOL_GPL(gpl_only_func);        /* 仅 GPL 模块可见 */</code></pre></div>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>宏/修饰符</th><th>作用</th><th>说明</th></tr>
+<tr><td><code>__init</code></td><td>标记初始化函数</td><td>加载后该段内存<strong>被释放</strong>，不可在运行时调用</td></tr>
+<tr><td><code>__exit</code></td><td>标记卸载函数</td><td>内置（非模块）编译时被丢弃</td></tr>
+<tr><td><code>__initdata</code></td><td>初始化数据</td><td>同理，初始化后释放</td></tr>
+<tr><td><code>MODULE_LICENSE</code></td><td>许可证</td><td>缺失会导致内核 tainted，很多调试工具失效</td></tr>
+<tr><td><code>MODULE_DEVICE_TABLE</code></td><td>导出匹配表</td><td>供 depmod 生成 alias，实现自动加载</td></tr>
+<tr><td><code>EXPORT_SYMBOL_GPL</code></td><td>GPL-only 导出</td><td>闭源模块无法使用这些符号</td></tr>
+</table></div>
+
+<h3>D1.3 内核编程六大禁区（★ 面试与排障高频）</h3>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>禁区</th><th>为什么</th><th>错误表现</th><th>正确做法</th></tr>
+<tr><td><strong>栈上大数组</strong></td><td>内核栈仅 8KB(x86)/16KB(ARM64)，溢出即踩线程信息</td><td>无声崩溃、随机 OOPS</td><td>大缓冲用 <code>kmalloc</code>；递归/深层调用要警惕</td></tr>
+<tr><td><strong>直接使用浮点</strong></td><td>内核默认不保存 FPU 上下文，切换开销大</td><td>计算结果随机错误（不崩溃！最难查）</td><td>避免浮点；必须用则 <code>kernel_fpu_begin/end</code></td></tr>
+<tr><td><strong>直接解引用用户指针</strong></td><td>用户地址在当前地址空间可能无效，且是安全漏洞</td><td>OOPS 或越权访问</td><td>用 <code>copy_to_user</code>/<code>copy_from_user</code> 并检查返回值</td></tr>
+<tr><td><strong>原子上下文睡眠</strong></td><td>中断/自旋锁内不可调度</td><td><code>BUG: scheduling while atomic</code></td><td>见 D2.3；把耗时工作推给 workqueue</td></tr>
+<tr><td><strong>用 <code>%</code> 打印 size_t/指针</strong></td><td>内核 printk 格式检查严格</td><td>编译警告，输出乱码</td><td>用 <code>%zu</code>/<code>%p</code>/<code>%pK</code>/<code>%px</code></td></tr>
+<tr><td><strong>忘记检查分配返回值</strong></td><td>内核分配可能失败，返回 NULL/ERR_PTR</td><td>NULL 指针解引用 OOPS</td><td>一律检查；错误码用 <code>ERR_PTR</code>/<code>IS_ERR</code></td></tr>
+</table></div>
+<div class="codeblock"><pre><code data-lang="c">/* 用户空间数据交换：必须检查返回值！ */
+static ssize_t drv_read(struct file *filp, char __user *buf,
+                        size_t count, loff_t *ppos)
+{
+    if (copy_to_user(buf, kbuf, count))        /* 返回未拷贝的字节数 */
+        return -EFAULT;                        /* 0 表示全部成功 */
+    return count;
+}
+
+/* 错误码传递惯用法 */
+struct foo *p = kmalloc(sizeof(*p), GFP_KERNEL);
+if (!p)
+    return -ENOMEM;
+/* 返回指针的函数用 ERR_PTR 传递负错误码 */
+if (err)
+    return ERR_PTR(-ENODEV);
+/* 调用方用 IS_ERR/PTR_ERR 判断 */
+p = create_foo();
+if (IS_ERR(p))
+    return PTR_ERR(p);</code></pre></div>
+
+<h3>D1.4 字符设备骨架精进与 file_operations 全集</h3>
+<div class="codeblock"><pre><code data-lang="c">static dev_t devno;                  /* 设备号(主+次) */
+static struct cdev my_cdev;
+static struct class *my_class;
+
+static int __init drv_init(void)
+{
+    /* ① 动态申请设备号（★ 不要用静态注册，避免冲突） */
+    alloc_chrdev_region(&amp;devno, 0, 1, "mydev");
+    /* ② 初始化并添加 cdev */
+    cdev_init(&amp;my_cdev, &amp;my_fops);
+    my_cdev.owner = THIS_MODULE;
+    cdev_add(&amp;my_cdev, devno, 1);
+    /* ③ 创建设备节点（依赖 udev/mdev 自动创建 /dev/mydev） */
+    my_class = class_create(THIS_MODULE, "myclass");
+    device_create(my_class, NULL, devno, NULL, "mydev");
+    return 0;
+}
+/* 卸载时严格逆序： device_destroy → class_destroy → cdev_del
+   → unregister_chrdev_region */</code></pre></div>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>回调</th><th>触发时机</th><th>要点</th></tr>
+<tr><td><code>open</code> / <code>release</code></td><td>open() / close()</td><td>把私有数据挂到 <code>filp-&gt;private_data</code></td></tr>
+<tr><td><code>read</code> / <code>write</code></td><td>read() / write()</td><td>返回 0 表示 EOF；配合 <code>wait_event</code> 做阻塞</td></tr>
+<tr><td><code>poll</code></td><td>select/poll/epoll</td><td>返回 mask；需 <code>poll_wait(filp, &amp;wq, wait)</code></td></tr>
+<tr><td><code>unlocked_ioctl</code></td><td>ioctl()</td><td>无大内核锁；高版本内核已移除老的 <code>ioctl</code></td></tr>
+<tr><td><code>compat_ioctl</code></td><td>32 位应用跑在 64 位内核</td><td>★ 涉及指针/长整型的命令必须实现</td></tr>
+<tr><td><code>mmap</code></td><td>mmap()</td><td>用 <code>remap_pfn_range</code> 或 <code>dma_mmap_coherent</code></td></tr>
+<tr><td><code>fasync</code></td><td>异步通知（信号）</td><td>配合 <code>kill_fasync</code> 发 SIGIO</td></tr>
+<tr><td><code>llseek</code></td><td>lseek()</td><td>不支持定位时返回 <code>-ESPIPE</code></td></tr>
+</table></div>
+<div class="codeblock"><pre><code data-lang="c">/* container_of：从结构体成员反推结构体首址 —— 内核最常用惯用法 */
+struct mydev { struct cdev cdev; int data; };
+
+static int my_open(struct inode *inode, struct file *filp)
+{
+    /* inode-&gt;i_cdev 指向嵌入的 cdev，反推外层 mydev */
+    struct mydev *dev = container_of(inode-&gt;i_cdev, struct mydev, cdev);
+    filp-&gt;private_data = dev;        /* ★ 存起来，后续回调直接用 */
+    return 0;
+}
+/* 后续回调中： struct mydev *dev = filp-&gt;private_data; */</code></pre></div>
+
+<h3>D1.5 ioctl 设计与 ABI 约定</h3>
+<div class="codeblock"><pre><code data-lang="c">/* ioctl 命令号编码（32 位）：
+   bit[31:30] direction(无/写/读/读写)  bit[29:16] size
+   bit[15:8]  type(魔数，每驱动唯一)     bit[7:0]   nr(序号) */
+#define MY_MAGIC  'k'
+#define MY_RESET  _IO(MY_MAGIC,  0)                    /* 无数据 */
+#define MY_SETVAL _IOW(MY_MAGIC, 1, int)               /* 用户→内核 */
+#define MY_GETVAL _IOR(MY_MAGIC, 2, int)               /* 内核→用户 */
+#define MY_XCHG   _IOWR(MY_MAGIC, 3, struct my_data)   /* 双向 */
+
+static long my_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
+{
+    /* ★ ① 先校验魔数与序号，防止误命令 */
+    if (_IOC_TYPE(cmd) != MY_MAGIC) return -ENOTTY;
+    /* ★ ② 校验用户缓冲区可访问(access_ok 在新内核由 copy_*_user 内部处理) */
+    switch (cmd) {
+    case MY_SETVAL:
+        if (copy_from_user(&amp;val, (int __user *)arg, sizeof(val)))
+            return -EFAULT;
+        break;
+    default: return -ENOTTY;      /* 不支持的命令返回 ENOTTY(非 EINVAL) */
+    }
+    return 0;
+}</code></pre></div>
+<div class="box warn"><span class="bt">⚠️ ABI 稳定性铁律</span>
+<p>ioctl 接口是<strong>内核与用户态的二进制契约</strong>，一旦发布就很难改动。设计时必须：① 魔数全局唯一（参考 <code>Documentation/userspace-api/ioctl/ioctl-number.rst</code>）；② 结构体显式指定定长类型（<code>__u32</code> 而非 <code>unsigned long</code>），避免 32/64 位布局差异；③ 预留版本号字段与 reserved 填充；④ 实现 <code>compat_ioctl</code>。<strong>能用 sysfs 表达的配置，优先用 sysfs 而非 ioctl</strong>——sysfs 是文本接口，天然跨架构且可脚本化。</p></div>
+
+<h3>D1.6 运行时接口三选一：模块参数 / sysfs / debugfs</h3>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>机制</th><th>路径</th><th>适用</th><th>稳定性</th></tr>
+<tr><td><strong>module_param</strong></td><td><code>/sys/module/&lt;mod&gt;/parameters/</code></td><td>加载时设定、运行期少变的配置</td><td>属模块 ABI，需谨慎</td></tr>
+<tr><td><strong>sysfs</strong></td><td><code>/sys/class/.../</code> 或设备目录</td><td><strong>正式的功能性接口</strong>（属性、配置、状态）</td><td>★ 受内核 ABI 稳定承诺约束</td></tr>
+<tr><td><strong>debugfs</strong></td><td><code>/sys/kernel/debug/</code></td><td><strong>调试专用</strong>，格式可随意改</td><td>不承诺稳定，可随时变更</td></tr>
+</table></div>
+<div class="codeblock"><pre><code data-lang="c">/* ① 模块参数 */
+static int debug_level = 1;
+module_param(debug_level, int, 0644);          /* 权限：root 可写 */
+MODULE_PARM_DESC(debug_level, "debug verbosity 0-3");
+/* 加载时： insmod drv.ko debug_level=3
+   运行期： echo 3 &gt; /sys/module/drv/parameters/debug_level */
+
+/* ② sysfs 属性（推荐用于正式接口） */
+static ssize_t threshold_show(struct device *dev,
+                              struct device_attribute *attr, char *buf)
+{
+    return sysfs_emit(buf, "%d\n", threshold);   /* ★ 用 sysfs_emit 而非 sprintf */
+}
+static ssize_t threshold_store(struct device *dev,
+                               struct device_attribute *attr,
+                               const char *buf, size_t count)
+{
+    int v;
+    if (kstrtoint(buf, 10, &amp;v))                /* 内核提供的字符串转数值 */
+        return -EINVAL;
+    threshold = v;
+    return count;                               /* 成功返回 count */
+}
+static DEVICE_ATTR_RW(threshold);               /* 自动生成 rw 属性 */
+/* 创建： device_create_file(dev, &amp;dev_attr_threshold); */
+
+/* ③ debugfs（调试用，随意） */
+struct dentry *dir = debugfs_create_dir("mydrv", NULL);
+debugfs_create_u32("reg_dump", 0644, dir, &amp;reg_val);
+debugfs_create_file("dump", 0444, dir, dev, &amp;dump_fops);</code></pre></div>
+<div class="box tip"><span class="bt">💡 sysfs 黄金规则</span>
+<p>每个属性文件<strong>只表达一个值</strong>（one value per file）。不要在一个文件里塞多个字段或用结构化输出——那是 debugfs 和 ioctl 的活。违反此规则会导致脚本难以解析、且会被内核社区要求返工。</p></div>
+
+<div class="quiz"><strong>📝 思考题</strong><ol>
+<li>模块加载时报 <code>version magic</code> 不匹配，根因是什么？有哪两种解决路径，各自的代价？</li>
+<li>为什么内核栈溢出往往表现为「随机崩溃」而不是稳定的报错？这与用户态有何不同？</li>
+<li>写一个含指针成员结构体的 ioctl 命令，在 64 位内核上跑 32 位应用会出现什么问题？如何修？</li>
+<li>某配置既要能脚本化读写、又要长期稳定，应选 module_param / sysfs / debugfs 中的哪一个？为什么？</li>
+</ol></div>
+
+<div class="lab"><strong>🧪 动手实验 LD1-1：从零构建可自动加载的字符设备（90 分钟）</strong>
+<p><strong>步骤</strong>：① 编写最小模块，故意省略 <code>MODULE_LICENSE</code>，观察 <code>dmesg</code> 中的 tainted 警告；② 补全元信息并加 <code>of_match_table</code> + <code>MODULE_DEVICE_TABLE</code>，<code>depmod -a</code> 后检查 <code>modules.alias</code> 是否生成；③ 实现完整 <code>file_operations</code>（open/read/write/poll/unlocked_ioctl），用 <code>container_of</code> 管理多设备；④ 故意在栈上声明 8KB 数组并写满，观察崩溃形态；⑤ 用 <code>copy_to_user</code> 传错指针，验证返回 <code>-EFAULT</code> 而非崩溃。</p>
+<p><strong>验收</strong>：一个可被 udev 自动加载、支持阻塞读与 ioctl 的模块 + 一份「六大禁区复现记录表」（每个禁区的现象与修复方法）。</p></div>
+
+<div class="box tip"><span class="bt">🗺️ 本章知识地图</span>
+<p><strong>前置依赖</strong>：第58章字符设备、第一篇 C 语言与链接。<strong>后续衔接</strong>：D2 的并发与内存是本章骨架的安全外衣；D3 的设备树负责驱动与硬件的描述解耦；D5 各子系统都是在本章骨架之上的领域封装。<strong>开源定位</strong>：内核 <code>Documentation/core-api/</code>、<code>samples/</code> 目录；经典教材《Linux Device Drivers》（LDD3，虽旧但模块与并发章节仍不过时）。</p></div>
+</section>
+
+<section class="chapter" id="chd2">
+<div class="ch-head">
+<span class="part-tag">第十五篇 · 驱动基础</span>
+<h2>D2 · 并发同步、内存管理与 DMA 一致性</h2>
+<p class="ch-sub">驱动崩溃与数据错乱，十有八九出在并发与内存上。本章建立「什么场景用什么锁、什么内存怎么分配、DMA 怎么保证一致」的决策能力。</p>
+</div>
+<div class="goals"><strong>🎯 学习目标</strong><ul>
+<li>识别内核中五种并发来源，并为每种场景选定正确的同步原语</li>
+<li>掌握自旋锁各变体的适用上下文，避免「原子上下文睡眠」</li>
+<li>写出标准的阻塞式 IO 骨架（等待队列 + 唤醒）</li>
+<li>掌握 DMA 两种映射方式与 Cache 一致性的正确处理</li>
+<li>能用 lockdep 提前发现死锁隐患</li>
+</ul></div>
+
+<h3>D2.1 内核并发的五个来源</h3>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>来源</th><th>说明</th><th>典型场景</th></tr>
+<tr><td><strong>多核并行</strong></td><td>真正同时执行</td><td>SMP 上两个 CPU 同时进驱动</td></tr>
+<tr><td><strong>内核抢占</strong></td><td><code>CONFIG_PREEMPT</code> 下高优先级任务可抢占</td><td>单核也会「伪并发」</td></tr>
+<tr><td><strong>中断</strong></td><td>硬中断打断当前上下文</td><td>中断上半部与进程上下文共享数据</td></tr>
+<tr><td><strong>软中断/tasklet</strong></td><td>下半部异步执行</td><td>与网络栈、timer 共享</td></tr>
+<tr><td><strong>睡眠与调度</strong></td><td>进程阻塞期间其他任务运行</td><td>多进程 open 同一设备</td></tr>
+</table></div>
+<div class="box tip"><span class="bt">💡 判据：先问「这段代码的上下文是什么」</span>
+<p>选锁之前必须回答三个问题：① 这段代码<strong>会不会在中断上下文执行</strong>？② 临界区里<strong>会不会睡眠</strong>？③ 竞争者是<strong>同类型上下文</strong>还是跨上下文？——这决定了锁的种类，是本章的核心方法论。</p></div>
+
+<h3>D2.2 同步原语选型表</h3>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>原语</th><th>可睡眠</th><th>可用于中断</th><th>适用</th><th>备注</th></tr>
+<tr><td><code>atomic_t</code> / <code>refcount_t</code></td><td>否</td><td>是</td><td>计数、标志位</td><td>refcount_t 溢出即报错，更安全</td></tr>
+<tr><td><strong>spinlock</strong></td><td><strong>否</strong></td><td>是</td><td>短临界区、跨上下文共享</td><td>临界区绝不能睡眠</td></tr>
+<tr><td><code>rwlock</code></td><td>否</td><td>是</td><td>读多写少</td><td>写者可能饥饿</td></tr>
+<tr><td>seqlock</td><td>否</td><td>是</td><td>读极多写极少</td><td>读者需重试循环</td></tr>
+<tr><td><strong>mutex</strong></td><td>是</td><td><strong>否</strong></td><td>进程上下文长临界区</td><td>有 owner，支持优先级继承</td></tr>
+<tr><td>semaphore</td><td>是</td><td>否</td><td>资源计数</td><td>同步场景优先用 completion</td></tr>
+<tr><td><strong>completion</strong></td><td>是</td><td>否</td><td>等待某事件完成</td><td>比 semaphore 语义更清晰</td></tr>
+<tr><td><strong>wait_queue</strong></td><td>是</td><td>否</td><td>阻塞式 IO、条件等待</td><td>见 D2.4</td></tr>
+<tr><td><strong>RCU</strong></td><td>读否/写视实现</td><td>读侧可以</td><td>读远多于写</td><td>读侧几乎零开销</td></tr>
+<tr><td>percpu</td><td>否</td><td>是</td><td>每 CPU 私有计数</td><td>避免共享，天然免锁</td></tr>
+<tr><td>内存屏障 <code>mb()</code></td><td>—</td><td>—</td><td>保证顺序</td><td>配合无锁算法</td></tr>
+</table></div>
+
+<h3>D2.3 spinlock 变体：选错就死锁</h3>
+<div class="codeblock"><pre><code data-lang="c">DEFINE_SPINLOCK(my_lock);
+unsigned long flags;
+
+/* 场景①：仅进程上下文之间竞争 → 最基础形式 */
+spin_lock(&amp;my_lock);
+/* 临界区：必须短小，绝不能调用可能睡眠的函数
+   (kmalloc(GFP_KERNEL)、copy_to_user、msleep、mutex_lock 都禁止！) */
+spin_unlock(&amp;my_lock);
+
+/* 场景②：与中断处理程序共享 → 必须关本地中断 ★ */
+spin_lock_irqsave(&amp;my_lock, flags);     /* 保存并关中断 */
+/* 临界区 */
+spin_unlock_irqrestore(&amp;my_lock, flags);/* 恢复原中断状态 */
+
+/* 场景③：与下半部(softirq/tasklet)共享 → 关软中断 */
+spin_lock_bh(&amp;my_lock);
+spin_unlock_bh(&amp;my_lock);
+
+/* 场景④：确定中断本身是开启的(少见，易出错) */
+spin_lock_irq(&amp;my_lock);                /* 无条件关中断 */
+spin_unlock_irq(&amp;my_lock);              /* 无条件开中断 ★ 危险 */</code></pre></div>
+<div class="box warn"><span class="bt">⚠️ 三条铁律</span>
+<p>① <strong>自旋锁临界区内绝不可睡眠</strong>——否则其他 CPU 自旋等待，可能永久卡死；违反会报 <code>BUG: scheduling while atomic</code>。<br>
+② <strong>中断上下文只能取自旋锁，绝不能取 mutex</strong>——因为中断无法被调度。<br>
+③ <strong>irqsave/irqrestore 必须配对且用同一 flags 变量</strong>；用 <code>spin_lock_irq</code> + <code>spin_unlock_irqsave</code> 混搭会导致中断状态错乱。另注意：在 <strong>PREEMPT_RT</strong> 实时内核上，spinlock 被实现为可睡眠的 rt_mutex，此时禁止睡眠的规则不再成立，但代码应保持可移植写法。</p></div>
+
+<h3>D2.4 阻塞式 IO 骨架：等待队列 + 唤醒</h3>
+<div class="codeblock"><pre><code data-lang="c">static DECLARE_WAIT_QUEUE_HEAD(my_wq);
+static int data_ready;                    /* ★ 条件变量，不用 int 会有丢失唤醒 */
+
+/* 读侧：条件不满足则睡眠 */
+static ssize_t my_read(struct file *filp, char __user *buf,
+                       size_t count, loff_t *ppos)
+{
+    /* interruptible：可被信号打断；用户 Ctrl+C 能退出 ★ 推荐 */
+    if (wait_event_interruptible(my_wq, data_ready))
+        return -ERESTARTSYS;              /* 被信号打断的标准返回值 */
+
+    if (copy_to_user(buf, kbuf, count))
+        return -EFAULT;
+    data_ready = 0;                       /* 消费后清条件 */
+    return count;
+}
+
+/* 中断侧：唤醒等待者 */
+static irqreturn_t my_irq(int irq, void *dev_id)
+{
+    data_ready = 1;                       /* ★ 先置条件，再唤醒 */
+    wake_up_interruptible(&amp;my_wq);
+    return IRQ_HANDLED;
+}
+
+/* 配合 poll 实现 select/epoll */
+static __poll_t my_poll(struct file *filp, struct poll_table_struct *wait)
+{
+    poll_wait(filp, &amp;my_wq, wait);        /* ★ 只是登记，不睡眠 */
+    return data_ready ? EPOLLIN | EPOLLRDNORM : 0;
+}</code></pre></div>
+<div class="box tip"><span class="bt">💡 为什么必须用「条件变量 + 等待队列」</span>
+<p>如果只调用 <code>wake_up</code> 而不设条件，唤醒可能<strong>早于</strong>等待者进入睡眠，导致唤醒信号丢失（lost wakeup），进程永久阻塞。<strong>先置条件、再唤醒</strong>，且 <code>wait_event</code> 内部会重新检查条件，二者配合才能杜绝竞态。</p></div>
+
+<h3>D2.5 RCU 与 percpu：读多写少的利器</h3>
+<div class="codeblock"><pre><code data-lang="c">/* RCU：读者无锁无开销，写者延迟回收旧数据 */
+struct foo __rcu *g_ptr;
+
+/* 读者（可在中断/原子上下文使用） */
+rcu_read_lock();
+struct foo *p = rcu_dereference(g_ptr);
+if (p) do_something(p);        /* 读期间 p 保证有效 */
+rcu_read_unlock();             /* ★ 读侧临界区不可睡眠(非抢占RCU除外) */
+
+/* 写者 */
+struct foo *old = g_ptr;
+struct foo *new = kmalloc(sizeof(*new), GFP_KERNEL);
+*new = *old; new-&gt;field = val;
+rcu_assign_pointer(g_ptr, new);
+synchronize_rcu();             /* 等待所有读者退出(可睡眠) */
+kfree(old);                    /* 之后才能释放旧数据 */
+/* 批量释放可用 call_rcu(&amp;old-&gt;rcu, free_cb) 异步回收 */
+
+/* percpu：每 CPU 独立副本，统计场景免锁 */
+DEFINE_PER_CPU(unsigned long, my_count);
+this_cpu_inc(my_count);                        /* 本地递增，无锁 */
+/* 汇总时需要遍历所有 CPU（注意数据非严格一致） */</code></pre></div>
+
+<h3>D2.6 内存分配：GFP 标志是重点</h3>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>接口</th><th>特点</th><th>适用</th></tr>
+<tr><td><code>kmalloc(size, flags)</code></td><td><strong>物理连续</strong>，速度快</td><td>小到中等（通常 ≤ 数 MB，受 MAX_ORDER 限制），DMA 友好</td></tr>
+<tr><td><code>kzalloc</code></td><td>kmalloc + 清零</td><td>需要零初始化的结构</td></tr>
+<tr><td><code>vmalloc(size)</code></td><td>虚拟连续、<strong>物理不连续</strong></td><td>大块（如几 MB 以上）且不需要 DMA</td></tr>
+<tr><td><code>kmem_cache_create/alloc</code></td><td>slab 对象池</td><td>频繁分配释放的同尺寸对象</td></tr>
+<tr><td><code>alloc_pages</code></td><td>页级分配</td><td>需要整页或特定阶数</td></tr>
+<tr><td><code>dma_alloc_coherent</code></td><td>DMA 一致性内存</td><td>见 D2.7</td></tr>
+</table></div>
+<div class="codeblock"><pre><code data-lang="c">/* GFP 标志决定「能不能睡眠 / 从哪分配」——选错直接崩溃 */
+p = kmalloc(size, GFP_KERNEL);      /* ★ 最常用，<strong>可能睡眠</strong>，
+                                       只能在进程上下文用 */
+p = kmalloc(size, GFP_ATOMIC);      /* 绝不睡眠，可在中断/自旋锁内用；
+                                       可能失败，务必检查返回值 */
+p = kmalloc(size, GFP_KERNEL | __GFP_ZERO);   /* 清零 */
+p = kmalloc(size, GFP_DMA);         /* 从 DMA 可寻址区域(低端)分配 */
+p = kmalloc(size, GFP_NOWAIT);      /* 不睡眠也不回退其他途径，最"轻" */
+
+/* 常见错误：在自旋锁内用 GFP_KERNEL → scheduling while atomic
+             在中断里用 GFP_KERNEL → 内核崩溃或警告
+   ★ 判据： 能用 GFP_KERNEL 的上下文 = 能睡眠的上下文 */</code></pre></div>
+
+<h3>D2.7 DMA 与 Cache 一致性（★ 驱动最隐蔽的坑）</h3>
+<div class="codeblock"><pre><code data-lang="text">问题根源： CPU 有 Cache，设备 DMA 直接访问内存 —— 二者看到的数据
+          可能不一致。典型症状： 收到的数据是"上一帧"或全零。
+
+两种映射方式：
+① 一致性映射(Coherent / Consistent)
+   dma_alloc_coherent(dev, size, &amp;dma_handle, GFP_KERNEL)
+   → 返回内核虚拟地址 + DMA 总线地址
+   → 硬件保证 CPU 与设备看到一致(通常标记为 Non-cacheable 或用
+     硬件一致性) —— 简单但<strong>每次访问可能较慢</strong>
+   → 适合： 控制结构、描述符环、频繁双向访问的小块常驻内存
+
+② 流式映射(Streaming)
+   dma_addr_t dma = dma_map_single(dev, cpu_addr, size, direction);
+   /* 之后设备可用 dma 地址访问 */
+   dma_unmap_single(dev, dma, size, direction);
+   → 性能好(利用 Cache)，但<strong>必须手工同步</strong>：
+     dma_sync_single_for_cpu(dev, dma, size, DMA_FROM_DEVICE);
+         /* 设备写完，CPU 读之前调用 */
+     dma_sync_single_for_device(dev, dma, size, DMA_TO_DEVICE);
+         /* CPU 写完，通知设备读之前调用 */
+   → 适合： 一次性大块数据传输(如网络包、视频帧)</code></pre></div>
+<div class="codeblock"><pre><code data-lang="c">/* 完整 DMA 传输骨架 */
+/* ① 告知内核设备的寻址能力 ★ 漏了会导致静默失败或性能极差 */
+if (dma_set_mask_and_coherent(dev, DMA_BIT_MASK(32))) {
+    dev_warn(dev, "fall back to 32-bit DMA\n");
+    /* 或 DMA_BIT_MASK(64) 若设备支持 */
+}
+
+/* ② 分配一致性内存 + 获取总线地址 */
+void *cpu_addr;
+dma_addr_t dma_handle;
+cpu_addr = dma_alloc_coherent(dev, BUF_SIZE, &amp;dma_handle, GFP_KERNEL);
+if (!cpu_addr) return -ENOMEM;
+
+/* ③ 把 dma_handle 写入设备寄存器，启动 DMA */
+writel(dma_handle, dev-&gt;base + DMA_ADDR_REG);
+writel(BUF_SIZE | DMA_START, dev-&gt;base + DMA_CTRL_REG);
+
+/* ④ 等待完成(中断中) → 处理 → 释放 */
+dma_free_coherent(dev, BUF_SIZE, cpu_addr, dma_handle);
+
+/* ⑤ 分散聚合： sg_table + dma_map_sg，适合非连续用户缓冲 */</code></pre></div>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>现象</th><th>根因</th><th>排查</th></tr>
+<tr><td>收到数据全是 0 或旧内容</td><td>漏了 <code>dma_sync_single_for_cpu</code></td><td>检查每次设备写后 CPU 读前的同步调用</td></tr>
+<tr><td>设备收到错误数据</td><td>漏了 <code>for_device</code> 同步</td><td>同上，方向别搞反</td></tr>
+<tr><td>DMA 地址超范围、静默失败</td><td>未设 <code>dma_set_mask</code>，默认 32 位</td><td>64 位设备必须显式设置</td></tr>
+<tr><td>大块 DMA 分配失败</td><td>连续物理内存不足</td><td>启用 CMA，或改用 scatter-gather</td></tr>
+<tr><td>带 IOMMU 平台地址异常</td><td>IOMMU 映射未建立</td><td>检查 <code>dma_map_*</code> 返回值（用 <code>dma_mapping_error</code>）</td></tr>
+</table></div>
+
+<h3>D2.8 lockdep：让死锁在运行前暴露</h3>
+<div class="codeblock"><pre><code data-lang="bash"># 内核需开启： CONFIG_PROVE_LOCKING=y（大多数发行版默认开）
+# lockdep 会记录锁的获取顺序图，发现「潜在」死锁立即告警
+
+# 典型告警（AB-BA 死锁）：
+#   WARNING: possible circular locking dependency detected
+#   ... is trying to acquire lock:  (lockA)
+#   but task is already holding lock: (lockB)
+#   which lock already depends on the new lock
+
+# 其他常用调试选项（内核 .config）
+CONFIG_DEBUG_ATOMIC_SLEEP=y     # 原子上下文睡眠检测 ★
+CONFIG_DEBUG_SPINLOCK=y
+CONFIG_DEBUG_MUTEXES=y
+CONFIG_PROVE_RCU=y              # RCU 使用错误检测
+CONFIG_DEBUG_LIST=y             # 链表操作错误检测
+
+# 查看 lockdep 状态
+cat /proc/lockdep_stats
+cat /proc/lockdep                 # 锁依赖图(内容庞大)
+
+# ★ 排障价值： lockdep 报的是「潜在」风险，即使本次没真死锁也要修 ——
+#   它说明存在一条会死锁的执行路径，只是还没被触发。</code></pre></div>
+
+<div class="quiz"><strong>📝 思考题</strong><ol>
+<li>驱动中一个全局变量同时被中断处理和 read() 访问，应选哪种锁变体？为什么不能用 mutex？</li>
+<li>写出「先置条件再唤醒」的反例代码，并说明丢失唤醒发生在什么时序下。</li>
+<li>流式 DMA 中，CPU 写完数据后直接启动设备 DMA（未做 for_device 同步），可能出什么问题？与 CPU 缓存写回策略有何关系？</li>
+<li>什么情况下应该用 RCU 而不是读写锁？给出判据。</li>
+<li>在自旋锁内调用 <code>kmalloc(GFP_KERNEL)</code> 会怎样？内核会报什么？如何改写？</li>
+</ol></div>
+
+<div class="lab"><strong>🧪 动手实验 LD2-1：并发与 DMA 一致性复现（120 分钟）</strong>
+<p><strong>步骤</strong>：① 写一个全局计数器，用两个进程并发递增，先不加锁观察丢失更新；② 分别用 atomic / spinlock / mutex 修复，用 <code>perf</code> 对比开销；③ 故意在自旋锁内调用 <code>msleep</code>，捕获 <code>BUG: scheduling while atomic</code> 并解读调用栈；④ 构造一个 DMA 缓冲，故意省去 <code>dma_sync_single_for_cpu</code>，观察读到旧数据的现象；⑤ 制造 AB-BA 锁序（两线程以相反顺序取两把锁），验证 lockdep 是否告警。</p>
+<p><strong>验收</strong>：五组「现象 → 修复」对照记录 + 至少两张内核告警日志截图（含调用栈解读）。</p></div>
+
+<div class="box tip"><span class="bt">🗺️ 本章知识地图</span>
+<p><strong>前置依赖</strong>：D1 模块骨架、第61章中断下半部、第26章 DMA 基础。<strong>后续衔接</strong>：D3 设备树负责资源描述；D5 各子系统内部大量使用本章原语（如 I2C 的 <code>i2c_lock_bus</code>、网络驱动的自旋锁）。<strong>开源定位</strong>：内核 <code>Documentation/core-api/</code>（<code>spinlocks.rst</code>、<code>rcu.rst</code>）、<code>Documentation/core-api/dma-api*.rst</code>、<code>Documentation/locking/lockdep-design.rst</code>。</p></div>
+</section>
+
+<section class="chapter" id="chd3">
+<div class="ch-head">
+<span class="part-tag">第十五篇 · 设备树</span>
+<h2>D3 · 设备树深度实战：语法体系、中断映射与 Overlay</h2>
+<p class="ch-sub">第59章讲了「怎么用 of API 拿资源」，本章讲「设备树本身该怎么读、怎么写、怎么查」。目标是给你一块陌生板卡的 dts，能在 10 分钟内定位到任意外设的描述。</p>
+</div>
+<div class="goals"><strong>🎯 学习目标</strong><ul>
+<li>掌握 dts/dtsi/dtb/overlay 的文件组织与编译链路</li>
+<li>熟记核心语法与标准属性，能读懂任意复杂节点</li>
+<li>理解中断映射机制（irq_domain、interrupt-map、级联控制器）</li>
+<li>掌握 Overlay 动态设备树的编写与加载</li>
+<li>建立设备树问题的系统化排查路径</li>
+</ul></div>
+
+<h3>D3.1 设备树解决了什么问题</h3>
+<div class="codeblock"><pre><code data-lang="text">历史： ARM 平台曾把硬件信息硬编码在内核源码(mach-xxx 目录)里，
+      导致同一份内核无法在不同板卡间复用 —— 「board file 地狱」。
+解决： 把硬件描述从内核剥离，由 Bootloader 传给内核一个
+       <strong>扁平设备树(Flattened Device Tree, FDT/dtb)</strong>。
+
+核心收益：
+  ① 一份内核镜像 + 不同 dtb = 支持多种板卡
+  ② 硬件改动只需改 dts，无需改内核代码
+  ③ 驱动与硬件描述解耦： 驱动匹配 compatible 字符串即可
+
+文件组织：
+  xxx.dtsi  —— 可复用的「SoC 级」描述(类似头文件，被 include)
+  xxx.dts   —— 「板级」描述，include 对应 dtsi 并做板卡定制
+  xxx.dtso  —— Overlay 源文件，编译为 .dtbo
+  ★ 覆盖规则： 后定义的同名属性覆盖先定义的；
+              同节点再次出现则合并(而非替换)属性
+
+编译链路：
+  dtc -I dts -O dtb -o board.dtb board.dts        # 编译
+  dtc -I dtb -O dts -o board.dts board.dtb        # 反编译(排障神器★)
+  make dtbs                                        # 内核树内批量编译
+  内核源码中 dts 位置： arch/arm/boot/dts/ 、 arch/arm64/boot/dts/</code></pre></div>
+
+<h3>D3.2 语法核心速查</h3>
+<div class="codeblock"><pre><code data-lang="dts">/dts-v1/;                            /* 版本声明，必须是首行 */
+#include "soc.dtsi"                 /* 或 /include/ "xxx" */
+
+/ {                                 /* 根节点 */
+    #address-cells = &lt;1&gt;;           /* 子节点 reg 中地址占几个 cell */
+    #size-cells    = &lt;1&gt;;           /* 子节点 reg 中长度占几个 cell */
+    model = "My Board";
+    compatible = "vendor,board", "vendor,soc";   /* ★ 从左到右，特异性递减 */
+
+    aliases {                        /* 别名：给节点起短名 */
+        serial0 = &amp;uart0;
+    };
+    chosen {                         /* 内核/Bootloader 约定的特殊节点 */
+        stdout-path = &amp;uart0;        /* 控制台输出路径 */
+        bootargs = "console=ttyS0,115200 root=/dev/mmcblk0p2";
+    };
+
+    cpus { ... };
+    memory@80000000 {                /* @ 后是「单元地址」，须与 reg 首址一致 */
+        device_type = "memory";
+        reg = &lt;0x80000000 0x40000000&gt;;
+    };
+
+    mydev@40010000 {                 /* 自定义外设节点 */
+        compatible = "vendor,mydev";
+        reg = &lt;0x40010000 0x1000&gt;;   /* 地址 + 长度 */
+        status = "okay";             /* ★ okay / disabled / fail */
+        label: my_label { };         /* 标签(label)：供 &amp; 引用 */
+    };
+};
+
+&amp;uart0 {                             /* ★ 在根节点外用 &amp; 引用并覆盖已有节点 */
+    status = "okay";
+    pinctrl-names = "default";
+    pinctrl-0 = &lt;&amp;uart0_pins&gt;;       /* phandle 引用 pinctrl 节点 */
+};</code></pre></div>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>语法元素</th><th>写法</th><th>说明</th></tr>
+<tr><td>标签与引用</td><td><code>label: node {}</code> → <code>&amp;label</code></td><td>编译后变 phandle；跨文件引用靠它</td></tr>
+<tr><td>phandle</td><td><code>&lt;&amp;node&gt;</code></td><td>指向另一节点的引用（32 位句柄）</td></tr>
+<tr><td>路径引用</td><td><code>&lt;&amp;{/soc/uart@1000}&gt;</code></td><td>按绝对路径引用</td></tr>
+<tr><td>字符串列表</td><td><code>compatible = "a", "b";</code></td><td>从左到右匹配，越靠前越优先</td></tr>
+<tr><td>字节序列</td><td><code>mac = [00 11 22 33 44 55];</code></td><td>方括号表示字节数组</td></tr>
+<tr><td>布尔属性</td><td><code>dma-coherent;</code>（无值）</td><td>存在即为真</td></tr>
+<tr><td>混合类型</td><td><code>mixed = "str", &lt;0x1 0x2&gt;;</code></td><td>逗号分隔不同类型</td></tr>
+</table></div>
+
+<h3>D3.3 五大资源类属性（驱动的「取货清单」）</h3>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>资源</th><th>设备树写法</th><th>驱动侧获取 API</th></tr>
+<tr><td><strong>寄存器空间</strong></td><td><code>reg = &lt;addr len&gt;;</code></td><td><code>platform_get_resource</code> + <code>devm_ioremap_resource</code></td></tr>
+<tr><td><strong>中断</strong></td><td><code>interrupts = &lt;...&gt;; interrupt-parent = &amp;gic;</code></td><td><code>platform_get_irq</code> / <code>irq_of_parse_and_map</code></td></tr>
+<tr><td><strong>GPIO</strong></td><td><code>reset-gpios = &lt;&amp;gpio1 5 GPIO_ACTIVE_LOW&gt;;</code></td><td><code>devm_gpiod_get(dev, "reset", GPIOD_OUT_HIGH)</code></td></tr>
+<tr><td><strong>时钟</strong></td><td><code>clocks = &lt;&amp;clkc CLK_ID&gt;; clock-names = "core";</code></td><td><code>devm_clk_get(dev, "core")</code> + <code>clk_prepare_enable</code></td></tr>
+<tr><td><strong>引脚复用</strong></td><td><code>pinctrl-names = "default"; pinctrl-0 = &lt;&amp;pins&gt;;</code></td><td>由 pinctrl 子系统<strong>自动应用</strong>，驱动通常无需调用</td></tr>
+<tr><td>电源</td><td><code>vdd-supply = &lt;&amp;reg_3v3&gt;;</code></td><td><code>devm_regulator_get(dev, "vdd")</code></td></tr>
+<tr><td>DMA</td><td><code>dmas = &lt;&amp;dma0 3&gt;; dma-names = "rx";</code></td><td><code>dma_request_chan(dev, "rx")</code></td></tr>
+<tr><td>电源域</td><td><code>power-domains = &lt;&amp;genpd 0&gt;;</code></td><td>由 genpd 框架自动管理</td></tr>
+</table></div>
+<div class="codeblock"><pre><code data-lang="c">/* probe 中的标准取资源流程（★ 记住这个模板） */
+static int my_probe(struct platform_device *pdev)
+{
+    struct device *dev = &amp;pdev-&gt;dev;
+    struct resource *res;
+    void __iomem *base;
+    int irq;
+
+    /* ① 寄存器空间（devm_ 版本自动释放，推荐） */
+    base = devm_platform_ioremap_resource(pdev, 0);   /* 第 0 个 reg */
+    if (IS_ERR(base)) return PTR_ERR(base);
+
+    /* ② 中断 */
+    irq = platform_get_irq(pdev, 0);
+    if (irq &lt; 0) return irq;                 /* 注意：返回的是负数错误码 */
+    ret = devm_request_irq(dev, irq, my_isr, IRQF_TRIGGER_RISING,
+                           "mydev", dev);
+
+    /* ③ GPIO（gpiod 是现代接口，注意 ACTIVE_LOW 语义自动处理） */
+    struct gpio_desc *rst = devm_gpiod_get_optional(dev, "reset",
+                                                    GPIOD_OUT_HIGH);
+    /* ④ 时钟 */
+    struct clk *clk = devm_clk_get_optional(dev, "core");
+    clk_prepare_enable(clk);
+    /* ⑤ 自定义属性 */
+    u32 val;
+    if (of_property_read_u32(dev-&gt;of_node, "vendor,custom", &amp;val))
+        val = DEFAULT;                        /* 属性不存在时用默认值 */
+}</code></pre></div>
+
+<h3>D3.4 中断映射深入：irq_domain 与级联控制器</h3>
+<div class="codeblock"><pre><code data-lang="text">背景： 设备树里的中断号是「硬件局部编号」，不等于内核的 virq。
+      中间由 <strong>irq_domain</strong> 做映射。
+
+三要素：
+  ① interrupt-controller   —— 声明本节点是中断控制器
+  ② #interrupt-cells       —— 描述 interrupts 属性需要几个 cell
+  ③ interrupt-parent       —— 子节点指定父控制器(可继承)
+
+级联示例（GPIO 控制器同时是中断控制器）：
+  gpio1: gpio@40000000 {
+      gpio-controller;
+      #gpio-cells = &lt;2&gt;;
+      interrupt-controller;              /* ★ 也是中断控制器 */
+      #interrupt-cells = &lt;2&gt;;            /* pin 号 + 触发类型 */
+      interrupt-parent = &lt;&amp;gic&gt;;          /* 它自己挂在 GIC 上 */
+      interrupts = &lt;GIC_SPI 66 IRQ_TYPE_LEVEL_HIGH&gt;;
+  };
+
+  sensor@50 {
+      interrupt-parent = &lt;&amp;gpio1&gt;;        /* 中断来自 gpio1 */
+      interrupts = &lt;5 IRQ_TYPE_EDGE_FALLING&gt;;   /* pin5，下降沿 */
+  };
+
+复杂总线(PCI)用 interrupt-map 做「地址 → 中断」的映射表：
+  interrupt-map = &lt; /* 地址三部分 */ &amp;gic GIC_SPI 20 IRQ_TYPE_LEVEL_HIGH &gt;;
+  interrupt-map-mask = &lt;0xf800 0 0 7&gt;;   /* 参与匹配的位掩码 */</code></pre></div>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>触发类型宏</th><th>含义</th><th>适用</th></tr>
+<tr><td><code>IRQ_TYPE_EDGE_RISING</code></td><td>上升沿</td><td>按键、脉冲信号</td></tr>
+<tr><td><code>IRQ_TYPE_EDGE_FALLING</code></td><td>下降沿</td><td>同上</td></tr>
+<tr><td><code>IRQ_TYPE_EDGE_BOTH</code></td><td>双边沿</td><td>需两次触发的场景</td></tr>
+<tr><td><code>IRQ_TYPE_LEVEL_HIGH</code>/<code>_LOW</code></td><td>电平</td><td><strong>共享中断、外设持续拉低</strong>（多数 SoC 外设用这个）</td></tr>
+</table></div>
+<div class="box warn"><span class="bt">⚠️ 触发类型写错的后果</span>
+<p>把<strong>电平触发</strong>误写成<strong>边沿触发</strong>：中断可能只来一次后再也不来（设备持续保持电平但边沿只发生一次），表现为「设备第一次能用，之后无响应」；反之（边沿写成电平）则会<strong>中断风暴</strong>——ISR 退出后立刻再次进入，日志刷屏、系统卡死。<strong>排查方法：看 <code>/proc/interrupts</code> 中该中断的计数是否疯狂增长。</strong></p></div>
+
+<h3>D3.5 Overlay：不动基础 dtb 的动态扩展</h3>
+<div class="codeblock"><pre><code data-lang="bash"># Overlay 的价值： 同一块主板插不同扩展板(HAT/cape)时，
+#                  无需重新编译基础 dtb，运行时叠加即可。
+
+# ① 编写 my-overlay.dts
+/dts-v1/;
+/plugin/;                       /* ★ 声明这是 overlay(插件) */
+&amp;{/} {                          /* 或 / { fragment@0 { ... }; } */
+    my_sensor: sensor@48 {
+        compatible = "vendor,sensor";
+        reg = &lt;0x48&gt;;
+        status = "okay";
+    };
+};
+
+# ② 编译（-@ 生成 __symbols__ 节点，运行时解析依赖必需 ★）
+dtc -@ -I dts -O dtb -o my-overlay.dtbo my-overlay.dts
+
+# ③ 加载方式一：configfs(运行时动态加载，最灵活)
+mkdir /sys/kernel/config/device-tree/overlays/my_ovl
+cat my-overlay.dtbo &gt; /sys/kernel/config/device-tree/overlays/my_ovl/dtbo
+#    卸载： rmdir /sys/kernel/config/device-tree/overlays/my_ovl
+
+# ④ 加载方式二：U-Boot 阶段(适合开机即需)
+#    U-Boot: load mmc 0:1 ${loadaddr} overlays/my.dtbo; fdt apply ${loadaddr}
+#    或树莓派： config.txt 中 dtoverlay=my-overlay
+
+# 注意： overlay 依赖的符号必须在基础 dtb 中带 __symbols__ 节点，
+#        编译基础 dtb 时同样需要 dtc -@</code></pre></div>
+
+<h3>D3.6 设备树调试工具箱</h3>
+<div class="codeblock"><pre><code data-lang="bash"># ① 运行时查看(内核展开后的设备树，与实际生效的一致)
+ls /proc/device-tree/                      # 或 /sys/firmware/devicetree/base/
+cat /proc/device-tree/model
+xxd /proc/device-tree/mydev@40010000/reg   # 二进制属性用 xxd/hexdump 看
+
+# ② 反编译正在使用的 dtb(★ 排障第一招)
+dtc -I fs -O dts /sys/firmware/devicetree/base 2&gt;/dev/null &gt; live.dts
+
+# ③ 检查驱动是否匹配上(★ probe 没被调用时的必查项)
+ls /sys/bus/platform/devices/ | grep mydev      # 设备是否生成？
+ls /sys/bus/platform/drivers/ | grep mydev      # 驱动是否注册？
+cat /sys/bus/platform/drivers/mydev/.../uevent  # 查看 MODALIAS
+cat /sys/firmware/devicetree/base/.../compatible
+#    ★ 二者必须一致才会 probe
+
+# ④ 语法与规范检查
+dtc -I dts -O dtb -o /dev/null test.dts        # 语法错误会报错
+make dtbs_check                                 # 内核绑定(bindings)合规检查
+
+# ⑤ 中断与资源核对
+cat /proc/interrupts                            # 中断号与触发计数
+cat /proc/iomem                                 # 物理地址空间占用</code></pre></div>
+
+<h3>D3.7 常见故障排故表</h3>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>现象</th><th>根因候选</th><th>定位路径</th></tr>
+<tr><td><strong>probe 完全没被调用</strong></td><td>compatible 不匹配 / status 非 okay / 模块未加载</td><td>对比 <code>uevent</code> 的 MODALIAS 与 dtb 的 compatible；检查 status 拼写（是 <code>okay</code> 不是 <code>ok</code>）；<code>lsmod</code></td></tr>
+<tr><td>设备节点未生成</td><td>节点在 <code>/soc</code> 外或缺少 compatible</td><td>只有带 compatible 且在 simple-bus 下的节点才会自动转 platform_device；或手工 <code>of_platform_populate</code></td></tr>
+<tr><td>reg 地址访问后死机</td><td>reg 与实际物理地址不符 / 时钟未开</td><td>对照芯片手册；<strong>先开时钟再访问寄存器</strong>（很多 SoC 外设时钟默认关闭）</td></tr>
+<tr><td>中断一直不来</td><td>触发类型错误 / 中断号错 / pinctrl 未配</td><td>看 <code>/proc/interrupts</code> 计数；核对 #interrupt-cells 个数；检查引脚复用是否配成 GPIO 模式</td></tr>
+<tr><td>中断风暴</td><td>电平触发误配为边沿，或 ISR 未清中断源</td><td><code>/proc/interrupts</code> 暴增；检查 ISR 中是否写了清中断寄存器</td></tr>
+<tr><td>GPIO 控制方向相反</td><td>ACTIVE_LOW 语义</td><td>gpiod 接口会按 <code>GPIO_ACTIVE_LOW</code> 自动反转；用 <code>gpiod_get_value</code> 而非 <code>gpio_get_value</code>（后者是原始值）</td></tr>
+<tr><td>Overlay 加载报符号未找到</td><td>基础 dtb 未带 <code>__symbols__</code></td><td>基础 dtb 编译时加 <code>dtc -@</code></td></tr>
+<tr><td>属性读不到（返回默认值）</td><td>属性名含厂商前缀拼错 / 节点路径错</td><td>用 <code>of_property_read_u32</code> 返回值判断；<code>ls /proc/device-tree/</code> 逐级核对</td></tr>
+</table></div>
+
+<div class="quiz"><strong>📝 思考题</strong><ol>
+<li><code>#address-cells</code> 与 <code>#size-cells</code> 的作用是什么？若父节点设为 2/2，子节点的 <code>reg</code> 该如何书写？</li>
+<li>一个挂 GPIO 的传感器，中断在 /proc/interrupts 中计数疯狂增长，列出可能的两个根因与排查顺序。</li>
+<li>Overlay 编译时为什么必须加 <code>-@</code>？缺少它会报什么错？</li>
+<li>驱动 probe 未调用，你有一台能进系统的板子，写出完整排查命令序列（从 dtb 到驱动注册）。</li>
+<li>为什么很多 SoC 外设「先开时钟再访问寄存器」？若顺序颠倒会怎样？</li>
+</ol></div>
+
+<div class="lab"><strong>🧪 动手实验 LD3-1：给板卡新增一个 I2C 传感器节点（90 分钟）</strong>
+<p><strong>步骤</strong>：① 找到板卡对应 dts 与 SoC dtsi，定位 I2C 控制器节点；② 在合适位置添加传感器子节点（compatible/reg/interrupts 齐全）；③ 编译 dtb 并部署，重启后检查 <code>/proc/device-tree/</code> 中节点是否生效；④ 加载对应内核驱动（若无则先写个只打印的最小驱动），观察 probe 是否被调用；⑤ 故意把 compatible 改错一个字符，复现「probe 未调用」并用 D3.6 的命令序列定位。</p>
+<p><strong>验收</strong>：一份 dts 修改 diff + 三份命令输出（dtb 生效验证、驱动匹配验证、错误复现定位）。</p></div>
+
+<div class="lab"><strong>🧪 动手实验 LD3-2：Overlay 动态加载（60 分钟，需支持 configfs 的内核）</strong>
+<p><strong>步骤</strong>：① 编写一个启用某外设的 overlay dts；② 用 <code>dtc -@</code> 编译为 dtbo；③ 通过 configfs 加载，观察 <code>dmesg</code> 与新出现的 platform 设备；④ 卸载 overlay，确认设备消失；⑤ 故意用不带 <code>__symbols__</code> 的基础 dtb 加载，记录报错信息。</p>
+<p><strong>验收</strong>：加载/卸载的完整命令记录 + 设备出现与消失的对比证据。</p></div>
+
+<div class="box tip"><span class="bt">🗺️ 本章知识地图</span>
+<p><strong>前置依赖</strong>：第59章 platform 驱动与 of API、第40章设备树基础。<strong>后续衔接</strong>：D4 的设备模型会解释 dts 节点如何变成 platform_device；D5 各子系统（I2C/SPI/PCI）都有各自的设备树绑定约定。<strong>开源定位</strong>：内核 <code>Documentation/devicetree/</code> 全目录、<code>Documentation/devicetree/bindings/</code>（每个子系统一份 YAML，是权威的绑定规范）。</p></div>
+</section>
+
+<section class="chapter" id="chd4">
+<div class="ch-head">
+<span class="part-tag">第十五篇 · 设备模型</span>
+<h2>D4 · 设备模型、probe 机制与电源管理</h2>
+<p class="ch-sub">为什么 probe 没被调用？为什么 remove 后资源泄漏？为什么休眠唤醒后设备失效？答案都在设备模型与 PM 框架里。本章把这些「框架层的规则」讲清楚。</p>
+</div>
+<div class="goals"><strong>🎯 学习目标</strong><ul>
+<li>理解 bus / device / driver 三者的关系与 sysfs 呈现</li>
+<li>掌握 probe 的完整触发链路与 <code>-EPROBE_DEFER</code> 延迟机制</li>
+<li>用 devm 系列接口杜绝资源泄漏</li>
+<li>实现正确的 suspend/resume 与 runtime PM，支持系统休眠与唤醒</li>
+</ul></div>
+
+<h3>D4.1 设备模型三大件与 sysfs 视图</h3>
+<div class="codeblock"><pre><code data-lang="text">Linux 设备模型的核心目的： 用统一的框架描述「什么设备挂在什么总线上、
+由哪个驱动接管」，并向用户空间呈现为 sysfs。
+
+三大抽象：
+  struct bus_type    —— 总线(platform/i2c/spi/pci/usb/mmc...)
+                        职责：管理 device 与 driver 两个链表，负责匹配
+  struct device      —— 设备(物理或逻辑)
+  struct device_driver—— 驱动
+                        ★ 二者通过 bus 的 match() 函数配对，
+                          成功后调用 driver 的 probe()
+
+底层支撑： kobject / kset / ktype —— 提供引用计数与 sysfs 目录项能力
+
+sysfs 四大视角(同一事物的不同组织方式)：
+  /sys/devices/...   按<strong>物理拓扑</strong>组织(真实层次，含桥与总线)
+  /sys/bus/&lt;bus&gt;/devices|drivers    按<strong>总线</strong>分类(符号链接)
+  /sys/class/&lt;class&gt;/               按<strong>功能</strong>分类(如 net/rtc/gpio)
+  /sys/dev/char|block/              按<strong>设备号</strong>索引
+  ★ 排障时常用 /sys/bus/platform/devices 与 /sys/class 交叉查看</code></pre></div>
+
+<h3>D4.2 probe 全链路与 deferred probe（★ 高频排障点）</h3>
+<div class="codeblock"><pre><code data-lang="text">probe 触发的两条路径：
+  ① 驱动注册时： driver_register → bus_add_driver → driver_attach
+     → 遍历总线上所有未绑定的 device，逐个 match
+  ② 设备注册时： device_register → bus_probe_device
+     → 遍历总线上所有 driver，逐个 match
+  ★ 「后到者主动」，所以加载顺序不影响最终结果
+
+匹配函数(bus-&gt;match)的典型实现(platform 总线)：
+  优先级： of_driver_match_device(设备树 compatible)
+         &gt; acpi_driver_match_device(ACPI ID)
+         &gt; platform_match_id(id_table .name)
+         &gt; 回退比较 driver->name 与 platform_device->name
+  ★ 结论： 有设备树时，compatible 字符串决定一切
+
+deferred probe（延迟探测）：
+  当驱动依赖的资源尚未就绪(时钟/regulator/GPIO 的 provider 还没 probe)，
+  probe 应返回 <strong>-EPROBE_DEFER</strong>，内核会把该设备放入
+  deferred_probe_pending_list，待有新驱动注册成功时再重试。
+  ★ 这不是错误！是正常的依赖协调机制。
+  ★ 若一直 defer，启动结束时会在 /sys/kernel/debug/
+    devices_deferred 中列出，可据此定位缺失的依赖。
+
+查看延迟探测状态：
+  cat /sys/kernel/debug/devices_deferred</code></pre></div>
+<div class="codeblock"><pre><code data-lang="c">/* 正确处理依赖获取：一律用 devm_ + 判错，让 defer 自然发生 */
+static int my_probe(struct platform_device *pdev)
+{
+    struct device *dev = &amp;pdev-&gt;dev;
+
+    /* devm_regulator_get 内部会处理 defer，直接返回即可 */
+    struct regulator *vdd = devm_regulator_get(dev, "vdd");
+    if (IS_ERR(vdd))
+        return dev_err_probe(dev, PTR_ERR(vdd), "get vdd failed");
+    /* ★ dev_err_probe(5.10+) 的好处：
+       -EPROBE_DEFER 时<strong>静默</strong>(不刷屏)，其他错误才打印，
+       且统一格式化为 "probe of xxx failed with error -517" */
+
+    struct clk *clk = devm_clk_get(dev, "core");
+    if (IS_ERR(clk))
+        return dev_err_probe(dev, PTR_ERR(clk), "get clk failed");
+
+    clk_prepare_enable(clk);
+    regulator_enable(vdd);
+    /* 之后才访问硬件寄存器 ★ 顺序不能颠倒 */
+}</code></pre></div>
+
+<h3>D4.3 devm 资源管理：把 release 从代码里删掉</h3>
+<div class="codeblock"><pre><code data-lang="text">原理： devm_*(device-managed) 系列把资源登记到设备的资源链表，
+      在 <strong>driver unbinding 或 probe 失败时自动释放</strong>，
+      释放顺序与申请顺序<strong>相反</strong>(栈式)。
+
+价值： ① remove() 里几乎不用写释放代码，杜绝泄漏
+      ② probe 中途失败时自动回滚已申请资源，不用写 goto 链
+      ③ 出错路径不会漏释放
+
+常用 devm_ 接口（记住这些足够覆盖 90% 场景）：
+  devm_kzalloc / devm_kmalloc      内存
+  devm_ioremap_resource            寄存器映射 ★
+  devm_request_irq / devm_request_threaded_irq   中断 ★
+  devm_gpiod_get / _optional       GPIO
+  devm_clk_get / devm_clk_get_optional   时钟
+  devm_regulator_get               电源
+  devm_pinctrl_get                 引脚
+  devm_dma_alloc_coherent          DMA 内存
+  devm_hwmon_device_register_with_info   hwmon
+  devm_device_add_group            sysfs 属性组
+  devm_add_action_or_reset         自定义清理动作(兜底神器★)</code></pre></div>
+<div class="box warn"><span class="bt">⚠️ devm 的两个陷阱</span>
+<p><strong>① 中断可能在 probe 完成前触发</strong>：<code>devm_request_irq</code> 之后、probe 返回之前，中断就可能到来。若此时 ISR 访问尚未初始化的成员（如未分配的缓冲），会崩溃。<strong>正确顺序：先分配所有 ISR 需要的数据结构 → 最后再 request_irq。</strong><br>
+<strong>② devm 的生命周期绑定在 device 上，不是 driver</strong>：如果资源需要比设备更长的生命周期，或需要在 remove 中精确控制释放时机，就不能用 devm，需手工管理并用 <code>devm_add_action_or_reset</code> 或显式释放。</p></div>
+
+<h3>D4.4 uevent 与设备节点自动生成</h3>
+<div class="codeblock"><pre><code data-lang="bash"># 内核在 device_add 时通过 netlink 发送 uevent 给用户空间守护进程
+# (systemd-udevd / busybox mdev / eudev)，后者按规则创建 /dev/xxx
+
+# 手动触发与观察
+udevadm monitor --environment            # 实时观察 uevent 事件
+udevadm info /sys/class/rtc/rtc0         # 查看某设备的属性与规则匹配
+udevadm trigger                          # 重新触发所有设备的事件
+udevadm settle                           # 等待事件队列处理完毕
+
+cat /sys/bus/i2c/devices/0-0050/uevent   # 查看设备的 uevent 变量
+#   DRIVER=mydev
+#   OF_NAME=... OF_COMPATIBLE_0=vendor,dev       ★ 自动加载的依据
+#   MODALIAS=of:NfooT<NULL>Cvendor,dev
+
+# 自定义 udev 规则：/etc/udev/rules.d/99-myd.rules
+#   KERNEL=="mydev*", MODE="0666", SYMLINK+="my"   # 免 root 访问
+#   ★ 调试期可用，生产环境请用 group+权限控制而非 0666
+
+# 加载模块后自动建节点的前提：
+#   ① 驱动有 MODULE_DEVICE_TABLE → modules.alias 有条目
+#   ② depmod -a 已更新
+#   ③ 用户空间有 udev/mdev 在运行(嵌入式常用 busybox mdev -s)</code></pre></div>
+
+<h3>D4.5 电源管理：系统休眠与 runtime PM</h3>
+<div class="codeblock"><pre><code data-lang="text">两套机制，目标不同：
+  系统级睡眠(suspend-to-RAM)  整机进入低功耗，由用户/策略触发
+  Runtime PM                  设备空闲时单独关电，不影响系统其他部分
+
+系统休眠的回调阶段(按顺序)：
+  prepare → suspend → suspend_late → suspend_noirq → (进入睡眠)
+  → resume_noirq → resume_early → resume → complete
+  ★ 关键区别：
+    suspend       —— 此时仍可睡眠、设备仍可访问(但用户进程已冻结)
+    suspend_late  —— 中断仍开，但不可访问可能被关的设备
+    suspend_noirq —— <strong>中断已关闭</strong>，只能做寄存器保存等最简操作
+  ★ 唤醒是<strong>完全逆序</strong>，且 resume 阶段要重新初始化硬件</code></pre></div>
+<div class="codeblock"><pre><code data-lang="c">/* 现代写法：用宏定义 PM 回调，自动处理 CONFIG_PM 开关 */
+static int my_suspend(struct device *dev)
+{
+    struct mydev *p = dev_get_drvdata(dev);
+    /* 保存寄存器上下文到 p->saved_regs，关时钟 */
+    clk_disable_unprepare(p-&gt;clk);
+    return 0;
+}
+static int my_resume(struct device *dev)
+{
+    struct mydev *p = dev_get_drvdata(dev);
+    clk_prepare_enable(p-&gt;clk);
+    /* ★ 恢复寄存器 —— 休眠期间硬件可能已掉电，状态全丢 */
+    my_hw_restore(p);
+    return 0;
+}
+static DEFINE_SIMPLE_DEV_PM_OPS(my_pm_ops, my_suspend, my_resume);
+/* 老写法是 SIMPLE_DEV_PM_OPS，注意内核版本差异 */
+
+static struct platform_driver my_driver = {
+    .probe  = my_probe,
+    .remove = my_remove,
+    .driver = {
+        .name = "mydev",
+        .of_match_table = my_of_match,
+        .pm = &amp;my_pm_ops,          /* ★ 挂上 PM 回调 */
+    },
+};
+
+/* 唤醒源：允许本设备唤醒系统 */
+device_init_wakeup(dev, true);         /* 声明有能力唤醒 */
+enable_irq_wake(p-&gt;irq);               /* ★ 把中断设为唤醒源 */
+/* 用户空间查看： cat /sys/.../power/wakeup  (enabled/disabled) */</code></pre></div>
+
+<h3>D4.6 Runtime PM：空闲即关电</h3>
+<div class="codeblock"><pre><code data-lang="c">/* probe 中启用 */
+pm_runtime_enable(dev);
+pm_runtime_set_autosuspend_delay(dev, 100);   /* 空闲 100ms 后关电 */
+pm_runtime_use_autosuspend(dev);
+
+/* 访问硬件前后成对调用（★ 忘记 get 会导致访问关电的硬件） */
+pm_runtime_get_sync(dev);          /* 若已关电则触发 resume */
+/* ... 访问硬件 ... */
+pm_runtime_put_autosuspend(dev);   /* 释放，启动 autosuspend 计时 */
+
+/* 驱动需提供 runtime PM 回调 */
+static const struct dev_pm_ops my_pm_ops = {
+    SET_RUNTIME_PM_OPS(my_runtime_suspend, my_runtime_resume, NULL)
+    SET_SYSTEM_SLEEP_PM_OPS(my_suspend, my_resume)
+};
+
+/* 调试与强制控制 */
+/* /sys/.../power/control : auto(自动) 或 on(强制开启)
+   /sys/.../power/runtime_status : suspended/active/...
+   echo on &gt; /sys/.../power/control    # 排障时强制保持供电 */
+/* 获取失败返回 -EACCES/-ETIMEDOUT 时，常见原因是 usage_count 不平衡
+   (get 与 put 次数不匹配) 或 autosuspend 计时器配置问题 */</code></pre></div>
+
+<h3>D4.7 故障排故表</h3>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>现象</th><th>根因候选</th><th>定位路径</th></tr>
+<tr><td><strong>probe 未被调用</strong></td><td>compatible 不匹配 / 未 insmod / 设备被占用</td><td>查 <code>devices_deferred</code>；比对 MODALIAS；<code>lsmod</code>；看 <code>/sys/bus/*/drivers/*/bind</code> 是否已有驱动绑定</td></tr>
+<tr><td>probe 一直 defer</td><td>依赖的 clock/regulator provider 驱动缺失</td><td><code>cat /sys/kernel/debug/devices_deferred</code>；检查对应 provider 是否编进内核</td></tr>
+<tr><td>rmmod 后再次 insmod 失败</td><td>资源未释放（未用 devm 或 remove 漏释放）</td><td>对比 remove 与 probe 的申请清单；<code>/sys/kernel/debug/*</code> 查残留</td></tr>
+<tr><td>休眠后设备失效</td><td>resume 未恢复寄存器 / 未重开时钟</td><td>在 resume 中完整重初始化；对照 datasheet 检查保存/恢复项</td></tr>
+<tr><td>系统无法进入休眠</td><td>某设备阻止休眠（wakeup pending 或 PM 回调失败）</td><td><code>dmesg</code> 中的 <code>PM: Device ... failed to suspend</code>；查 <code>/sys/power/pm_wakeup_irq</code></td></tr>
+<tr><td>runtime suspend 后访问死机</td><td>漏了 <code>pm_runtime_get_sync</code></td><td>检查所有寄存器访问路径是否都包在 get/put 内</td></tr>
+<tr><td>中断唤醒无效</td><td>未调 <code>enable_irq_wake</code> / wakeup 未使能</td><td>查 <code>power/wakeup</code> 文件内容；确认中断在 suspend 期间可被路由</td></tr>
+</table></div>
+
+<div class="quiz"><strong>📝 思考题</strong><ol>
+<li>驱动 A 依赖驱动 B 提供的 clock，但 B 编译为模块且加载更晚。会发生什么？如何用 deferred probe 机制正确解决？</li>
+<li>为什么 <code>devm_request_irq</code> 要放在 probe 的最后？画出错误顺序下的崩溃时序。</li>
+<li><code>suspend</code> 与 <code>suspend_noirq</code> 两个回调的区别是什么？哪些操作必须放在 noirq 阶段？</li>
+<li>设备休眠唤醒后寄存器默认值恢复，为什么？resume 回调应如何设计才能保证功能正常？</li>
+<li>某驱动 rmmod 后再 insmod 报资源忙，你如何用 sysfs 与 debugfs 定位是哪个资源没释放？</li>
+</ol></div>
+
+<div class="lab"><strong>🧪 动手实验 LD4-1：deferred probe 与 devm 泄漏验证（90 分钟）</strong>
+<p><strong>步骤</strong>：① 写一个依赖 regulator 的驱动，故意先加载它（provider 未加载），观察 <code>-EPROBE_DEFER</code> 与 <code>devices_deferred</code> 文件；② 加载 provider 后确认自动重试成功；③ 写一个不用 devm 的模块，rmmod 后检查内存/中断是否残留（对比 <code>kmalloc</code> 计数）；④ 改用 devm 重写，重复验证；⑤ 用 <code>dev_err_probe</code> 改造错误处理，对比日志输出差异。</p>
+<p><strong>验收</strong>：deferred probe 的完整复现与恢复记录 + devm 改造前后的资源残留对比表。</p></div>
+
+<div class="box tip"><span class="bt">🗺️ 本章知识地图</span>
+<p><strong>前置依赖</strong>：D1 模块骨架、D3 设备树、第59章 platform 驱动。<strong>后续衔接</strong>：D5 的每个子系统都是「特定 bus_type + 特定 device_driver 封装」；D6 的调试技巧大量依赖本章的 sysfs 视图。<strong>开源定位</strong>：内核 <code>Documentation/driver-api/driver-model/</code>、<code>Documentation/power/</code>（<code>runtime_pm.rst</code> 与 <code>devices.txt</code> 是必读）。</p></div>
+</section>
+
+<section class="chapter" id="chd5">
+<div class="ch-head">
+<span class="part-tag">第十五篇 · 子系统</span>
+<h2>D5 · 内核子系统全景与选型地图</h2>
+<p class="ch-sub">拿到一块新芯片，第一件事不是写代码，而是「选对子系统」。本章给出全景地图、五类核心子系统的驱动骨架，以及一份可查的选型决策表。</p>
+</div>
+<div class="goals"><strong>🎯 学习目标</strong><ul>
+<li>建立内核子系统的全景分类认知，知道「什么问题归谁管」</li>
+<li>掌握 I2C / SPI / 块设备 / 网络 / 显示 / 音频六类驱动的骨架写法</li>
+<li>掌握 regmap 抽象，写出可复用于多总线的驱动</li>
+<li>拿到新硬件时，能用决策树选出正确的子系统</li>
+</ul></div>
+
+<h3>D5.1 全景地图：谁管什么</h3>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>类别</th><th>子系统</th><th>典型硬件</th><th>用户接口</th></tr>
+<tr><td rowspan="3"><strong>总线/传输</strong></td><td>I2C / SPI</td><td>传感器、EEPROM、RTC</td><td><code>/dev/i2c-*</code>、<code>/dev/spidev*</code></td></tr>
+<tr><td>PCI / USB</td><td>扩展卡、外设</td><td>见 I1/I2 章、<code>/dev/bus/usb</code></td></tr>
+<tr><td>MFD（多功能设备）</td><td>PMIC、带多功能的芯片</td><td>派生多个子设备</td></tr>
+<tr><td rowspan="4"><strong>通用外设</strong></td><td><strong>GPIO / pinctrl</strong></td><td>引脚控制与复用</td><td><code>/dev/gpiochip*</code>、libgpiod</td></tr>
+<tr><td><strong>IIO</strong></td><td>ADC/DAC/IMU/各类传感器 ★</td><td><code>/sys/bus/iio/devices/</code></td></tr>
+<tr><td><strong>hwmon</strong></td><td>温度/电压/风扇</td><td><code>/sys/class/hwmon/</code></td></tr>
+<tr><td>Input</td><td>按键/触摸/鼠标/摇杆</td><td><code>/dev/input/event*</code></td></tr>
+<tr><td rowspan="3"><strong>控制类</strong></td><td>PWM / LED / Backlight</td><td>调光、电机、指示灯</td><td><code>/sys/class/pwm|leds|backlight</code></td></tr>
+<tr><td>Clock / Regulator / Reset</td><td>时钟树、电源轨、复位线</td><td>主要给其他驱动用（provider）</td></tr>
+<tr><td>Thermal / CPUfreq / Devfreq</td><td>温控与调频</td><td><code>/sys/class/thermal</code></td></tr>
+<tr><td rowspan="2"><strong>存储</strong></td><td>块设备（blk-mq）</td><td>SATA/NVMe/eMMC/SD</td><td><code>/dev/sd*</code>、<code>/dev/mmcblk*</code></td></tr>
+<tr><td>MTD</td><td>NOR/NAND Flash、裸 Flash</td><td><code>/dev/mtd*</code>、UBI</td></tr>
+<tr><td><strong>网络</strong></td><td>net_device</td><td>以太网、WiFi、CAN</td><td><code>eth0</code>、socket、<code>ip link</code></td></tr>
+<tr><td><strong>显示</strong></td><td>DRM（fbdev 已过时）</td><td>GPU、显示控制器、面板</td><td><code>/dev/dri/card*</code></td></tr>
+<tr><td><strong>音频</strong></td><td>ALSA / ASoC</td><td>Codec、I2S、声卡</td><td><code>/dev/snd/*</code></td></tr>
+<tr><td><strong>其他</strong></td><td>RTC / Watchdog / Counter / UIO / VFIO</td><td>时钟、看门狗、用户态驱动</td><td>见第85章 UIO/VFIO</td></tr>
+</table></div>
+<div class="box tip"><span class="bt">💡 选型的第一性原则</span>
+<p><strong>能用现成子系统就绝不要自己写字符设备。</strong>理由：① 复用生态（用户空间工具、库、测试程序现成）；② 复用框架能力（电源管理、sysfs 接口、并发保护都已做好）；③ 社区认可，易于上游合入。自研字符设备只适用于<strong>确实没有对应子系统</strong>的特殊硬件（如自定义 FPGA IP）。</p></div>
+
+<h3>D5.2 I2C 设备驱动骨架</h3>
+<div class="codeblock"><pre><code data-lang="c">#include &lt;linux/i2c.h&gt;
+
+static const struct of_device_id my_i2c_of_match[] = {
+    { .compatible = "vendor,sensor" },
+    { }
+};
+MODULE_DEVICE_TABLE(of, my_i2c_of_match);
+
+static int my_probe(struct i2c_client *client,
+                    const struct i2c_device_id *id)
+{
+    /* I2C 驱动通常搭配 regmap 使用（见 D5.9） */
+    struct regmap *map = devm_regmap_init_i2c(client, &amp;my_regmap_cfg);
+    ...
+}
+static void my_remove(struct i2c_client *client) { /* devm 自动清理 */ }
+
+static struct i2c_driver my_i2c_driver = {
+    .driver = {
+        .name = "my-sensor",
+        .of_match_table = my_i2c_of_match,
+        .pm = &amp;my_pm_ops,
+    },
+    .probe    = my_probe,
+    .remove   = my_remove,
+    .id_table = my_i2c_id,        /* 非设备树匹配用 */
+};
+module_i2c_driver(my_i2c_driver);   /* ★ 一行替代 init/exit 样板 */
+
+/* 数据传输三种方式 */
+/* ① 简单 SMBus 风格（最常用） */
+u8 val = i2c_smbus_read_byte_data(client, REG_ADDR);
+i2c_smbus_write_byte_data(client, REG_ADDR, val);
+/* ② 裸传输（多字节/复合消息）*/
+struct i2c_msg msgs[2] = {
+    { .addr = client-&gt;addr, .flags = 0,        .len = 1, .buf = &amp;reg },
+    { .addr = client-&gt;addr, .flags = I2C_M_RD, .len = 4, .buf = data },
+};
+i2c_transfer(client-&gt;adapter, msgs, 2);
+/* ③ 直接用 regmap（推荐） */</code></pre></div>
+<div class="codeblock"><pre><code data-lang="bash"># I2C 用户态调试工具箱（i2c-tools）—— 硬件 bring-up 必备
+i2cdetect -l                     # 列出所有 I2C 总线
+i2cdetect -y 1                   # 扫描总线 1 上的设备地址(★UU 表示已被驱动占用)
+i2cdump -y 1 0x50                # dump 某设备的全部寄存器
+i2cget -y 1 0x50 0x00            # 读单字节
+i2cset -y 1 0x50 0x00 0x12       # 写单字节
+# ★ 排障口诀： i2cdetect 扫不到 → 查供电/上拉电阻/地址位(7位vs8位)；
+#              扫得到但读写错 → 查时序/速率/从设备是否忙</code></pre></div>
+
+<h3>D5.3 SPI 设备驱动骨架</h3>
+<div class="codeblock"><pre><code data-lang="c">#include &lt;linux/spi/spi.h&gt;
+
+static int my_probe(struct spi_device *spi)
+{
+    /* 总线参数(由设备树或板级信息提供) */
+    dev_info(&amp;spi-&gt;dev, "mode=%d max_speed=%u bits=%d\n",
+             spi-&gt;mode, spi-&gt;max_speed_hz, spi-&gt;bits_per_word);
+    struct regmap *map = devm_regmap_init_spi(spi, &amp;my_regmap_cfg);
+    ...
+}
+
+static struct spi_driver my_spi_driver = {
+    .driver = { .name = "my-spi-dev", .of_match_table = my_spi_of_match },
+    .probe  = my_probe,
+    .remove = my_remove,
+};
+module_spi_driver(my_spi_driver);
+
+/* 传输：同步方式（可睡眠，进程上下文） */
+u8 tx[3] = { CMD, addr, 0 }, rx[3];
+struct spi_transfer t = { .tx_buf = tx, .rx_buf = rx, .len = 3,
+                          .speed_hz = 1000000 };   /* 可覆盖默认速率 */
+struct spi_message m;
+spi_message_init(&amp;m);
+spi_message_add_tail(&amp;t, &amp;m);
+spi_sync(spi, &amp;m);            /* 阻塞直到完成 */
+
+/* 简单场景可用封装 */
+spi_write(spi, buf, len);
+spi_read(spi, buf, len);
+spi_write_then_read(spi, txbuf, n_tx, rxbuf, n_rx);   /* 常用(先写命令再读) */
+
+/* ★ 注意： SPI 传输会睡眠，<strong>不可在中断上下文调用</strong>；
+   如需异步用 spi_async + 完成回调 */</code></pre></div>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>对比项</th><th>I2C</th><th>SPI</th></tr>
+<tr><th>速率</th><td>100k / 400k / 1M / 3.4M</td><td>通常 1M~50M，更高</td></tr>
+<tr><td>线数</td><td>2（SDA/SCL）+ 上拉</td><td>4（MOSI/MISO/SCLK/CS）+ 每从机一根 CS</td></tr>
+<tr><td>寻址</td><td>地址在协议里（7/10 位）</td><td>靠硬件 CS 片选</td></tr>
+<tr><td>全双工</td><td>半双工</td><td><strong>全双工</strong></td></tr>
+<tr><td>适用场景</td><td>低速、多器件、省引脚</td><td>高速、大数据量（Flash、显示屏、ADC）</td></tr>
+</table></div>
+
+<h3>D5.4 存储类：块设备与 MTD</h3>
+<div class="codeblock"><pre><code data-lang="text">两条路线，选错会走很多弯路：
+  块设备(block)  —— 带控制器、可做磨损均衡/坏块管理、对外呈现为磁盘
+                    eMMC / SD / U 盘 / SSD / NVMe
+                    → 上层可跑文件系统(ext4/f2fs)，接口 /dev/sdX
+  MTD            —— 裸 Flash，<strong>无控制器</strong>，需软件管理擦写与坏块
+                    NOR / NAND / SPI-NOR
+                    → /dev/mtdX，配 JFFS2/UBIFS，或用 UBI 卷管理
+
+★ 判据： 硬件是否自带 FTL(Flash Translation Layer)？
+         有 → 块设备；无(裸 Flash) → MTD
+
+块设备现代骨架（blk-mq 多队列，取代老的 request_fn）：
+  blk_mq_alloc_tag_set(&amp;tag_set)       # 分配标签集
+  blk_mq_alloc_queue(&amp;tag_set)         # 分配请求队列
+  alloc_disk(minors)                   # 分配 gendisk
+  设置 queue-&gt;queue_ops(→ struct blk_mq_ops { .queue_rq, ... })
+  disk->fops = &amp;my_block_ops;          # struct block_device_operations
+  set_capacity(disk, sectors); add_disk(disk);
+  ★ 核心回调 queue_rq： 从请求中取出 bio，转成硬件 DMA 描述符
+
+MTD 驱动要点：
+  mtd_device_register(mtd, partitions, nr)     # 注册分区
+  mtd-&gt;_read / _write / _erase                 # 三个核心操作
+  nand_scan / spi_nor_scan                     # 探测芯片参数
+  配套： UBI(卷管理+磨损均衡) → UBIFS(文件系统)
+  用户态工具： mtdinfo / flash_eraseall / nanddump / ubinfo</code></pre></div>
+
+<h3>D5.5 网络驱动：net_device 与 NAPI</h3>
+<div class="codeblock"><pre><code data-lang="c">/* 骨架 */
+static const struct net_device_ops my_netdev_ops = {
+    .ndo_open            = my_open,        /* ifconfig up */
+    .ndo_stop            = my_stop,
+    .ndo_start_xmit      = my_xmit,        /* ★ 发送，可能被多核并发调用 */
+    .ndo_set_mac_address = eth_mac_addr,
+    .ndo_do_ioctl        = my_ioctl,
+    .ndo_validate_addr   = eth_validate_addr,
+};
+
+/* probe 中 */
+struct net_device *ndev = alloc_etherdev(sizeof(struct my_priv));
+/* 或 alloc_netdev(sizeof(priv), "name", NET_NAME_UNKNOWN, ether_setup) */
+ndev-&gt;netdev_ops = &amp;my_netdev_ops;
+netif_napi_add(ndev, &amp;priv-&gt;napi, my_poll, NAPI_POLL_WEIGHT);
+register_netdev(ndev);              /* ★ 之后接口才出现在 ip link */
+
+/* 接收：中断 + NAPI 轮询（高吞吐的关键） */
+static irqreturn_t my_rx_irq(int irq, void *dev_id)
+{
+    disable_rx_irq();               /* ★ 先关本中断，避免风暴 */
+    napi_schedule(&amp;priv-&gt;napi);     /* 调度轮询 */
+    return IRQ_HANDLED;
+}
+static int my_poll(struct napi_struct *napi, int budget)
+{
+    int work = 0;
+    while (work &lt; budget &amp;&amp; rx_has_packet()) {
+        struct sk_buff *skb = netdev_alloc_skb(ndev, len);
+        skb_put(skb, len);          /* ★ 填充数据后必须更新长度 */
+        skb-&gt;protocol = eth_type_trans(skb, ndev);
+        napi_gro_receive(napi, skb); /* 或 netif_receive_skb(skb) */
+        work++;
+    }
+    if (work &lt; budget) {            /* 处理完了 */
+        napi_complete_done(napi, work);
+        enable_rx_irq();            /* ★ 重新开中断 */
+    }
+    return work;
+}</code></pre></div>
+<div class="box tip"><span class="bt">💡 NAPI 为什么快</span>
+<p>纯中断模式在高速收包时会<strong>中断风暴</strong>——每包一次中断，CPU 全耗在上下文切换上。NAPI 的做法：<strong>第一个包用中断唤醒，随后关闭接收中断并转为轮询</strong>，一次处理一批（budget），处理完再开中断。低负载时走中断（低延迟），高负载时转轮询（高吞吐），兼顾两者。</p></div>
+
+<h3>D5.6 显示与音频：概览级认知</h3>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>领域</th><th>现代框架</th><th>核心对象</th><th>要点</th></tr>
+<tr><td rowspan="2"><strong>显示</strong></td><td><strong>DRM</strong>（推荐）</td><td>drm_device / CRTC / Plane / Encoder / Connector / Framebuffer</td><td>支持 atomic 提交、多图层、vsync；简单驱动可用 <code>drm_simple_display_pipe</code> + <code>drm_panel</code></td></tr>
+<tr><td>fbdev（<strong>已过时</strong>）</td><td>fb_info / fb_ops</td><td>仅维护老驱动；<strong>新驱动不要再用</strong></td></tr>
+<tr><td rowspan="2"><strong>音频</strong></td><td>ALSA（核心层）</td><td>snd_card / snd_pcm / snd_ctl</td><td>提供 PCM、Control、Mixer 抽象</td></tr>
+<tr><td><strong>ASoC</strong>（嵌入式专用）</td><td>Machine / Platform(CPU DAI) / Codec</td><td>★ 三件套分离，靠 <code>dai_link</code> 在 Machine 驱动里绑定；DAPM 管理电源路由</td></tr>
+</table></div>
+<div class="codeblock"><pre><code data-lang="text">ASoC 三件套分工（理解这个，音频驱动就入门了）：
+  Codec 驱动   —— 描述音频编解码芯片(如 WM8960)，提供 DAI 与控件
+  Platform驱动 —— 描述 SoC 端(如 I2S/PCM 控制器、DMA)
+  Machine 驱动 —— ★ 把二者用 dai_link 连起来，描述板级连线
+  ★ 大部分嵌入式工作 = 写/改 Machine 驱动 + 复用现成 Codec 驱动
+
+调试命令：
+  aplay -l / arecord -l           # 列出声卡与设备
+  amixer contents                 # 查看所有混音控件(★ 调音量/路由)
+  alsamixer                       # 交互式
+  cat /proc/asound/cards
+  # 显示： modetest(libdrm) 查看 connector/CRTC 状态</code></pre></div>
+
+<h3>D5.7 regmap：跨总线的寄存器抽象（★ 强烈推荐）</h3>
+<div class="codeblock"><pre><code data-lang="c">/* regmap 把「寄存器访问」从具体总线中抽离：
+   同一份驱动逻辑，可同时支持 I2C / SPI / MMIO 三种后端 */
+
+static const struct regmap_config my_regmap_cfg = {
+    .reg_bits   = 8,          /* 寄存器地址位宽 */
+    .val_bits   = 8,          /* 寄存器值位宽 */
+    .max_register = 0xFF,
+    .cache_type = REGCACHE_RBTREE,   /* 缓存类型，可省去重复读 */
+    .volatile_reg = my_volatile_reg, /* 声明哪些寄存器不可缓存(如状态位) */
+    .writeable_reg = my_writeable_reg,
+};
+
+/* 初始化：按总线选择(三选一) */
+map = devm_regmap_init_i2c(client, &amp;my_regmap_cfg);
+map = devm_regmap_init_spi(spi,    &amp;my_regmap_cfg);
+map = devm_regmap_init_mmio(dev, base, &amp;my_regmap_cfg);
+
+/* 使用：统一 API */
+unsigned int val;
+regmap_read(map, REG_STATUS, &amp;val);
+regmap_write(map, REG_CTRL, 0x01);
+regmap_update_bits(map, REG_CTRL, MASK_EN, MASK_EN);  /* 读-改-写 ★ 非原子 */
+regmap_bulk_read(map, REG_BASE, buf, 16);             /* 批量读 */
+
+/* 寄存器字段抽象(把位域操作也省了) */
+struct reg_field f_en = REG_FIELD(REG_CTRL, 3, 3);    /* 第 3 位 */
+struct regmap_field *en = devm_regmap_field_alloc(dev, map, f_en);
+regmap_field_write(en, 1);
+/* 配合 regmap_irq_chip 还能统一管理中断状态/屏蔽寄存器 */</code></pre></div>
+<div class="box tip"><span class="bt">💡 为什么要用 regmap</span>
+<p>① <strong>一份驱动支持多总线</strong>（很多芯片同时出 I2C 和 SPI 版本）；② 自动处理<strong>字节序、分页、缓存</strong>；③ <code>regmap_update_bits</code> 把易出错的手工「读-改-写」封装好；④ 与 <code>debugfs</code> 天然集成，<code>/sys/kernel/debug/regmap/&lt;dev&gt;/registers</code> 可直接 dump 全部寄存器——<strong>这个调试便利本身就值得用它</strong>。</p></div>
+
+<h3>D5.8 选型决策表：拿到新硬件怎么走</h3>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>硬件特征</th><th>应选子系统</th><th>说明</th></tr>
+<tr><td>温度/电压/电流/风扇</td><td><strong>hwmon</strong></td><td><code>/sys/class/hwmon</code>，被 lm_sensors 生态支持</td></tr>
+<tr><td>加速度/陀螺/ADC/IMU/光感</td><td><strong>IIO</strong></td><td>支持缓冲采集与触发，适合数据流</td></tr>
+<tr><td>按键/键盘/触摸屏/摇杆</td><td><strong>Input</strong></td><td>标准事件上报，用户态库成熟</td></tr>
+<tr><td>LED 指示灯</td><td><strong>LED</strong></td><td>支持亮度/触发(trigger)如 heartbeat</td></tr>
+<tr><td>电机调速/背光/PWM 输出</td><td><strong>PWM</strong>（背光另走 backlight）</td><td>统一占空比接口</td></tr>
+<tr><td>显示屏</td><td><strong>DRM</strong> + panel</td><td>不要再用 fbdev</td></tr>
+<tr><td>音频 Codec</td><td><strong>ASoC Codec 驱动</strong></td><td>复用 DAPM 电源管理</td></tr>
+<tr><td>裸 Flash</td><td><strong>MTD</strong>（+UBI）</td><td>需自己管理坏块</td></tr>
+<tr><td>带控制器的存储</td><td><strong>块设备 blk-mq</strong></td><td>标准磁盘接口</td></tr>
+<tr><td>以太网/WiFi/CAN</td><td><strong>net_device</strong></td><td>CAN 走 SocketCAN</td></tr>
+<tr><td>PMIC（多路电源+GPIO+RTC）</td><td><strong>MFD + 各子设备</strong></td><td>一个物理芯片注册多个逻辑设备</td></tr>
+<tr><td>自定义 FPGA IP / 无对应框架</td><td>字符设备（+ regmap）</td><td>仅当确实无匹配子系统时</td></tr>
+<tr><td>需用户态高性能访问</td><td>UIO / VFIO</td><td>见第85章</td></tr>
+</table></div>
+
+<div class="quiz"><strong>📝 思考题</strong><ol>
+<li>一颗加速度计同时提供 I2C 和 SPI 接口，如何设计驱动使代码复用最大化？</li>
+<li>为什么 NAPI 要先关中断再轮询？budget 参数的作用是什么？设置过大会怎样？</li>
+<li>裸 NAND Flash 能否直接用 ext4 文件系统？需要经过哪些中间层？</li>
+<li>regmap 的 <code>volatile_reg</code> 回调为什么重要？若把状态寄存器错误声明为可缓存会发生什么？</li>
+<li>PMIC 芯片同时有 3 路 DCDC、1 个 RTC、8 个 GPIO，应如何组织驱动结构？</li>
+</ol></div>
+
+<div class="lab"><strong>🧪 动手实验 LD5-1：用 regmap 写一个 I2C 传感器驱动并注册为 IIO（120 分钟）</strong>
+<p><strong>步骤</strong>：① 用 <code>i2cdetect</code> 确认器件地址，<code>i2cdump</code> 读出寄存器初值；② 用 regmap 封装寄存器访问；③ 实现 IIO 驱动（<code>iio_chan_spec</code> + <code>read_raw</code>）；④ 加载后从 <code>/sys/bus/iio/devices/iio:deviceX/</code> 读取原始值；⑤ 通过 <code>/sys/kernel/debug/regmap/</code> dump 寄存器，验证与 <code>i2cdump</code> 一致。</p>
+<p><strong>验收</strong>：驱动源码 + 三份证据（i2cdetect 扫描结果、sysfs 读数、regmap dump 对比）。</p></div>
+
+<div class="lab"><strong>🧪 动手实验 LD5-2：子系统选型演练（45 分钟，无硬件可做）</strong>
+<p><strong>步骤</strong>：① 列出 10 种常见硬件（温感、加速度计、LED、按键、蜂鸣器、NAND、eMMC、网口、LCD、Codec）；② 逐个用 D5.8 决策表选出子系统并写出用户空间验证命令；③ 对其中 3 个写出关键的 <code>struct</code> 骨架与必需回调；④ 查阅内核 <code>Documentation/</code> 验证你的选择。</p>
+<p><strong>验收</strong>：一份选型对照表 + 3 份代码骨架（含回调清单）。</p></div>
+
+<div class="box tip"><span class="bt">🗺️ 本章知识地图</span>
+<p><strong>前置依赖</strong>：D1 模块骨架、D2 并发与 DMA、D4 设备模型、第60章（GPIO/Input/IIO/RTC/WDT 实战）。<strong>后续衔接</strong>：D6 的调试技巧在各子系统上通用。<strong>开源定位</strong>：内核 <code>Documentation/driver-api/</code> 下各子系统目录（<code>i2c</code>、<code>spi</code>、<code>networking</code>、<code>gpu/drm</code>、<code>sound/soc</code>）、<code>Documentation/devicetree/bindings/</code> 对应的 YAML 绑定。</p></div>
+</section>
+
+<section class="chapter" id="chd6">
+<div class="ch-head">
+<span class="part-tag">第十五篇 · 调试技巧</span>
+<h2>D6 · 驱动调试技巧大全：从日志到崩溃分析</h2>
+<p class="ch-sub">本章是「救火手册」。按<strong>代价从低到高</strong>组织调试手段，并给出 Oops 解码的完整实战流程与典型案例，目标是让你在面对内核崩溃时不再慌张。</p>
+</div>
+<div class="goals"><strong>🎯 学习目标</strong><ul>
+<li>建立调试手段的分层地图，知道「先用什么、后用什么」</li>
+<li>掌握动态调试、ftrace、perf 的实战用法</li>
+<li><strong>能独立完成 Oops 日志的解码与定位</strong>（含模块偏移计算）</li>
+<li>会用 KASAN/KCSAN/KMEMLEAK 主动发现内存与并发缺陷</li>
+<li>通过案例集建立从现象到根因的推理链</li>
+</ul></div>
+
+<h3>D6.1 调试手段分层地图（★ 先记这张表）</h3>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>层级</th><th>手段</th><th>代价</th><th>能解决什么</th></tr>
+<tr><td>①</td><td><code>printk</code> / <code>dev_dbg</code> / 动态调试</td><td>极低</td><td>流程确认、变量观察</td></tr>
+<tr><td>②</td><td>sysfs / debugfs / <code>/proc</code> 状态导出</td><td>极低</td><td>运行时状态、寄存器 dump</td></tr>
+<tr><td>③</td><td>用户态工具（strace、i2cdetect、devmem）</td><td>低</td><td>接口层验证、硬件连通性</td></tr>
+<tr><td>④</td><td><strong>ftrace / trace event / kprobe</strong></td><td>低</td><td>调用链、时序、谁调用了什么</td></tr>
+<tr><td>⑤</td><td><strong>perf</strong> / 火焰图</td><td>低</td><td>性能瓶颈、热点函数</td></tr>
+<tr><td>⑥</td><td><strong>编译期检测</strong>（KASAN/KCSAN/UBSAN/lockdep）</td><td>中（需重编内核）</td><td><strong>主动</strong>发现内存/并发缺陷 ★</td></tr>
+<tr><td>⑦</td><td><strong>Oops / Panic 解码</strong></td><td>中</td><td>崩溃定位（事后分析）</td></tr>
+<tr><td>⑧</td><td>kgdb / kdb 在线调试</td><td>高（需串口，系统暂停）</td><td>断点、单步、查看内存</td></tr>
+<tr><td>⑨</td><td>kdump + crash 事后分析</td><td>高（需预留内存）</td><td>完整崩溃现场转储</td></tr>
+<tr><td>⑩</td><td>示波器 / 逻辑分析仪</td><td>硬件成本</td><td>时序、电平、协议正确性</td></tr>
+</table></div>
+<div class="box tip"><span class="bt">💡 核心方法论：从轻到重，二分定位</span>
+<p>① <strong>永远从代价最低的手段开始</strong>——90% 的问题靠 printk 和状态导出就能定位；② <strong>用二分法缩小范围</strong>：先确认是硬件、驱动还是应用问题，再在驱动内部按「probe / 中断 / 数据传输」切分；③ <strong>让内核自己报错</strong>：优先开启各种 CONFIG_DEBUG_* 选项，比人肉 review 高效得多。</p></div>
+
+<h3>D6.2 日志体系：pr_debug 与动态调试</h3>
+<div class="codeblock"><pre><code data-lang="c">/* 推荐写法：用 dev_ 系列(带设备名前缀，信息更完整) */
+dev_dbg(dev, "reg 0x%02x = 0x%02x\n", reg, val);   /* 调试级，默认不输出 */
+dev_info(dev, "initialized\n");                     /* 信息级 */
+dev_warn(dev, "unexpected state\n");
+dev_err(dev, "transfer failed: %d\n", ret);
+/* 无 device 结构时用 pr_* 系列： pr_debug / pr_info / pr_err */
+
+/* ★ 高频日志必须限速，否则刷屏掩盖真相甚至拖垮系统 */
+if (netif_msg_rx_err(priv))
+    dev_err_ratelimited(dev, "rx error\n");
+/* 或手动： if (printk_ratelimit()) printk(...); */</code></pre></div>
+<div class="codeblock"><pre><code data-lang="bash"># 日志级别(越低越紧急)： 0 emerg 1 alert 2 crit 3 err 4 warn
+#                        5 notice 6 info 7 debug
+cat /proc/sys/kernel/printk        # 当前控制台级别 默认 "7 4 1 7"
+echo 8 &gt; /proc/sys/kernel/printk   # 让所有 dev_dbg 都打印出来
+
+# ★ 动态调试(dynamic debug)：无需重新编译，运行期开关 pr_debug/dev_dbg
+#   前提： 内核 CONFIG_DYNAMIC_DEBUG=y
+echo 'file mydrv.c +p' &gt; /sys/kernel/debug/dynamic_debug/control
+echo 'func my_probe +p' &gt; ...              # 只开某个函数
+echo 'module mydrv +p' &gt; ...               # 整个模块
+echo 'file drivers/i2c/* +p' &gt; ...         # 通配符
+echo 'file mydrv.c line 120-130 +p' &gt; ...  # 指定行区间
+echo 'file mydrv.c -p' &gt; ...               # 关闭
+# 其他 flag： +f(函数名) +l(行号) +m(模块名) +t(线程ID)
+
+# 启动时即开启(用于抓早期日志)：
+#   内核参数： dyndbg="file mydrv.c +p"
+#   或模块参数： modprobe mydrv dyndbg=+p</code></pre></div>
+
+<h3>D6.3 ftrace：内核的「调用录像机」</h3>
+<div class="codeblock"><pre><code data-lang="bash">cd /sys/kernel/debug/tracing
+
+# ① 函数跟踪：看某函数被调用的完整路径
+echo function &gt; current_tracer
+echo mydrv_* &gt; set_ftrace_filter        # 只跟踪指定函数(支持通配)
+echo 1 &gt; tracing_on
+# ... 触发操作 ...
+echo 0 &gt; tracing_on
+cat trace
+
+# ② 函数调用图(function_graph)：★ 看清调用层次与耗时
+echo function_graph &gt; current_tracer
+echo my_probe &gt; set_graph_function
+cat trace
+#   输出带时长标记，可直接看出哪一步慢
+
+# ③ trace event：内核预埋的事件点（推荐，开销最小）
+ls events/                               # 查看所有可用事件
+echo 1 &gt; events/i2c/enable               # 开启 I2C 子系统全部事件
+echo 1 &gt; events/regmap/enable            # ★ regmap 寄存器读写全记录
+echo 1 &gt; events/irq/irq_handler_entry/enable
+cat trace
+
+# ④ kprobe/kretprobe：动态在函数入口/返回处插桩
+echo 'p:myprobe mydrv_write' &gt; kprobe_events        # 入口
+echo 'r:myretprobe mydrv_write' &gt; kprobe_events     # 返回
+echo 1 &gt; events/kprobes/myprobe/enable
+# ★ 无需重新编译内核即可观察任意函数的调用与参数
+
+# ⑤ 更友好的前端(推荐安装 trace-cmd / kernelshark)
+trace-cmd record -e i2c -e regmap -p function_graph my_cmd
+trace-cmd report</code></pre></div>
+
+<h3>D6.4 perf：性能剖析</h3>
+<div class="codeblock"><pre><code data-lang="bash">perf top                              # 实时看热点函数(需 vmlinux 符号)
+perf record -g -a -- sleep 10         # 采样 10 秒(含调用图)
+perf report                           # 分析结果
+perf report -g graph,0.5,callee       # 展开调用图
+
+# 针对驱动模块：需提供符号
+perf report -k /path/to/vmlinux
+# 或把模块的 .ko 放在 /lib/modules/$(uname -r)/ 下以便解析
+
+# 其他实用子命令
+perf stat -e cache-misses,cycles ./app     # 硬件计数器
+perf ftrace my_cmd                          # 直接调 ftrace
+perf probe --add mydrv_write                # 动态探针
+perf kmem record -- sleep 10 ; perf kmem stat   # ★ 内核内存分配分析
+
+# 火焰图(把 perf 数据可视化)
+perf record -g -a -- sleep 10 &amp;&amp; perf script &gt; out.perf
+#   再用 FlameGraph 脚本生成 svg</code></pre></div>
+
+<h3>D6.5 ★ Oops 解码实战（本章核心）</h3>
+<div class="codeblock"><pre><code data-lang="text">典型 Oops 输出（ARM64，节选）：
+
+Unable to handle kernel NULL pointer dereference at virtual address 0000000000000008
+Mem abort info:
+  ESR = 0x96000005  EC = 0x25  ...
+  Data abort info: ISV = 0 ...
+user pgtable: 4k pages, 39-bit VAs, pgdp = ...
+Internal error: Oops: 96000005 [#1] PREEMPT SMP
+Modules linked in: mydrv(O) ...
+CPU: 2 PID: 1234 Comm: my_test Tainted: G  O  5.10.0 #1
+Hardware name: My Board (DT)
+pstate: 80000005 ...
+pc : my_probe+0x24/0x100 [mydrv]
+lr : platform_drv_probe+0x54/0xa8
+sp : ffff80001234bc00
+Call trace:
+ my_probe+0x24/0x100 [mydrv]
+ platform_drv_probe+0x54/0xa8
+ really_probe+0xd8/0x3d0
+ ...
+Code: f9400a60 91002000 ...
+---[ end trace 0000000000000001 ]---
+</code></pre></div>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>字段</th><th>含义</th><th>解读要点</th></tr>
+<tr><td><strong>错误类型</strong></td><td><code>NULL pointer dereference</code></td><td>见 D6.5 下方对照表</td></tr>
+<tr><td><strong>virtual address</strong></td><td><code>0x8</code></td><td>访问的地址。<strong>接近 0 说明空指针 + 成员偏移</strong>（此处偏移 8）</td></tr>
+<tr><td><strong>pc</strong></td><td><code>my_probe+0x24/0x100</code></td><td>★ 出错指令 = 函数入口 + 0x24；函数总长 0x100</td></tr>
+<tr><td><strong>lr</strong></td><td>返回地址</td><td>调用者位置，判断调用路径</td></tr>
+<tr><td><strong>Call trace</strong></td><td>调用栈</td><td>★ 自上而下即「谁调了谁」</td></tr>
+<tr><td>PID / Comm</td><td>进程</td><td>哪个进程触发</td></tr>
+<tr><td>Tainted</td><td>内核污染标志</td><td><code>O</code>=有外部模块；污染后很多调试手段受限</td></tr>
+<tr><td>Code</td><td>出错指令机器码</td><td>可反汇编核对</td></tr>
+</table></div>
+<div class="codeblock"><pre><code data-lang="bash"># ★ 解码三步法
+
+# 步骤一：用内核自带脚本(最简单，推荐)
+scripts/faddr2line vmlinux my_probe+0x24/0x100
+#   输出： my_probe+0x24/0x100:
+#          my_probe at drivers/mydrv.c:87
+#   ★ 一步到位给出文件名与行号
+
+# 步骤二：手工用 addr2line(需要先算出绝对地址)
+#   对内核镜像：
+addr2line -e vmlinux -f -C 0xffff800008123456
+#   对模块：先确定模块的加载基址
+cat /sys/module/mydrv/sections/.text      # 得到基址 B
+#   绝对地址 = B + 0x24，然后
+objdump -dS --adjust-vma=B mydrv.ko | grep -A5 -B5 "B+0x24"
+#   或： gdb 中 list *(my_probe+0x24)
+
+# 步骤三：直接反汇编模块对照(无符号表时)
+objdump -d mydrv.ko | grep -A20 "&lt;my_probe&gt;:"
+#   数到 +0x24 的指令，结合 Code 字段的机器码核对
+
+# ★ 必备前提：
+#   1. 保留带调试信息的 vmlinux(不能是压缩后的 bzImage/zImage)
+#   2. 保留编译时生成的同名 .ko 文件
+#   3. 内核开启 CONFIG_DEBUG_INFO(建议开发版常开)
+#   4. 模块版本与运行内核严格一致</code></pre></div>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>常见错误类型</th><th>含义</th><th>高频根因</th></tr>
+<tr><td><strong>NULL pointer dereference</strong></td><td>空指针访问</td><td>未判空的指针、devm 分配失败未处理、<code>private_data</code> 未设置</td></tr>
+<tr><td>Unable to handle kernel paging request</td><td>访问了无效地址</td><td><strong>use-after-free</strong>、越界、<code>ERR_PTR</code> 未用 <code>IS_ERR</code> 判断</td></tr>
+<tr><td><strong>BUG: scheduling while atomic</strong></td><td>原子上下文睡眠</td><td>自旋锁/中断内调用 <code>kmalloc(GFP_KERNEL)</code>、<code>msleep</code>、<code>mutex_lock</code></td></tr>
+<tr><td>BUG: spinlock bad magic</td><td>锁被破坏</td><td>未初始化就用、越界写覆盖了锁内存、重复解锁</td></tr>
+<tr><td>kernel BUG at / WARNING at</td><td><code>BUG_ON</code> / <code>WARN_ON</code> 触发</td><td>断言条件成立，看代码里的断言意图</td></tr>
+<tr><td>list_del corruption</td><td>链表损坏</td><td><strong>并发访问未加锁</strong>、重复删除、节点内存被踩</td></tr>
+<tr><td>slab-out-of-bounds</td><td>越界访问（KASAN 报）</td><td>数组越界、<code>memcpy</code> 长度错、off-by-one</td></tr>
+<tr><td>use-after-free</td><td>释放后使用（KASAN 报）</td><td>释放后未置 NULL、生命周期管理错误</td></tr>
+<tr><td>soft lockup / hard lockup</td><td>CPU 卡死</td><td>死循环、长时间关中断、自旋锁死等</td></tr>
+<tr><td>rcu_sched self-detected stall</td><td>RCU 停顿</td><td>长时间关中断或关抢占、读侧临界区过久</td></tr>
+<tr><td>hung_task: blocked for more than N sec</td><td>任务长时间阻塞</td><td>死锁、等待永不满足的条件、D 状态卡死</td></tr>
+<tr><td>irq N: nobody cared</td><td>中断无人处理</td><td>ISR 返回 <code>IRQ_NONE</code>、共享中断判断错误、中断号配错</td></tr>
+</table></div>
+
+<h3>D6.6 编译期检测：让 bug 自己跳出来</h3>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>选项</th><th>检测什么</th><th>开销</th><th>使用建议</th></tr>
+<tr><td><strong>CONFIG_KASAN</strong></td><td>越界、use-after-free</td><td>高（内存+速度）</td><td><strong>驱动开发期强烈推荐</strong>，能抓到最隐蔽的内存 bug</td></tr>
+<tr><td><strong>CONFIG_KCSAN</strong></td><td><strong>数据竞争</strong></td><td>高</td><td>并发代码必开</td></tr>
+<tr><td>CONFIG_UBSAN</td><td>未定义行为（溢出等）</td><td>低</td><td>常开</td></tr>
+<tr><td><strong>CONFIG_PROVE_LOCKING</strong>（lockdep）</td><td>死锁隐患</td><td>中</td><td>见 D2.8，常开</td></tr>
+<tr><td>CONFIG_DEBUG_ATOMIC_SLEEP</td><td>原子上下文睡眠</td><td>低</td><td>常开</td></tr>
+<tr><td><strong>CONFIG_DEBUG_KMEMLEAK</strong></td><td>内存泄漏</td><td>中</td><td>长期运行测试时开，见下</td></tr>
+<tr><td>CONFIG_DEBUG_LIST / _SPINLOCK / _MUTEXES</td><td>各类使用错误</td><td>低</td><td>常开</td></tr>
+<tr><td>CONFIG_SLUB_DEBUG</td><td>slab 分配错误</td><td>低</td><td>常开</td></tr>
+</table></div>
+<div class="codeblock"><pre><code data-lang="bash"># kmemleak 使用(检测内存泄漏)
+mount -t debugfs none /sys/kernel/debug
+echo scan &gt; /sys/kernel/debug/kmemleak      # 触发扫描
+cat /sys/kernel/debug/kmemleak               # 查看泄漏报告
+#   报告含泄漏内存的分配调用栈 —— 直接定位到代码行
+echo clear &gt; /sys/kernel/debug/kmemleak      # 清空已有记录
+# ★ 注意： 存在「假阳性」(指针被藏在内核内部结构中被认为泄漏)，
+#          判读时结合代码确认
+
+# KASAN 报告解读要点
+#   BUG: KASAN: slab-out-of-bounds in my_func+0x30/0x80
+#   Read of size 4 at addr ffff888012345678 by task ...
+#   ^ 关注三处： 错误类型 / 访问大小 / 分配与释放的调用栈
+#   Allocated by task ... / Freed by task ...   ← ★ 定位生命周期</code></pre></div>
+
+<h3>D6.7 用户态辅助工具箱</h3>
+<div class="codeblock"><pre><code data-lang="bash"># ① 系统调用跟踪：确认「应用到底调了什么」
+strace -f -o trace.log ./myapp             # 跟踪系统调用
+strace -e trace=ioctl,read,write ./myapp   # 只看特定调用
+#   ★ 价值： 区分「应用没调用」还是「驱动没响应」
+ltrace ./myapp                             # 跟踪库函数调用
+
+# ② 直接读写物理内存/寄存器(硬件 bring-up 神器，慎用)
+devmem2 0x40010000 w                       # 读 32 位寄存器
+devmem2 0x40010000 w 0x1                   # 写寄存器
+#   ★ 用途： 不写驱动就能验证硬件是否正常响应
+#   ★ 风险： 写错地址可能损坏硬件或使系统崩溃
+
+# ③ 状态查询
+cat /proc/interrupts                       # 中断计数(★ 判断是否来中断)
+cat /proc/iomem                            # 物理地址空间占用
+cat /proc/meminfo                          # 内存概况
+cat /sys/kernel/debug/gpio                 # GPIO 状态与占用
+cat /sys/kernel/debug/clk/clk_summary      # 时钟树(★ 查时钟是否开启)
+cat /sys/kernel/debug/regulator/*          # 电源轨状态
+cat /sys/kernel/debug/regmap/*/registers   # ★ regmap 寄存器 dump
+
+# ④ 模块与设备
+dmesg -w                                   # 实时内核日志
+udevadm monitor                            # 热插拔事件
+ls /sys/bus/platform/devices/              # 设备是否生成</code></pre></div>
+
+<h3>D6.8 硬件协同：什么时候该拿示波器</h3>
+<div class="tbl-wrap"><table class="tbl">
+<tr><th>现象</th><th>该用什么</th><th>看什么</th></tr>
+<tr><td>I2C 扫不到设备</td><td>万用表 + 逻辑分析仪</td><td>供电、上拉电阻、SDA/SCL 波形与地址位</td></tr>
+<tr><td>SPI 数据错乱</td><td>逻辑分析仪（带协议解码）</td><td>CPOL/CPHA 极性、片选时序、时钟频率是否超限</td></tr>
+<tr><td>中断不来/风暴</td><td>示波器</td><td>引脚电平、脉冲宽度、是否持续拉低</td></tr>
+<tr><td>偶发通信失败</td><td>示波器（抓瞬态）</td><td>电源纹波、信号完整性、边沿质量</td></tr>
+<tr><td>DMA 数据错</td><td>逻辑分析仪 + 内核 KASAN</td><td>硬件侧时序；软件侧一致性同步</td></tr>
+<tr><td>设备时好时坏</td><td>示波器 + 温度/电源监测</td><td>低温/高温复现，查时序漂移（见第85章案例）</td></tr>
+</table></div>
+<div class="box tip"><span class="bt">💡 软硬分界的判据</span>
+<p>用 <code>devmem2</code> 直接读写寄存器：如果<strong>手工操作硬件正常，而驱动不正常</strong> → 问题在软件（时序、配置顺序、并发）；如果<strong>手工操作也不正常</strong> → 问题在硬件（供电、连线、时钟）。这一招能在一分钟内完成软硬责任划分，是 bring-up 阶段最高性价比的技巧。</p></div>
+
+<h3>D6.9 典型案例集（四条推理链）</h3>
+<div class="codeblock"><pre><code data-lang="text">案例①：加载模块立即 Oops，pc 在 probe+0x24
+  现象： insmod 瞬间崩溃，地址 0x0000000000000008
+  分析： 地址≈0 说明空指针 + 偏移 8 → 访问某结构体第 2 个成员
+  解码： faddr2line vmlinux my_probe+0x24/0x100 → mydrv.c:87
+  根因： devm_kzalloc 失败返回 NULL 未检查，直接 p->field = x，
+         而 field 恰在偏移 8 处
+  修复： 加判空并返回 -ENOMEM；全面排查所有分配点
+  沉淀： <strong>地址接近 0 = 空指针 + 成员偏移；偏移值能反推是哪个成员</strong>
+
+案例②：运行几小时后死机，日志最后一行是 list_del corruption
+  现象： 长时间运行后崩溃，难以复现
+  取证： 开启 KASAN 与 KCSAN 后重跑，很快报出 data race
+  根因： 中断处理与 read() 同时操作链表，只用了 mutex（中断不能用）
+  修复： 改用 spin_lock_irqsave 保护共享链表
+  沉淀： <strong>间歇性崩溃 = 并发问题，优先上 KCSAN/lockdep 而非人肉猜</strong>
+
+案例③：设备第一次能用，之后再也无响应
+  现象： 首包成功，后续全部超时
+  取证： /proc/interrupts 中该中断计数只有 1
+  根因： 设备树把电平触发写成了边沿触发；设备保持低电平但边沿只来一次
+  修复： 设备树改 IRQ_TYPE_LEVEL_HIGH
+  沉淀： <strong>第一次成功后续失效，先查中断计数与触发类型</strong>
+
+案例④：休眠唤醒后设备失效，但驱动无报错
+  现象： rtcwake 唤醒后读写设备全超时，dmesg 干净
+  分析： resume 回调只做了 clk_enable，未恢复寄存器
+  根因： 休眠期间硬件掉电，寄存器恢复默认值（如 DMA 使能位被清）
+  修复： resume 中完整重初始化，恢复关键寄存器上下文
+  沉淀： <strong>PM 相关的"无报错失效"，几乎都是 resume 恢复不完整</strong>
+
+案例⑤：驱动一切正常，但用户程序 open 失败(EACCES)
+  现象： 内核日志显示设备创建成功，open 仍报权限不足
+  取证： ls -l /dev/mydev 显示 660 且属组非用户所在组
+  根因： udev 规则未配置，默认权限受限
+  修复： 添加 udev 规则指定 GROUP 与 MODE(生产环境不要用 0666)
+  沉淀： <strong>驱动层"正常"不等于用户可用，权限是独立一层</strong></code></pre></div>
+
+<h3>D6.10 调试检查清单（按此顺序过一遍）</h3>
+<ol>
+<li><strong>复现</strong>：能否稳定复现？偶发的话能否用压力测试提高概率？</li>
+<li><strong>分层</strong>：应用 / 驱动 / 硬件？用 <code>strace</code> + <code>devmem2</code> 划分责任</li>
+<li><strong>日志</strong>：<code>dmesg -w</code> 开着，动态调试只开相关文件（避免信息淹没）</li>
+<li><strong>状态</strong>：<code>/proc/interrupts</code>、<code>iomem</code>、debugfs 的 clk/regulator/gpio 状态</li>
+<li><strong>跟踪</strong>：ftrace / trace event 看调用链与时序</li>
+<li><strong>检测</strong>：能否重编内核开 KASAN/KCSAN/lockdep 让 bug 自曝？</li>
+<li><strong>解码</strong>：若崩溃，用 <code>faddr2line</code> 定位到行，不要只读 Call trace 猜</li>
+<li><strong>验证</strong>：修复后跑压力测试与长时间运行，确认不再复现</li>
+<li><strong>留痕</strong>：把「现象→根因→修复」记入项目文档（本篇的价值所在）</li>
+</ol>
+
+<div class="quiz"><strong>📝 思考题</strong><ol>
+<li>Oops 中 <code>pc : my_probe+0x24/0x100 [mydrv]</code>，已知模块 .text 基址为 0xffffffffc0000000，写出三种定位到源码行的具体方法。</li>
+<li>访问地址是 <code>0x0000000000000008</code>，为什么几乎可以确定是空指针成员访问而不是野指针？</li>
+<li>驱动在中断中与进程上下文共享链表，团队用了 mutex 保护。为什么在某些场景下会出问题？正确的做法是什么？</li>
+<li>设备休眠唤醒后失效但无任何报错，列出你的前三个排查假设及验证方法。</li>
+<li>为什么建议「优先开 CONFIG_DEBUG_* 而不是人肉 review 代码」？举一个具体场景说明。</li>
+</ol></div>
+
+<div class="lab"><strong>🧪 动手实验 LD6-1：Oops 注入与解码全流程（120 分钟）</strong>
+<p><strong>步骤</strong>：① 写一个含空指针解引用的模块（故意不检查 <code>devm_kzalloc</code> 返回值），加载触发 Oops；② 保存完整 Oops 日志，识别错误类型与 pc 字段；③ 用 <code>scripts/faddr2line</code> 解码到源码行；④ 再用 <code>objdump</code> + 模块基址手工验证一次；⑤ 修复后重新加载，确认正常；⑥ 追加一个 <code>list_del corruption</code> 场景，开启 KCSAN 观察是否自动报出竞争。</p>
+<p><strong>验收</strong>：一份完整的 Oops 日志 + 三种解码方法的结果对照（应指向同一行）+ 修复前后对比。</p></div>
+
+<div class="lab"><strong>🧪 动手实验 LD6-2：搭建你的驱动调试工具箱（60 分钟）</strong>
+<p><strong>步骤</strong>：① 在开发机上编译安装 trace-cmd 与 perf；② 确认目标内核已挂载 debugfs，检查 <code>/sys/kernel/debug/tracing</code> 可用；③ 用 trace event 抓取一次 I2C 传输（<code>echo 1 &gt; events/i2c/enable</code>）；④ 用 dynamic debug 打开某个驱动的全部 <code>dev_dbg</code>；⑤ 用 <code>devmem2</code> 读一个已知寄存器，与驱动读取值对比；⑥ 整理一份属于你自己平台的「命令速查卡」。</p>
+<p><strong>验收</strong>：一份可复用的调试速查卡（含本平台特有路径与注意事项）+ 三组工具的实际输出记录。</p></div>
+
+<div class="box tip"><span class="bt">🎓 第十五篇收束寄语</span>
+<p>驱动开发的成长，本质上是<strong>把「玄学」变成「可推理」</strong>的过程。你在这篇里积累的每一个排故表、每一条解码命令、每一个案例，都是在把不确定性往前推一步。请记住三个习惯：<strong>① 保留现场</strong>——任何崩溃都先存日志与 vmlinux，别急着重启；<strong>② 用工具代替猜测</strong>——KASAN、lockdep、ftrace 能告诉你真相，人肉 review 往往只看到自己想看的；<strong>③ 记录复盘</strong>——今天花两小时查出的 bug，写下来后明天两分钟就能解决。驱动工程师的真正资产不是会写多少驱动，而是<strong>遇到未知问题时，有一套能走通的方法论</strong>。</p></div>
+
+<div class="box tip"><span class="bt">🗺️ 本章知识地图</span>
+<p><strong>前置依赖</strong>：D1~D5 全部、第64章内核调试专题（Oops/debugfs/kgdb/kdump 基础概念）。<strong>本篇定位</strong>：第64章讲「有哪些工具」，本章讲「怎么组合使用、怎么解到源码行、怎么形成推理链」——建议两章对照阅读。<strong>横向联动</strong>：第18章示波器与逻辑分析仪、第12篇火焰图与 USE 法、第85章 PCIe 排障。<strong>开源定位</strong>：内核 <code>Documentation/dev-tools/</code>（<code>kasan.rst</code>、<code>ftrace.rst</code>、<code>kgdb.rst</code>）、<code>Documentation/admin-guide/bug-hunting.rst</code>、<code>scripts/faddr2line</code>。</p></div>
+</section>
+
 <div class="part-divider" id="partapp"><h3>B5 · Zephyr west 与 ESP-IDF 命令速查</h3>
 <div class="tbl-wrap"><table class="tbl">
 <tr><th>west(Zephyr)</th><th>idf.py(ESP-IDF)</th><th>说明</th></tr>
@@ -19473,6 +21096,7 @@ STM32F407 + SP3485 收发器；115200-8N1
 - 相关章节： [[ch28-串口工程化]] [[ch75-Modbus]]
 - 根因类别： #timing #rs485 #direction-control
 ---
+</code></pre></div>
 
 <!-- 步骤③ 审核修正后移入 02-Troubleshooting/ 并 commit --><div class="codeblock"><pre><code data-lang="markdown">步骤④ 添加双链：
 ## 关联

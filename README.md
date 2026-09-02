@@ -4,7 +4,7 @@
 >
 > 一条覆盖「编程基础 → 调试工具 → 单片机 → SoC → RTOS → 嵌入式 Linux → Android 底层 → 通信协议」的完整成长路线，以**可复现的命令、可运行的代码、可落地的排故表**支撑实战，并以 6 个综合项目 + 主流开源项目源码解析收束。
 
-本项目是一个**单文件、纯前端、零依赖、可离线使用**的嵌入式学习知识库，共约 1.4MB / 19700+ 行，包含 **14 篇正篇 + 5 大附录、138 章节**，覆盖从 C 语言指针到 ZYNQ 异构 SoC，再到 PCIe 协议栈 / GPU 互连 / NCCL 集合通信的完整技术栈。
+本项目是一个**单文件、纯前端、零依赖、可离线使用**的嵌入式学习知识库，共约 1.53MB / 21300+ 行，包含 **15 篇正篇 + 5 大附录、144 章节**，覆盖从 C 语言指针到 ZYNQ 异构 SoC、PCIe / GPU 互连 / NCCL 集合通信，再到嵌入式 Linux 驱动开发精进的完整技术栈。
 
 ---
 
@@ -39,6 +39,7 @@
 | 第十二篇 | 系统性能工程 | SO1~SO5 + SE | USE 法/火焰图方法论、MCU 系统优化、RTOS 多任务调优、三大优化战役复盘、Linux 内核调参与容器治理、专家技能地图 |
 | 第十三篇 | ZYNQ 异构 SoC 开发 | Z1~Z5 | ZYNQ7020 架构全景、Verilog 精要与 Vivado 七步流程、PS 裸机与 PS-PL 协同、数据采集系统实战 |
 | **第十四篇** | **高速互连与集合通信** | **I1~I5** | **PCIe 协议栈深潜**（TLP 结构/三种路由/信用流控/LTSSM 状态机/配置空间/MSI-X）、**带宽账本与性能工程**（开销精算/MPS·MRRS/DMA 引擎/AER 排障）、**GPU 互连体系**（PCIe P2P 与 ACS 陷阱/GPUDirect 四能力/NVLink·NVSwitch 拓扑/`nvidia-smi topo -m` 读图）、**NCCL 集合通信库**（九种原语/Ring·Tree 算法/LL·LL128 协议/algbw·busbw 换算/环境变量速查/挂起排查）、**分布式通信实战**（RDMA·RoCE v2/NCCL vs MPI vs Gloo/DDP·FSDP·TP·PP·EP 通信模式/通信计算重叠/四则故障案例复盘） |
+| **第十五篇** | **嵌入式 Linux 驱动开发精进** | **D1~D6** | **内核模块机制与编程范式**（生命周期/六大禁区/字符设备骨架/ioctl ABI/sysfs·debugfs 选型）、**并发同步与内存 DMA**（同步原语选型/spinlock 变体/等待队列/RCU/GFP 标志/DMA 一致性与流式映射/lockdep）、**设备树深度实战**（语法体系/五大资源属性/irq_domain 中断映射/Overlay 动态加载/dtc 调试工具箱）、**设备模型与电源管理**（bus·device·driver/deferred probe/devm 资源管理/uevent/suspend·resume/runtime PM）、**子系统全景与选型**（I2C·SPI/块设备·MTD/net_device·NAPI/DRM·ASoC/regmap/选型决策表）、**驱动调试技巧大全**（分层地图/动态调试/ftrace·perf/**Oops 解码三步法**/KASAN·KCSAN·KMEMLEAK/kgdb·kdump/五则案例复盘） |
 | 附录 | 题库与速查 | A~E | 面试题库（五专项）、工具命令速查卡、芯片/模块/仪器选型对照表、术语表、Obsidian × LLM 知识管理工作流 |
 
 ---
